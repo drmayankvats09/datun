@@ -3,7 +3,7 @@
 An AI-powered healthcare platform for India, beginning with dental care and expanding to a unified healthcare aggregation ecosystem.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000)](https://nextjs.org/)
 [![Turborepo](https://img.shields.io/badge/Turborepo-latest-EF4444)](https://turbo.build/)
 [![License](https://img.shields.io/badge/License-Proprietary-lightgrey)](#license)
 
