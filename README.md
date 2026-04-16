@@ -61,7 +61,7 @@ Install dependencies:Run all applications in development mode:Build all applicat
 ## Contact
 
 Dr. Mayank Vats — Founder and Chief Executive Officer  
-Email: dr.mayankvats@gmail.com
+Email: dr.mayankvats09@gmail.com
 
 ## License
 
