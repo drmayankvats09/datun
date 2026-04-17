@@ -1,0 +1,1307 @@
+// ═══════════════════════════════════════════════════════════════
+// DATUN — Complete Database Schema v1
+// 28 Tables | 300+ Fields | 5-Year Architecture
+// Built for 1,00,000+ users Day 1
+// Author: Dr. Mayank Vats (CEO) + CTO Architecture
+// ═══════════════════════════════════════════════════════════════
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENUMS — All at top for clean organization
+// ═══════════════════════════════════════════════════════════════
+
+enum UserPrimaryRole {
+    PATIENT
+    CLINIC_OWNER
+    CLINIC_STAFF
+    DOCTOR
+    ADMIN
+    SUPER_ADMIN
+}
+
+enum AuthProvider {
+    EMAIL
+    GOOGLE
+    PHONE
+    AUTH0
+    APPLE
+    MAGIC_LINK
+}
+
+enum Gender {
+    MALE
+    FEMALE
+    OTHER
+    PREFER_NOT_TO_SAY
+}
+
+enum SmokingStatus {
+    NEVER
+    FORMER
+    CURRENT
+}
+
+enum PregnancyStatus {
+    NOT_PREGNANT
+    PREGNANT
+    BREASTFEEDING
+    NOT_APPLICABLE
+}
+
+enum SubscriptionTier {
+    FREE
+    PRO
+}
+
+enum PatientRelationship {
+    SELF
+    PARENT
+    SPOUSE
+    CHILD
+    SIBLING
+    CAREGIVER
+    GUARDIAN
+    OTHER
+}
+
+enum AccessLevel {
+    FULL
+    VIEW_ONLY
+    EMERGENCY
+}
+
+enum RoleType {
+    PATIENT
+    CLINIC_OWNER
+    CLINIC_STAFF
+    DOCTOR
+    ADMIN
+    SUPER_ADMIN
+}
+
+enum ClinicTier {
+    LITE
+    GROW
+    PRO
+    ENTERPRISE
+}
+
+enum ClinicMemberRole {
+    OWNER
+    ADMIN
+    RECEPTIONIST
+    DOCTOR
+}
+
+enum InvitationStatus {
+    PENDING
+    ACCEPTED
+    EXPIRED
+    REVOKED
+}
+
+enum ConsultationStatus {
+    IN_PROGRESS
+    COMPLETED
+    ABANDONED
+    EXPIRED
+}
+
+enum UrgencyLevel {
+    EMERGENCY
+    URGENT
+    MODERATE
+    ROUTINE
+}
+
+enum MessageRole {
+    USER
+    ASSISTANT
+    SYSTEM
+}
+
+enum MessageContentType {
+    TEXT
+    IMAGE
+    CHIPS
+    SYSTEM_EVENT
+}
+
+enum AppointmentStatus {
+    SCHEDULED
+    CONFIRMED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+    NO_SHOW
+    RESCHEDULED
+}
+
+enum AppointmentType {
+    FIRST_VISIT
+    FOLLOW_UP
+    EMERGENCY
+    ROUTINE_CHECKUP
+}
+
+enum PaymentStatus {
+    PENDING
+    PAID
+    REFUNDED
+}
+
+enum AppointmentSource {
+    DATUN_AI
+    DIRECT
+    PHONE
+    WALKIN
+}
+
+enum ReviewSource {
+    POST_APPOINTMENT
+    ORGANIC
+    INVITED
+}
+
+enum LeadStatus {
+    NEW
+    CONTACTED
+    APPOINTMENT_BOOKED
+    CONVERTED
+    CLOSED
+    EXPIRED
+}
+
+enum NotificationType {
+    CONSULTATION_COMPLETE
+    APPOINTMENT_REMINDER
+    FOLLOW_UP
+    REVIEW_REQUEST
+    LEAD_NEW
+    PAYMENT_SUCCESS
+    PAYMENT_FAILED
+    SYSTEM
+    PROMOTIONAL
+}
+
+enum NotificationChannel {
+    IN_APP
+    EMAIL
+    WHATSAPP
+    SMS
+    PUSH
+}
+
+enum SubscriptionStatus {
+    ACTIVE
+    TRIAL
+    PAST_DUE
+    CANCELLED
+    PAUSED
+    EXPIRED
+}
+
+enum BillingCycle {
+    MONTHLY
+    ANNUAL
+}
+
+enum InvoiceStatus {
+    DRAFT
+    SENT
+    PAID
+    OVERDUE
+    CANCELLED
+    REFUNDED
+}
+
+enum TransactionStatus {
+    INITIATED
+    AUTHORIZED
+    CAPTURED
+    FAILED
+    REFUNDED
+    PARTIALLY_REFUNDED
+}
+
+enum WhatsAppStatus {
+    QUEUED
+    SENT
+    DELIVERED
+    READ
+    FAILED
+}
+
+enum WhatsAppDirection {
+    OUTBOUND
+    INBOUND
+}
+
+enum WhatsAppProvider {
+    META
+    GUPSHUP
+    AISENSY
+}
+
+enum SourceChannel {
+    WEB
+    WHATSAPP
+    APP
+}
+
+enum ConsentPurpose {
+    PRIVACY_POLICY
+    AI_CONSULTATION
+    WHATSAPP_OPTIN
+    MARKETING
+    DATA_TRAINING
+    TREATMENT_DISCLAIMER
+}
+
+enum ConsentStatus {
+    GRANTED
+    REVOKED
+    EXPIRED
+}
+
+enum ReviewStatusEnum {
+    PENDING_REVIEW
+    APPROVED
+    NEEDS_CORRECTION
+    CORRECTED
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 1: User
+// Every person on the platform — patient, clinic owner, admin.
+// Central identity table. All other tables reference this.
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+    id                 String           @id @default(uuid()) @db.Uuid
+    email              String           @unique
+    phone              String?          @unique
+    passwordHash       String?
+    name               String
+    avatarUrl          String?
+    dateOfBirth        DateTime?
+    gender             Gender?
+    languagePreference String           @default("en")
+    city               String?
+    state              String?
+    pincode            String?
+    latitude           Float?
+    longitude          Float?
+    primaryRole        UserPrimaryRole  @default(PATIENT)
+    isEmailVerified    Boolean          @default(false)
+    isPhoneVerified    Boolean          @default(false)
+    isActive           Boolean          @default(true)
+    lastLoginAt        DateTime?
+    lastLoginIp        String?
+    lastLoginDevice    String?
+    referralCode       String?          @unique
+    referredById       String?          @db.Uuid
+    referredBy         User?            @relation("UserReferrals", fields: [referredById], references: [id])
+    referrals          User[]           @relation("UserReferrals")
+    subscriptionTier   SubscriptionTier @default(FREE)
+    metadata           Json?
+    createdAt          DateTime         @default(now())
+    updatedAt          DateTime         @updatedAt
+    deletedAt          DateTime?
+
+    // ── Relations ──
+    patient              Patient?
+    roles                UserRole[]
+    authIdentities       UserAuthIdentity[]
+    clinicsOwned         Clinic[]
+    clinicMemberships    ClinicMember[]
+    clinicInvitesSent    ClinicInvitation[]       @relation("InvitedByUser")
+    doctor               Doctor?
+    consultations        Consultation[]           @relation("UserConsultations")
+    consultationsStarted Consultation[]           @relation("InitiatedByUser")
+    appointments         Appointment[]            @relation("PatientAppointments")
+    prescriptions        Prescription[]           @relation("UserPrescriptions")
+    reviewsGiven         Review[]
+    leadsAsPatient       Lead[]                   @relation("PatientLeads")
+    notifications        Notification[]
+    notificationPrefs    NotificationPreference[]
+    whatsappMessages     WhatsAppMessage[]
+    auditLogs            AuditLog[]
+    consentLogs          ConsentLog[]
+    mediaUploads         MediaAsset[]             @relation("UploadedByUser")
+    trainingLabels       TrainingLabel[]
+    patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
+
+    @@index([email])
+    @@index([phone])
+    @@index([createdAt(sort: Desc)])
+    @@index([primaryRole])
+    @@index([referralCode])
+    @@map("users")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 2: Patient
+// Medical data separated from User for security.
+// Doctor needs allergies but NOT login IP. Separation of concerns.
+// ═══════════════════════════════════════════════════════════════
+
+model Patient {
+    id                    String           @id @default(uuid()) @db.Uuid
+    userId                String           @unique @db.Uuid
+    user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+    bloodGroup            String?
+    allergies             Json?
+    medicalConditions     Json?
+    currentMedications    Json?
+    emergencyContactName  String?
+    emergencyContactPhone String?
+    dentalHistory         Json?
+    lastDentalVisit       DateTime?
+    smokingStatus         SmokingStatus?
+    tobaccoUse            Boolean?
+    pregnancyStatus       PregnancyStatus?
+    insuranceProvider     String?
+    insurancePolicyNumber String?
+    createdAt             DateTime         @default(now())
+    updatedAt             DateTime         @updatedAt
+
+    // ── Relations ──
+    accessedBy    UserPatientAccess[]
+    consultations Consultation[]
+    appointments  Appointment[]
+    prescriptions Prescription[]
+    reviews       Review[]
+    leads         Lead[]
+
+    @@map("patients")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 3: UserPatientAccess
+// Parent books for child, husband for wife, caregiver for elder.
+// India mein healthcare = family affair. Day 1 se chahiye.
+// ═══════════════════════════════════════════════════════════════
+
+model UserPatientAccess {
+    id           String              @id @default(uuid()) @db.Uuid
+    userId       String              @db.Uuid
+    user         User                @relation("UserAccesses", fields: [userId], references: [id], onDelete: Cascade)
+    patientId    String              @db.Uuid
+    patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+    relationship PatientRelationship
+    accessLevel  AccessLevel         @default(FULL)
+    isPrimary    Boolean             @default(false)
+    createdAt    DateTime            @default(now())
+    updatedAt    DateTime            @updatedAt
+
+    @@unique([userId, patientId])
+    @@index([userId])
+    @@index([patientId])
+    @@map("user_patient_accesses")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 4: UserRole
+// One person = multiple roles. Doctor + patient + clinic owner.
+// Proper RBAC table — Google Workspace / AWS IAM standard.
+// ═══════════════════════════════════════════════════════════════
+
+model UserRole {
+    id        String   @id @default(uuid()) @db.Uuid
+    userId    String   @db.Uuid
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    role      RoleType
+    clinicId  String?  @db.Uuid
+    clinic    Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+    createdAt DateTime @default(now())
+
+    @@unique([userId, role, clinicId])
+    @@index([userId])
+    @@map("user_roles")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 5: UserAuthIdentity
+// Auth0 today, own auth tomorrow, Apple/Google/OTP later.
+// Each login method = separate row. Migration-proof.
+// ═══════════════════════════════════════════════════════════════
+
+model UserAuthIdentity {
+    id              String       @id @default(uuid()) @db.Uuid
+    userId          String       @db.Uuid
+    user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    provider        AuthProvider
+    providerUserId  String
+    emailAtProvider String?
+    phoneAtProvider String?
+    isPrimary       Boolean      @default(false)
+    linkedAt        DateTime     @default(now())
+    lastUsedAt      DateTime?
+
+    @@unique([provider, providerUserId])
+    @@index([userId])
+    @@map("user_auth_identities")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 6: Clinic
+// B2B side — dental clinic profiles. "Zomato of healthcare"
+// mein restaurants ki jagah clinics.
+// ═══════════════════════════════════════════════════════════════
+
+model Clinic {
+    id                  String     @id @default(uuid()) @db.Uuid
+    ownerId             String     @db.Uuid
+    owner               User       @relation(fields: [ownerId], references: [id])
+    name                String
+    slug                String     @unique
+    description         String?    @db.Text
+    phone               String
+    email               String
+    website             String?
+    address             String
+    landmark            String?
+    city                String
+    state               String
+    pincode             String
+    latitude            Float
+    longitude           Float
+    registrationNumber  String?
+    registrationCertUrl String?
+    isVerified          Boolean    @default(false)
+    tier                ClinicTier @default(LITE) // Derived from Subscription — Subscription is source of truth
+    trialEndsAt         DateTime?
+    logoUrl             String?
+    coverImageUrl       String?
+    photos              Json?
+    services            Json?
+    specialties         Json?
+    languages           Json?
+    openingHours        Json?
+    averageRating       Float      @default(0)
+    totalReviews        Int        @default(0)
+    totalLeads          Int        @default(0)
+    totalAppointments   Int        @default(0)
+    isActive            Boolean    @default(true)
+    onboardingStep      Int        @default(0)
+    metadata            Json?
+    createdAt           DateTime   @default(now())
+    updatedAt           DateTime   @updatedAt
+    deletedAt           DateTime?
+
+    // ── Relations ──
+    members       ClinicMember[]
+    invitations   ClinicInvitation[]
+    doctors       DoctorClinic[]
+    appointments  Appointment[]
+    reviews       Review[]
+    leads         Lead[]
+    subscriptions Subscription[]
+    invoices      Invoice[]
+    userRoles     UserRole[]
+
+    @@index([slug])
+    @@index([city])
+    @@index([ownerId])
+    @@index([isActive, isVerified])
+    @@map("clinics")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 7: ClinicMember
+// Staff in a clinic — owner, receptionist, associate doctor.
+// Many-to-many between Clinic and User with role context.
+// ═══════════════════════════════════════════════════════════════
+
+model ClinicMember {
+    id          String           @id @default(uuid()) @db.Uuid
+    clinicId    String           @db.Uuid
+    clinic      Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+    userId      String           @db.Uuid
+    user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+    role        ClinicMemberRole
+    isActive    Boolean          @default(true)
+    invitedAt   DateTime         @default(now())
+    joinedAt    DateTime?
+    invitedById String?          @db.Uuid
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+
+    // ── Relations ──
+    leadsAssigned Lead[]
+
+    @@unique([clinicId, userId])
+    @@index([clinicId])
+    @@index([userId])
+    @@map("clinic_members")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 8: ClinicInvitation
+// Owner invites staff by email/phone BEFORE they sign up.
+// Staff joins → auto-linked to clinic via token.
+// ═══════════════════════════════════════════════════════════════
+
+model ClinicInvitation {
+    id           String           @id @default(uuid()) @db.Uuid
+    clinicId     String           @db.Uuid
+    clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+    emailOrPhone String
+    role         ClinicMemberRole
+    invitedById  String           @db.Uuid
+    invitedBy    User             @relation("InvitedByUser", fields: [invitedById], references: [id])
+    tokenHash    String           @unique
+    expiresAt    DateTime
+    acceptedAt   DateTime?
+    status       InvitationStatus @default(PENDING)
+    createdAt    DateTime         @default(now())
+    updatedAt    DateTime         @updatedAt
+
+    @@index([clinicId])
+    @@index([emailOrPhone])
+    @@index([tokenHash])
+    @@map("clinic_invitations")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 9: Doctor
+// Doctor-specific profile — credentials, specialties, fees.
+// Separate from User because doctor fields are domain-specific.
+// ═══════════════════════════════════════════════════════════════
+
+model Doctor {
+    id                  String   @id @default(uuid()) @db.Uuid
+    userId              String   @unique @db.Uuid
+    user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    registrationNumber  String
+    registrationCouncil String?
+    qualification       String
+    specialization      String?
+    experienceYears     Int?
+    bio                 String?  @db.Text
+    avatarUrl           String?
+    isAcceptingPatients Boolean  @default(true)
+    rating              Float    @default(0)
+    totalConsultations  Int      @default(0)
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
+
+    // ── Relations ──
+    clinics               DoctorClinic[]
+    appointments          Appointment[]
+    reviews               Review[]
+    consultationsReviewed Consultation[] @relation("ReviewedByDoctor")
+    prescriptionsSigned   Prescription[] @relation("SignedByDoctor")
+    prescriptionsReviewed Prescription[] @relation("ReviewedByDoctor")
+
+    @@map("doctors")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 10: DoctorClinic
+// Doctor practices at multiple clinics — morning ek, evening doosri.
+// Replaces Doctor.clinicId for proper many-to-many.
+// ═══════════════════════════════════════════════════════════════
+
+model DoctorClinic {
+    id                   String    @id @default(uuid()) @db.Uuid
+    doctorId             String    @db.Uuid
+    doctor               Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+    clinicId             String    @db.Uuid
+    clinic               Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+    isPrimaryClinic      Boolean   @default(false)
+    consultationFeePaisa Int?
+    isActive             Boolean   @default(true)
+    startDate            DateTime  @default(now())
+    endDate              DateTime?
+    createdAt            DateTime  @default(now())
+    updatedAt            DateTime  @updatedAt
+
+    @@unique([doctorId, clinicId])
+    @@index([doctorId])
+    @@index([clinicId])
+    @@map("doctor_clinics")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 11: Consultation
+// CORE TABLE — AI dental consultation. Patient ↔ AI interaction.
+// Every diagnosis, every medication, every PDF lives here.
+// ═══════════════════════════════════════════════════════════════
+
+model Consultation {
+    id                     String             @id @default(uuid()) @db.Uuid
+    patientId              String             @db.Uuid
+    patient                Patient            @relation(fields: [patientId], references: [id])
+    initiatedByUserId      String             @db.Uuid
+    initiatedByUser        User               @relation("InitiatedByUser", fields: [initiatedByUserId], references: [id])
+    userId                 String             @db.Uuid
+    user                   User               @relation("UserConsultations", fields: [userId], references: [id])
+    clientUuid             String?            @unique
+    status                 ConsultationStatus @default(IN_PROGRESS)
+    language               String             @default("en")
+    chiefComplaint         String?            @db.Text
+    diagnosis              String?            @db.Text
+    urgency                UrgencyLevel?
+    treatmentPlan          String?            @db.Text
+    homeRemedies           String?            @db.Text
+    dosList                Json?
+    dontsList              Json?
+    redFlags               Json?
+    medications            Json?
+    investigationsNeeded   Json?
+    visualFindings         String?            @db.Text
+    photoUrls              Json?
+    followUpDays           Int?
+    // ── AI tracking ──
+    aiProvider             String             @default("claude")
+    aiModel                String?
+    aiLatencyMs            Int?
+    aiTokensUsed           Int?
+    aiCostUsd              Decimal?           @db.Decimal(10, 6)
+    promptVersion          String?
+    workflowVersion        String?
+    safetyFlags            Json?
+    // ── Human review (proprietary AI path) ──
+    needsHumanReview       Boolean            @default(false)
+    reviewStatus           ReviewStatusEnum?
+    reviewedByDoctorId     String?            @db.Uuid
+    reviewedByDoctor       Doctor?            @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
+    reviewedAt             DateTime?
+    reviewNotes            String?            @db.Text
+    // ── Stats ──
+    totalMessages          Int                @default(0)
+    durationSeconds        Int?
+    // ── PDF ──
+    pdfUrl                 String?
+    pdfGeneratedAt         DateTime?
+    shareableSlug          String?            @unique
+    shareableLinkExpiresAt DateTime?
+    // ── Compliance ──
+    consentGiven           Boolean            @default(false)
+    consentAt              DateTime?
+    // ── Source ──
+    sourceChannel          SourceChannel      @default(WEB)
+    leadId                 String?            @db.Uuid
+    lead                   Lead?              @relation(fields: [leadId], references: [id])
+    metadata               Json?
+    completedAt            DateTime?
+    createdAt              DateTime           @default(now())
+    updatedAt              DateTime           @updatedAt
+    deletedAt              DateTime?
+
+    // ── Relations ──
+    messages         ConsultationMessage[]
+    trainingLabels   TrainingLabel[]
+    appointments     Appointment[]
+    prescription     Prescription?
+    whatsappMessages WhatsAppMessage[]
+
+    @@index([userId, status, updatedAt(sort: Desc)])
+    @@index([patientId])
+    @@index([createdAt(sort: Desc)])
+    @@index([shareableSlug])
+    @@map("consultations")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 12: ConsultationMessage
+// Every single message — patient said what, AI replied what.
+// Training data ka backbone. 10k labeled = LoRA fine-tune ready.
+// ═══════════════════════════════════════════════════════════════
+
+model ConsultationMessage {
+    id             String             @id @default(uuid()) @db.Uuid
+    consultationId String             @db.Uuid
+    consultation   Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+    role           MessageRole
+    content        String             @db.Text
+    contentType    MessageContentType @default(TEXT)
+    imageUrl       String?
+    chips          Json?
+    selectedChip   String?
+    aiLatencyMs    Int?
+    aiTokensUsed   Int?
+    sequenceNumber Int
+    createdAt      DateTime           @default(now())
+
+    // ── Relations ──
+    trainingLabels TrainingLabel[]
+
+    @@index([consultationId, sequenceNumber])
+    @@map("consultation_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 13: TrainingLabel
+// Mayank rates AI responses 1-5, writes corrections.
+// 10,000 quality-labeled records = proprietary AI moat.
+// ═══════════════════════════════════════════════════════════════
+
+model TrainingLabel {
+    id             String               @id @default(uuid()) @db.Uuid
+    consultationId String               @db.Uuid
+    consultation   Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+    messageId      String?              @db.Uuid
+    message        ConsultationMessage? @relation(fields: [messageId], references: [id])
+    labeledById    String               @db.Uuid
+    labeledBy      User                 @relation(fields: [labeledById], references: [id])
+    qualityScore   Int
+    isCorrect      Boolean
+    correctionText String?              @db.Text
+    clinicalNotes  String?              @db.Text
+    category       String?
+    createdAt      DateTime             @default(now())
+    updatedAt      DateTime             @updatedAt
+
+    @@index([consultationId])
+    @@index([labeledById])
+    @@map("training_labels")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 14: Appointment
+// Patient books appointment at a clinic.
+// Full lifecycle: scheduled → confirmed → check-in → completed.
+// ═══════════════════════════════════════════════════════════════
+
+model Appointment {
+    id                   String            @id @default(uuid()) @db.Uuid
+    patientId            String            @db.Uuid
+    patient              Patient           @relation(fields: [patientId], references: [id])
+    userId               String            @db.Uuid
+    user                 User              @relation("PatientAppointments", fields: [userId], references: [id])
+    clinicId             String            @db.Uuid
+    clinic               Clinic            @relation(fields: [clinicId], references: [id])
+    doctorId             String?           @db.Uuid
+    doctor               Doctor?           @relation(fields: [doctorId], references: [id])
+    consultationId       String?           @db.Uuid
+    consultation         Consultation?     @relation(fields: [consultationId], references: [id])
+    leadId               String?           @db.Uuid
+    lead                 Lead?             @relation(fields: [leadId], references: [id])
+    scheduledAt          DateTime
+    durationMinutes      Int               @default(30)
+    timezone             String            @default("Asia/Kolkata")
+    status               AppointmentStatus @default(SCHEDULED)
+    type                 AppointmentType   @default(FIRST_VISIT)
+    chiefComplaint       String?           @db.Text
+    urgency              UrgencyLevel?
+    notes                String?           @db.Text
+    cancelledAt          DateTime?
+    cancelledById        String?           @db.Uuid
+    cancellationReason   String?           @db.Text
+    reminderSentAt       DateTime?
+    confirmedAt          DateTime?
+    checkInAt            DateTime?
+    startedAt            DateTime?
+    endedAt              DateTime?
+    completedAt          DateTime?
+    rescheduledFromId    String?           @db.Uuid
+    rescheduledFrom      Appointment?      @relation("Reschedules", fields: [rescheduledFromId], references: [id])
+    rescheduledTo        Appointment[]     @relation("Reschedules")
+    patientFeedbackScore Int?
+    amountPaisa          Int?
+    paymentStatus        PaymentStatus?
+    sourceChannel        AppointmentSource @default(DATUN_AI)
+    metadata             Json?
+    createdAt            DateTime          @default(now())
+    updatedAt            DateTime          @updatedAt
+
+    // ── Relations ──
+    review              Review?
+    paymentTransactions PaymentTransaction[]
+
+    @@index([patientId])
+    @@index([clinicId])
+    @@index([doctorId])
+    @@index([scheduledAt])
+    @@index([status])
+    @@map("appointments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 15: Prescription
+// AI-generated prescription — structured PDF data.
+// signedByDoctorId for multi-doctor flow (future).
+// ═══════════════════════════════════════════════════════════════
+
+model Prescription {
+    id                  String            @id @default(uuid()) @db.Uuid
+    consultationId      String            @unique @db.Uuid
+    consultation        Consultation      @relation(fields: [consultationId], references: [id])
+    patientId           String            @db.Uuid
+    patient             Patient           @relation(fields: [patientId], references: [id])
+    userId              String            @db.Uuid
+    user                User              @relation("UserPrescriptions", fields: [userId], references: [id])
+    prescribedByName    String            @default("Dr. Mayank Vats")
+    signedByDoctorId    String?           @db.Uuid
+    signedByDoctor      Doctor?           @relation("SignedByDoctor", fields: [signedByDoctorId], references: [id])
+    diagnosis           String            @db.Text
+    medications         Json
+    investigations      Json?
+    procedures          Json?
+    homeRemedies        Json?
+    followUpDate        DateTime?
+    specialInstructions String?           @db.Text
+    pdfUrl              String?
+    pdfVersion          Int               @default(1)
+    shareableSlug       String?           @unique
+    expiresAt           DateTime?
+    viewCount           Int               @default(0)
+    isActive            Boolean           @default(true)
+    // ── Review ──
+    reviewStatus        ReviewStatusEnum?
+    reviewedByDoctorId  String?           @db.Uuid
+    reviewedByDoctor    Doctor?           @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
+    reviewedAt          DateTime?
+    signatureUrl        String?
+    createdAt           DateTime          @default(now())
+    updatedAt           DateTime          @updatedAt
+
+    @@index([patientId])
+    @@index([shareableSlug])
+    @@map("prescriptions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 16: Review
+// Patient reviews clinic/doctor. Practo's moat = reviews.
+// Verified reviews = trust. helpfulCount = engagement.
+// ═══════════════════════════════════════════════════════════════
+
+model Review {
+    id                String       @id @default(uuid()) @db.Uuid
+    patientId         String       @db.Uuid
+    patient           Patient      @relation(fields: [patientId], references: [id])
+    userId            String       @db.Uuid
+    user              User         @relation(fields: [userId], references: [id])
+    clinicId          String       @db.Uuid
+    clinic            Clinic       @relation(fields: [clinicId], references: [id])
+    doctorId          String?      @db.Uuid
+    doctor            Doctor?      @relation(fields: [doctorId], references: [id])
+    appointmentId     String?      @unique @db.Uuid
+    appointment       Appointment? @relation(fields: [appointmentId], references: [id])
+    overallRating     Int
+    cleanlinessRating Int?
+    staffRating       Int?
+    doctorRating      Int?
+    waitTimeRating    Int?
+    valueRating       Int?
+    reviewText        String?      @db.Text
+    clinicResponse    String?      @db.Text
+    clinicRespondedAt DateTime?
+    isVerified        Boolean      @default(false)
+    isPublished       Boolean      @default(true)
+    isFlagged         Boolean      @default(false)
+    flagReason        String?
+    helpfulCount      Int          @default(0)
+    source            ReviewSource @default(ORGANIC)
+    createdAt         DateTime     @default(now())
+    updatedAt         DateTime     @updatedAt
+
+    @@index([clinicId, isPublished])
+    @@index([patientId])
+    @@map("reviews")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 17: Lead
+// AI consultation → nearby clinic connection. REVENUE CORE.
+// Clinic pays for leads. CRM fields for follow-up tracking.
+// ═══════════════════════════════════════════════════════════════
+
+model Lead {
+    id                  String               @id @default(uuid()) @db.Uuid
+    patientId           String               @db.Uuid
+    patient             Patient              @relation(fields: [patientId], references: [id])
+    userId              String               @db.Uuid
+    user                User                 @relation("PatientLeads", fields: [userId], references: [id])
+    clinicId            String               @db.Uuid
+    clinic              Clinic               @relation(fields: [clinicId], references: [id])
+    status              LeadStatus           @default(NEW)
+    urgency             UrgencyLevel?
+    diagnosis           String?              @db.Text
+    patientName         String
+    patientPhone        String?
+    patientArea         String?
+    distanceKm          Float?
+    // ── CRM fields ──
+    assignedToMemberId  String?              @db.Uuid
+    assignedToMember    ClinicMember?        @relation(fields: [assignedToMemberId], references: [id])
+    firstResponseAt     DateTime?
+    lastContactAt       DateTime?
+    nextFollowUpAt      DateTime?
+    followUpCount       Int                  @default(0)
+    lostReasonCode      String?
+    // ── Lifecycle ──
+    contactedAt         DateTime?
+    appointmentBookedAt DateTime?
+    convertedAt         DateTime?
+    closedAt            DateTime?
+    closedReason        String?
+    notes               String?              @db.Text
+    notifiedVia         NotificationChannel?
+    notifiedAt          DateTime?
+    revenue             Int?
+    metadata            Json?
+    createdAt           DateTime             @default(now())
+    updatedAt           DateTime             @updatedAt
+
+    // ── Relations ──
+    consultations Consultation[]
+    appointments  Appointment[]
+    activities    LeadActivity[]
+
+    @@index([clinicId, status])
+    @@index([patientId])
+    @@index([nextFollowUpAt])
+    @@map("leads")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 18: LeadActivity
+// Every touchpoint logged — called, emailed, no answer.
+// Real CRM = activity history. Churn prediction data.
+// ═══════════════════════════════════════════════════════════════
+
+model LeadActivity {
+    id            String               @id @default(uuid()) @db.Uuid
+    leadId        String               @db.Uuid
+    lead          Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade)
+    action        String
+    notes         String?              @db.Text
+    performedById String?              @db.Uuid
+    channel       NotificationChannel?
+    metadata      Json?
+    createdAt     DateTime             @default(now())
+
+    @@index([leadId, createdAt(sort: Desc)])
+    @@map("lead_activities")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 19: Subscription
+// Clinic's paid plan. Source of truth for billing.
+// Clinic.tier is DERIVED from this — never edit tier directly.
+// ═══════════════════════════════════════════════════════════════
+
+model Subscription {
+    id                     String             @id @default(uuid()) @db.Uuid
+    clinicId               String             @db.Uuid
+    clinic                 Clinic             @relation(fields: [clinicId], references: [id])
+    plan                   ClinicTier
+    status                 SubscriptionStatus @default(TRIAL)
+    billingCycle           BillingCycle       @default(MONTHLY)
+    amountPaisa            Int
+    currency               String             @default("INR")
+    trialStartedAt         DateTime?
+    trialEndsAt            DateTime?
+    currentPeriodStart     DateTime
+    currentPeriodEnd       DateTime
+    razorpaySubscriptionId String?
+    razorpayCustomerId     String?
+    stripeFallbackId       String?
+    cancelledAt            DateTime?
+    cancellationReason     String?            @db.Text
+    pausedAt               DateTime?
+    resumesAt              DateTime?
+    dunningAttempts        Int                @default(0)
+    lastDunningAt          DateTime?
+    seatLimit              Int
+    createdAt              DateTime           @default(now())
+    updatedAt              DateTime           @updatedAt
+
+    // ── Relations ──
+    invoices Invoice[]
+
+    @@index([clinicId])
+    @@index([status])
+    @@map("subscriptions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 20: Invoice
+// GST-compliant invoice. Immutable buyer snapshot = legal proof.
+// buyerName/address frozen at invoice time — never changes.
+// ═══════════════════════════════════════════════════════════════
+
+model Invoice {
+    id                 String        @id @default(uuid()) @db.Uuid
+    subscriptionId     String        @db.Uuid
+    subscription       Subscription  @relation(fields: [subscriptionId], references: [id])
+    clinicId           String        @db.Uuid
+    clinic             Clinic        @relation(fields: [clinicId], references: [id])
+    invoiceNumber      String        @unique
+    status             InvoiceStatus @default(DRAFT)
+    subtotalPaisa      Int
+    taxPaisa           Int
+    totalPaisa         Int
+    currency           String        @default("INR")
+    taxBreakdown       Json?
+    // ── Immutable buyer snapshot ──
+    buyerName          String
+    buyerAddress       String?
+    buyerState         String?
+    buyerPincode       String?
+    buyerGstin         String?
+    // ── Seller snapshot ──
+    sellerName         String        @default("Datun")
+    sellerAddress      String?
+    sellerGstin        String?
+    placeOfSupply      String?
+    // ── Billing period ──
+    billingPeriodStart DateTime
+    billingPeriodEnd   DateTime
+    paidAt             DateTime?
+    razorpayPaymentId  String?
+    paymentMethod      String?
+    pdfUrl             String?
+    sentAt             DateTime?
+    dueDate            DateTime
+    notes              String?       @db.Text
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
+
+    // ── Relations ──
+    lineItems           InvoiceLineItem[]
+    paymentTransactions PaymentTransaction[]
+
+    @@index([clinicId])
+    @@index([subscriptionId])
+    @@index([invoiceNumber])
+    @@map("invoices")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 21: InvoiceLineItem
+// Each charge on an invoice — separate row for GST audit.
+// HSN/SAC codes for compliance.
+// ═══════════════════════════════════════════════════════════════
+
+model InvoiceLineItem {
+    id             String   @id @default(uuid()) @db.Uuid
+    invoiceId      String   @db.Uuid
+    invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+    description    String
+    quantity       Int      @default(1)
+    unitPricePaisa Int
+    totalPaisa     Int
+    hsnSacCode     String?
+    taxRate        Decimal? @db.Decimal(5, 2)
+    taxPaisa       Int?
+    metadata       Json?
+    createdAt      DateTime @default(now())
+
+    @@index([invoiceId])
+    @@map("invoice_line_items")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 22: PaymentTransaction
+// Every payment attempt — success, failed, refunded.
+// Razorpay/Stripe raw data stored for reconciliation.
+// ═══════════════════════════════════════════════════════════════
+
+model PaymentTransaction {
+    id                  String            @id @default(uuid()) @db.Uuid
+    invoiceId           String?           @db.Uuid
+    invoice             Invoice?          @relation(fields: [invoiceId], references: [id])
+    appointmentId       String?           @db.Uuid
+    appointment         Appointment?      @relation(fields: [appointmentId], references: [id])
+    entityType          String
+    entityId            String            @db.Uuid
+    gateway             String
+    gatewayOrderId      String?
+    gatewayPaymentId    String?
+    amountPaisa         Int
+    feePaisa            Int?
+    taxPaisa            Int?
+    status              TransactionStatus @default(INITIATED)
+    paidAt              DateTime?
+    failedAt            DateTime?
+    failureCode         String?
+    failureReason       String?
+    refundedAmountPaisa Int?
+    refundedAt          DateTime?
+    rawPayload          Json?
+    createdAt           DateTime          @default(now())
+    updatedAt           DateTime          @updatedAt
+
+    @@index([invoiceId])
+    @@index([gateway, gatewayPaymentId])
+    @@index([entityType, entityId])
+    @@map("payment_transactions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 23: AuditLog
+// Immutable system record — who did what, when, from where.
+// NO updatedAt, NO deletedAt — legal requirement.
+// ═══════════════════════════════════════════════════════════════
+
+model AuditLog {
+    id         String   @id @default(uuid()) @db.Uuid
+    userId     String?  @db.Uuid
+    user       User?    @relation(fields: [userId], references: [id])
+    action     String
+    entityType String
+    entityId   String
+    changes    Json?
+    ipAddress  String?
+    userAgent  String?
+    metadata   Json?
+    createdAt  DateTime @default(now())
+
+    @@index([userId])
+    @@index([entityType, entityId])
+    @@index([createdAt(sort: Desc)])
+    @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 24: Notification
+// All notifications — WhatsApp, email, push, in-app.
+// Delivery tracking with retry logic.
+// ═══════════════════════════════════════════════════════════════
+
+model Notification {
+    id            String              @id @default(uuid()) @db.Uuid
+    userId        String              @db.Uuid
+    user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type          NotificationType
+    channel       NotificationChannel
+    title         String
+    body          String              @db.Text
+    actionUrl     String?
+    isRead        Boolean             @default(false)
+    readAt        DateTime?
+    isSent        Boolean             @default(false)
+    sentAt        DateTime?
+    failedAt      DateTime?
+    failureReason String?
+    retryCount    Int                 @default(0)
+    scheduledFor  DateTime?
+    expiresAt     DateTime?
+    metadata      Json?
+    createdAt     DateTime            @default(now())
+
+    @@index([userId, isRead])
+    @@index([scheduledFor])
+    @@index([type, channel])
+    @@map("notifications")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 25: NotificationPreference
+// User controls: "promotional mat bhejo, reminder bhejo."
+// TRAI compliance — unsolicited message = penalty.
+// ═══════════════════════════════════════════════════════════════
+
+model NotificationPreference {
+    id              String              @id @default(uuid()) @db.Uuid
+    userId          String              @db.Uuid
+    user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+    channel         NotificationChannel
+    category        NotificationType
+    isEnabled       Boolean             @default(true)
+    quietHoursStart String?
+    quietHoursEnd   String?
+    language        String              @default("en")
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+
+    @@unique([userId, channel, category])
+    @@index([userId])
+    @@map("notification_preferences")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 26: WhatsAppMessage
+// Every WhatsApp template sent — delivery status tracked.
+// Meta webhook updates status: queued → sent → delivered → read.
+// ═══════════════════════════════════════════════════════════════
+
+model WhatsAppMessage {
+    id              String            @id @default(uuid()) @db.Uuid
+    userId          String            @db.Uuid
+    user            User              @relation(fields: [userId], references: [id])
+    consultationId  String?           @db.Uuid
+    consultation    Consultation?     @relation(fields: [consultationId], references: [id])
+    templateName    String
+    phoneNumber     String
+    waMessageId     String?
+    status          WhatsAppStatus    @default(QUEUED)
+    statusUpdatedAt DateTime?
+    failureReason   String?
+    direction       WhatsAppDirection @default(OUTBOUND)
+    content         String?           @db.Text
+    provider        WhatsAppProvider  @default(META)
+    costPaisa       Int?
+    createdAt       DateTime          @default(now())
+
+    @@index([userId])
+    @@index([consultationId])
+    @@index([waMessageId])
+    @@index([status])
+    @@map("whatsapp_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 27: ConsentLog
+// DPDP Act compliance — granular consent per purpose.
+// Extensible: 3 purposes now, 10+ later as law evolves.
+// ═══════════════════════════════════════════════════════════════
+
+model ConsentLog {
+    id        String         @id @default(uuid()) @db.Uuid
+    userId    String?        @db.Uuid
+    user      User?          @relation(fields: [userId], references: [id])
+    purpose   ConsentPurpose
+    status    ConsentStatus  @default(GRANTED)
+    version   String
+    ipAddress String?
+    userAgent String?
+    source    String?
+    grantedAt DateTime       @default(now())
+    revokedAt DateTime?
+    createdAt DateTime       @default(now())
+
+    @@index([userId, purpose])
+    @@map("consent_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 28: MediaAsset
+// Centralized media registry — photos, PDFs, certificates.
+// Provider-agnostic: Cloudinary today, S3 tomorrow, one query.
+// ═══════════════════════════════════════════════════════════════
+
+model MediaAsset {
+    id           String    @id @default(uuid()) @db.Uuid
+    storageKey   String
+    publicUrl    String
+    mimeType     String
+    sizeBytes    Int?
+    checksum     String?
+    entityType   String
+    entityId     String    @db.Uuid
+    uploadedById String?   @db.Uuid
+    uploadedBy   User?     @relation("UploadedByUser", fields: [uploadedById], references: [id])
+    isSensitive  Boolean   @default(false)
+    metadata     Json?
+    createdAt    DateTime  @default(now())
+    deletedAt    DateTime?
+
+    @@index([entityType, entityId])
+    @@index([uploadedById])
+    @@map("media_assets")
+}
