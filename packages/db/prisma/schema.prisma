@@ -1232,8 +1232,8 @@ model NotificationPreference {
 
 model WhatsAppMessage {
     id              String            @id @default(uuid()) @db.Uuid
-    userId          String            @db.Uuid
-    user            User              @relation(fields: [userId], references: [id])
+    userId          String?           @db.Uuid
+    user            User?             @relation(fields: [userId], references: [id])
     consultationId  String?           @db.Uuid
     consultation    Consultation?     @relation(fields: [consultationId], references: [id])
     templateName    String
