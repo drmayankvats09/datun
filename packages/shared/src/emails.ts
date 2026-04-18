@@ -4,8 +4,8 @@
 // Pattern: Single place to update email branding/layout.
 // ═══════════════════════════════════════════════════════════════
 
-import { BRAND } from './brand.js';
-import { COLORS } from './colors.js';
+import { BRAND } from './brand';
+import { COLORS } from './colors';
 
 /** Standard email wrapper — dark branded container */
 export function emailWrapper(content: string): string {

@@ -4,8 +4,8 @@
 // Pattern: Design system tokens that cross platform boundaries.
 // ═══════════════════════════════════════════════════════════════
 
-import { RADII } from './radii.js';
-import { SHADOWS } from './shadows.js';
+import { RADII } from './radii';
+import { SHADOWS } from './shadows';
 
 export const COMPONENTS = {
   /** Button variants */

@@ -5,8 +5,8 @@
 // Pattern: Google PWA checklist, Lighthouse PWA audit requirements.
 // ═══════════════════════════════════════════════════════════════
 
-import { BRAND } from './brand.js';
-import { COLORS } from './colors.js';
+import { BRAND } from './brand';
+import { COLORS } from './colors';
 
 export const PWA = {
   /** App name on home screen */

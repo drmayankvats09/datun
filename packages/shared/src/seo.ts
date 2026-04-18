@@ -4,8 +4,8 @@
 // Pattern: Next.js metadata API, Google structured data guidelines.
 // ═══════════════════════════════════════════════════════════════
 
-import { BRAND } from './brand.js';
-import { URLS } from './urls.js';
+import { BRAND } from './brand';
+import { URLS } from './urls';
 
 export const SEO = {
   /** Default meta title suffix */
