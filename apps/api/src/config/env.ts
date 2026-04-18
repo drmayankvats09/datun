@@ -20,6 +20,8 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   AI_PRIMARY_MODEL: z.string().default('claude-sonnet-4-20250514'),
   AI_FALLBACK_MODEL: z.string().default('claude-haiku-4-5-20251001'),
+  OPENAI_API_KEY: z.string().optional(), // ← ADD THIS LINE
+  GEMINI_API_KEY: z.string().optional(), // ← ADD THIS LINE
 
   // ── Sentry (optional in dev) ──
   SENTRY_DSN: z.string().optional(),

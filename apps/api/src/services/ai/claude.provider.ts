@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CLAUDE PROVIDER — Anthropic API with prompt caching
-// Retry: 429/529 → wait → retry same model → fallback model.
+// Retry: 429/529 → exponential backoff → same model retry.
+// Intra-provider fallback: Sonnet → Haiku (both Claude).
 // Cost: calculated per-request from token counts + model pricing.
 // ═══════════════════════════════════════════════════════════════
 
@@ -8,38 +9,59 @@ import axios from 'axios';
 import { env } from '../../config/env.js';
 import { logger } from '../../lib/logger.js';
 import { ExternalServiceError } from '../../errors/index.js';
-import type { AIProvider, AIResponse, ChatMessage } from './types.js';
+import type { AIProvider, AIResponse, ChatMessage, CompletionOptions } from './types.js';
 
 const API_URL = 'https://api.anthropic.com/v1/messages';
-const MAX_RETRIES = 2;
-const RETRY_DELAYS = [2000, 5000];
+const DEFAULT_MAX_RETRIES = 2;
+const RETRY_DELAYS = [2000, 5000, 10000];
 
-// Approximate pricing per million tokens (USD) — update when pricing changes
+// Pricing per million tokens (USD) — update when Anthropic changes pricing
+// 📝 SAVE TO NOTES: Check Anthropic pricing page quarterly. Last verified: April 2026.
 const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead: number }> = {
   'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cacheRead: 0.3 },
   'claude-haiku-4-5-20251001': { input: 0.8, output: 4.0, cacheRead: 0.08 },
 };
 
 export class ClaudeProvider implements AIProvider {
-  readonly name = 'claude';
+  readonly name = 'claude' as const;
+
+  isConfigured(): boolean {
+    return Boolean(env.ANTHROPIC_API_KEY);
+  }
 
   async complete(
     systemPrompt: string,
     messages: ChatMessage[],
-    options: { maxTokens?: number } = {},
+    options: CompletionOptions = {},
   ): Promise<AIResponse> {
+    if (!this.isConfigured()) {
+      throw new ExternalServiceError('Claude', 'ANTHROPIC_API_KEY not configured');
+    }
+
     const maxTokens = options.maxTokens ?? 8096;
-    const models = [env.AI_PRIMARY_MODEL, env.AI_FALLBACK_MODEL];
+    const timeoutMs = options.timeoutMs ?? 60000;
+    const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
+
+    // Intra-provider fallback: primary model → fallback model (both Claude)
+    const models = [env.AI_PRIMARY_MODEL, env.AI_FALLBACK_MODEL].filter(Boolean);
 
     for (const model of models) {
       try {
-        return await this.callWithRetry(model, systemPrompt, messages, maxTokens);
+        return await this.callWithRetry(
+          model,
+          systemPrompt,
+          messages,
+          maxTokens,
+          timeoutMs,
+          maxRetries,
+        );
       } catch (err) {
-        const status = (err as { statusCode?: number }).statusCode;
-        // If primary model returned non-retryable error, try fallback
+        const status = (err as { response?: { status: number } }).response?.status;
+        // On non-retryable error with primary, try fallback model
         if (model === models[0] && models.length > 1 && status !== 429 && status !== 529) {
-          logger.warn(`Primary model ${model} failed, trying fallback ${models[1]}`, {
+          logger.warn(`[Claude] Primary ${model} failed, trying fallback ${models[1]}`, {
             error: (err as Error).message,
+            status,
           });
           continue;
         }
@@ -47,7 +69,7 @@ export class ClaudeProvider implements AIProvider {
       }
     }
 
-    throw new ExternalServiceError('Claude API', 'All models failed');
+    throw new ExternalServiceError('Claude', 'All Claude models failed');
   }
 
   private async callWithRetry(
@@ -55,10 +77,12 @@ export class ClaudeProvider implements AIProvider {
     systemPrompt: string,
     messages: ChatMessage[],
     maxTokens: number,
+    timeoutMs: number,
+    maxRetries: number,
   ): Promise<AIResponse> {
     const startTime = Date.now();
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const response = await axios.post(
           API_URL,
@@ -81,7 +105,7 @@ export class ClaudeProvider implements AIProvider {
               'anthropic-beta': 'prompt-caching-2024-07-31',
               'Content-Type': 'application/json',
             },
-            timeout: 60000,
+            timeout: timeoutMs,
           },
         );
 
@@ -108,33 +132,35 @@ export class ClaudeProvider implements AIProvider {
         };
 
         const costUsd = this.calculateCost(model, usage);
-        const latencyMs = Date.now() - startTime;
 
-        logger.info('AI response', {
+        return {
+          text,
+          usage,
+          latencyMs: Date.now() - startTime,
           model,
-          inputTokens: usage.inputTokens,
-          outputTokens: usage.outputTokens,
-          cacheReadTokens: usage.cacheReadTokens,
-          costUsd: costUsd.toFixed(6),
-          latencyMs,
-        });
-
-        return { text, usage, latencyMs, model, costUsd };
+          provider: 'claude',
+          costUsd,
+          cached: false,
+        };
       } catch (err) {
         const status = (err as { response?: { status: number } }).response?.status;
 
-        if ((status === 429 || status === 529) && attempt < MAX_RETRIES) {
+        // Retryable errors: 429 (rate limit), 529 (overloaded)
+        if ((status === 429 || status === 529) && attempt < maxRetries) {
           const delay = RETRY_DELAYS[attempt] ?? 5000;
-          logger.warn(`Claude ${status}, retry ${attempt + 1}/${MAX_RETRIES} in ${delay}ms`);
+          logger.warn(
+            `[Claude] ${status} on ${model}, retry ${attempt + 1}/${maxRetries} in ${delay}ms`,
+          );
           await new Promise((r) => setTimeout(r, delay));
           continue;
         }
 
+        // Non-retryable or max retries exhausted — throw to aiClient for failover
         throw err;
       }
     }
 
-    throw new ExternalServiceError('Claude API', 'Max retries exceeded');
+    throw new ExternalServiceError('Claude', `Max retries exceeded on ${model}`);
   }
 
   private calculateCost(
