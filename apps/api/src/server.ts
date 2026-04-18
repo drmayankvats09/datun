@@ -16,6 +16,7 @@ import { logger } from './lib/logger.js';
 import { createApp } from './app.js';
 import { startCronJobs } from './crons/index.js';
 import { prisma } from '@repo/db';
+import { BRAND, API_VERSION } from '@repo/shared';
 import type { Server } from 'node:http';
 
 let server: Server | null = null;
@@ -42,17 +43,17 @@ async function main(): Promise<void> {
 
   // ── 4. Listen ──
   server = app.listen(env.PORT, () => {
-    logger.info(`Datun API started on port ${env.PORT}`, {
-      version: '2.1.0',
+    logger.info(`${BRAND.name} API started on port ${env.PORT}`, {
+      version: API_VERSION,
       env: env.NODE_ENV,
       port: env.PORT,
     });
 
     console.log(`
   ╔═══════════════════════════════════════╗
-  ║        Datun API Running 🦷           ║
+  ║        ${BRAND.name} API Running 🦷           ║
   ║        Port: ${String(env.PORT).padEnd(24)}║
-  ║        Version: 2.1.0                ║
+  ║        Version: ${API_VERSION.padEnd(21)}║
   ║        Env: ${env.NODE_ENV.padEnd(25)}║
   ╚═══════════════════════════════════════╝
     `);

@@ -13,6 +13,7 @@
     "@logtail/node": "^0.5.6",
     "@logtail/winston": "^0.5.6",
     "@repo/db": "workspace:*",
+    "@repo/shared": "workspace:*",
     "@sentry/node": "^9.14.0",
     "axios": "^1.9.0",
     "cors": "^2.8.5",

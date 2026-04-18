@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { prisma } from '@repo/db';
+import { BRAND, COLORS, CONTACTS, emailFooter } from '@repo/shared';
 import { logger } from '../lib/logger.js';
 import { Sentry } from '../lib/sentry.js';
 import { pingHealthcheck } from '../lib/healthcheck.js';
@@ -42,37 +43,35 @@ export async function runDailyReport(): Promise<void> {
     const timeStr = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const html = `
-<div style="font-family:Inter,system-ui,sans-serif;max-width:600px;margin:0 auto;background:#0a0f1a;color:#fff;padding:24px;border-radius:12px">
-  <h1 style="margin:0 0 8px;color:#12c4b2">🦷 Datun — Daily Health Report</h1>
-  <p style="margin:0 0 24px;color:#888;font-size:13px">${timeStr}</p>
+<div style="font-family:Inter,system-ui,sans-serif;max-width:600px;margin:0 auto;background:${COLORS.bgDark};color:#fff;padding:24px;border-radius:12px">
+  <h1 style="margin:0 0 8px;color:${COLORS.primary}">🦷 ${BRAND.name} — Daily Health Report</h1>
+  <p style="margin:0 0 24px;color:${COLORS.muted};font-size:13px">${timeStr}</p>
 
-  <h3 style="color:#12c4b2;margin-bottom:8px">📊 Last 24 Hours</h3>
+  <h3 style="color:${COLORS.primary};margin-bottom:8px">📊 Last 24 Hours</h3>
   <table style="width:100%;border-collapse:collapse">
-    <tr><td style="padding:6px 0;color:#a7f3d0">Consultations started</td><td style="text-align:right;font-weight:600">${totalConsultations24h}</td></tr>
-    <tr><td style="padding:6px 0;color:#a7f3d0">Completed</td><td style="text-align:right;font-weight:600">${completedConsultations24h}</td></tr>
-    <tr><td style="padding:6px 0;color:#a7f3d0">In progress / abandoned</td><td style="text-align:right;font-weight:600">${inProgress24h}</td></tr>
-    <tr><td style="padding:6px 0;color:#fca5a5">🚨 Emergencies</td><td style="text-align:right;font-weight:600;color:#fca5a5">${emergencies24h}</td></tr>
-    <tr><td style="padding:6px 0;color:#a7f3d0">New signups</td><td style="text-align:right;font-weight:600">${newUsers24h}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">Consultations started</td><td style="text-align:right;font-weight:600">${totalConsultations24h}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">Completed</td><td style="text-align:right;font-weight:600">${completedConsultations24h}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">In progress / abandoned</td><td style="text-align:right;font-weight:600">${inProgress24h}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.danger}">🚨 Emergencies</td><td style="text-align:right;font-weight:600;color:${COLORS.danger}">${emergencies24h}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">New signups</td><td style="text-align:right;font-weight:600">${newUsers24h}</td></tr>
   </table>
 
-  <h3 style="color:#12c4b2;margin-top:24px;margin-bottom:8px">📈 All-Time</h3>
+  <h3 style="color:${COLORS.primary};margin-top:24px;margin-bottom:8px">📈 All-Time</h3>
   <table style="width:100%;border-collapse:collapse">
-    <tr><td style="padding:6px 0;color:#a7f3d0">Total registered users</td><td style="text-align:right;font-weight:600">${totalUsers}</td></tr>
-    <tr><td style="padding:6px 0;color:#a7f3d0">Total consultations</td><td style="text-align:right;font-weight:600">${totalConsultations}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">Total registered users</td><td style="text-align:right;font-weight:600">${totalUsers}</td></tr>
+    <tr><td style="padding:6px 0;color:${COLORS.mint}">Total consultations</td><td style="text-align:right;font-weight:600">${totalConsultations}</td></tr>
   </table>
 
-  <p style="margin-top:32px;padding-top:16px;border-top:1px solid #1e2a3a;color:#888;font-size:12px;text-align:center">
-    Everyone Deserves a Doctor.<br/>— Datun Automated Reports
-  </p>
+  ${emailFooter()}
 </div>`;
 
     // Send email
     if (env.RESEND_API_KEY) {
       const resend = new Resend(env.RESEND_API_KEY);
       await resend.emails.send({
-        from: 'Datun System <system@datunai.com>',
+        from: CONTACTS.systemEmailFrom,
         to: [env.ALERT_EMAIL_TO],
-        subject: `📊 Datun Daily Report — ${dateStr}`,
+        subject: `📊 ${BRAND.name} Daily Report — ${dateStr}`,
         html,
       });
     }

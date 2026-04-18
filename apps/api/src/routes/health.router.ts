@@ -5,6 +5,7 @@
 
 import { Router } from 'express';
 import { prisma } from '@repo/db';
+import { BRAND, API_VERSION } from '@repo/shared';
 import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
 
@@ -13,8 +14,8 @@ export const healthRouter = Router();
 // Root — basic liveness
 healthRouter.get('/', (_req, res) => {
   res.json({
-    status: 'Datun API is live 🦷',
-    version: '2.1.0',
+    status: `${BRAND.name} API is live 🦷`,
+    version: API_VERSION,
     timestamp: new Date().toISOString(),
   });
 });
@@ -48,7 +49,7 @@ healthRouter.get('/health', async (_req, res) => {
 
   res.status(allOk ? 200 : 503).json({
     status: allOk ? 'healthy' : 'degraded',
-    version: '2.1.0',
+    version: API_VERSION,
     uptime: Math.floor(process.uptime()),
     checks,
     totalMs,

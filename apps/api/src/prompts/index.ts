@@ -5,9 +5,8 @@
 // Old versions stay for reference + training data correlation.
 // ═══════════════════════════════════════════════════════════════
 
-export const SYSTEM_PROMPT_VERSION = '2.1.0';
-export const PHOTO_PROMPT_VERSION = '2.1.0';
-export const WORKFLOW_VERSION = '2.1.0';
+// Versions from @repo/shared — single source of truth
+export { SYSTEM_PROMPT_VERSION, PHOTO_PROMPT_VERSION, WORKFLOW_VERSION } from '@repo/shared';
 
 // Re-export active prompt builders
 export { buildSystemPrompt } from './system.v1.js';

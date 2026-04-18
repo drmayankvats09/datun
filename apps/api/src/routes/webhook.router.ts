@@ -6,17 +6,12 @@
 //
 // SECURITY: x-hub-signature-256 verification prevents spoofing.
 // Every incoming message is logged to WhatsAppMessage table.
-//
-// FIX: Old system showed "sent" in logs but messages never arrived.
-// Root causes addressed here:
-// 1. Signature verification added (prevents Meta from dropping events)
-// 2. Delivery status updates tracked (sent→delivered→read→failed)
-// 3. Full error diagnosis logged (not just "failed")
 // ═══════════════════════════════════════════════════════════════
 
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import { prisma } from '@repo/db';
+import { BRAND, CONTACTS, URLS } from '@repo/shared';
 import { logger } from '../lib/logger.js';
 import { Sentry } from '../lib/sentry.js';
 import { sendWhatsAppText, sendWhatsAppTemplate } from '../services/whatsapp/index.js';
@@ -59,14 +54,12 @@ webhookRouter.post('/', async (req, res) => {
     for (const change of changes) {
       const value = change.value;
 
-      // Handle delivery status updates (sent → delivered → read → failed)
       if (value?.statuses) {
         for (const status of value.statuses) {
           await handleStatusUpdate(status);
         }
       }
 
-      // Handle incoming messages
       if (value?.messages) {
         for (const message of value.messages) {
           await handleIncomingMessage(message);
@@ -89,7 +82,6 @@ webhookRouter.post('/', async (req, res) => {
 function verifyWebhookSignature(req: { headers: Record<string, unknown>; body: unknown }): boolean {
   const signature = req.headers['x-hub-signature-256'] as string | undefined;
 
-  // In development or if verify token not set, skip verification
   if (!signature || !env.WHATSAPP_VERIFY_TOKEN) return true;
 
   try {
@@ -136,7 +128,6 @@ async function handleStatusUpdate(status: StatusEvent): Promise<void> {
       });
     }
 
-    // Log failures with diagnosis for debugging
     if (newStatus === 'failed' && status.errors?.length) {
       logger.error('WhatsApp delivery FAILED', {
         waMessageId,
@@ -182,10 +173,8 @@ async function handleIncomingMessage(message: IncomingMessage): Promise<void> {
 
   logger.info('WhatsApp incoming', { from, type: message.type, body: msgBody });
 
-  // Track in database
   await trackInboundMessage(from, msgBody);
 
-  // Route by button text
   const lower = msgBody.toLowerCase();
 
   if (lower === 'book appointment') {
@@ -204,55 +193,61 @@ async function handleIncomingMessage(message: IncomingMessage): Promise<void> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BUTTON HANDLERS
+// BUTTON HANDLERS — All use BRAND + CONTACTS from @repo/shared
 // ═══════════════════════════════════════════════════════════════
 
-async function handleBookAppointment(from: string): Promise<void> {
-  await sendWhatsAppText(
-    from,
-    'Thank you! 😊\n\nYour appointment request has been received.\n\nOur care team will contact you within 30 minutes to confirm your appointment with the right dentist near you.\n\nNeed urgent help?\n📞 +91 87960 64170\n\nEveryone Deserves a Doctor.\n— Datun',
-  );
-
+async function sendInternalAlert(
+  alertType: string,
+  from: string,
+  detail: string,
+  urgency: string,
+): Promise<void> {
   const alertParams = [
     {
       type: 'body' as const,
       parameters: [
-        { type: 'text' as const, text: 'Appointment Request' },
+        { type: 'text' as const, text: alertType },
         { type: 'text' as const, text: from },
-        { type: 'text' as const, text: 'Patient clicked Book Appointment' },
-        { type: 'text' as const, text: 'ACTION NEEDED' },
+        { type: 'text' as const, text: detail },
+        { type: 'text' as const, text: urgency },
       ],
     },
   ];
-  await sendWhatsAppTemplate('918796064170', 'datunai_internal_alert', alertParams);
-  await sendWhatsAppTemplate('919953135340', 'datunai_internal_alert', alertParams);
+  for (const recipient of CONTACTS.alertRecipients) {
+    await sendWhatsAppTemplate(recipient, CONTACTS.internalAlertTemplate, alertParams);
+  }
+}
+
+async function handleBookAppointment(from: string): Promise<void> {
+  await sendWhatsAppText(
+    from,
+    `Thank you! 😊\n\nYour appointment request has been received.\n\nOur care team will contact you within 30 minutes to confirm your appointment with the right dentist near you.\n\nNeed urgent help?\n📞 ${CONTACTS.supportPhoneDisplay}\n\n${BRAND.tagline}\n— ${BRAND.name}`,
+  );
+  await sendInternalAlert(
+    'Appointment Request',
+    from,
+    'Patient clicked Book Appointment',
+    'ACTION NEEDED',
+  );
 }
 
 async function handleStillInPain(from: string): Promise<void> {
   await sendWhatsAppText(
     from,
-    "We're sorry to hear that. Your health is our priority.\n\nWe strongly recommend visiting a dentist at the earliest. Our care team will reach out to you shortly to help book an appointment.\n\nNeed immediate help?\n📞 +91 87960 64170\n\nEveryone Deserves a Doctor.\n— Datun",
+    `We're sorry to hear that. Your health is our priority.\n\nWe strongly recommend visiting a dentist at the earliest. Our care team will reach out to you shortly to help book an appointment.\n\nNeed immediate help?\n📞 ${CONTACTS.supportPhoneDisplay}\n\n${BRAND.tagline}\n— ${BRAND.name}`,
   );
-
-  const alertParams = [
-    {
-      type: 'body' as const,
-      parameters: [
-        { type: 'text' as const, text: 'URGENT — Still in Pain' },
-        { type: 'text' as const, text: from },
-        { type: 'text' as const, text: 'Follow-up: patient still in pain' },
-        { type: 'text' as const, text: 'EMERGENCY' },
-      ],
-    },
-  ];
-  await sendWhatsAppTemplate('918796064170', 'datunai_internal_alert', alertParams);
-  await sendWhatsAppTemplate('919953135340', 'datunai_internal_alert', alertParams);
+  await sendInternalAlert(
+    'URGENT — Still in Pain',
+    from,
+    'Follow-up: patient still in pain',
+    'EMERGENCY',
+  );
 }
 
 async function handleFeelingBetter(from: string): Promise<void> {
   await sendWhatsAppText(
     from,
-    "That's wonderful to hear! 😊\n\nKeep following your care instructions from the report. If anything changes, we're always here.\n\nAsk Datun · datunai.com\n\n— Datun",
+    `That's wonderful to hear! 😊\n\nKeep following your care instructions from the report. If anything changes, we're always here.\n\nAsk ${BRAND.name} · ${URLS.website}\n\n— ${BRAND.name}`,
   );
 }
 
@@ -272,12 +267,12 @@ async function handleViewReport(from: string): Promise<void> {
     if (consultation) {
       await sendWhatsAppText(
         from,
-        `Here's your latest dental report:\n\n📋 datunai.com/report/${consultation.id}\n\nTap the link to view and download.\n\n— Datun`,
+        `Here's your latest dental report:\n\n📋 ${URLS.reportUrl(consultation.id)}\n\nTap the link to view and download.\n\n— ${BRAND.name}`,
       );
     } else {
       await sendWhatsAppText(
         from,
-        "We couldn't find a report linked to this number.\n\nStart a consultation:\n🔗 www.datunai.com\n\n— Datun",
+        `We couldn't find a report linked to this number.\n\nStart a consultation:\n🔗 www.${URLS.website}\n\n— ${BRAND.name}`,
       );
     }
   } catch (err) {
@@ -287,7 +282,7 @@ async function handleViewReport(from: string): Promise<void> {
     });
     await sendWhatsAppText(
       from,
-      'Something went wrong. Please try again or visit:\n🔗 www.datunai.com\n\n— Datun',
+      `Something went wrong. Please try again or visit:\n🔗 www.${URLS.website}\n\n— ${BRAND.name}`,
     );
   }
 }
@@ -295,22 +290,9 @@ async function handleViewReport(from: string): Promise<void> {
 async function handleTalkToUs(from: string): Promise<void> {
   await sendWhatsAppText(
     from,
-    "Our care team is here for you.\n\nYou can reach us directly:\n📞 Call/WhatsApp: +91 87960 64170\n\nOr reply here — we're listening.\n\nEveryone Deserves a Doctor.\n— Datun",
+    `Our care team is here for you.\n\nYou can reach us directly:\n📞 Call/WhatsApp: ${CONTACTS.supportPhoneDisplay}\n\nOr reply here — we're listening.\n\n${BRAND.tagline}\n— ${BRAND.name}`,
   );
-
-  const alertParams = [
-    {
-      type: 'body' as const,
-      parameters: [
-        { type: 'text' as const, text: 'Talk Request' },
-        { type: 'text' as const, text: from },
-        { type: 'text' as const, text: 'Patient wants to talk' },
-        { type: 'text' as const, text: 'ROUTINE' },
-      ],
-    },
-  ];
-  await sendWhatsAppTemplate('918796064170', 'datunai_internal_alert', alertParams);
-  await sendWhatsAppTemplate('919953135340', 'datunai_internal_alert', alertParams);
+  await sendInternalAlert('Talk Request', from, 'Patient wants to talk', 'ROUTINE');
 }
 
 // ═══════════════════════════════════════════════════════════════
