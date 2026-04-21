@@ -22,6 +22,7 @@ export interface ApiResponse<T = unknown> {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       auth?: DecodedToken;

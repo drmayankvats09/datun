@@ -11,7 +11,6 @@ import { logger } from '../lib/logger.js';
 import { AuthenticationError, ForbiddenError, NotFoundError } from '../errors/index.js';
 import { JwtService } from '../services/auth/jwt.service.js';
 import { blacklist } from '../lib/redis.js';
-import type { DecodedToken } from '../services/auth/types.js';
 
 /**
  * Verify JWT + check blacklist. Lightweight — no DB call.

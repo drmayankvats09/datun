@@ -4,16 +4,9 @@
 // Pattern: Single-responsibility service, Stripe Auth, Clerk backend.
 // ═══════════════════════════════════════════════════════════════
 
-import crypto from 'node:crypto';
 import { prisma } from '@repo/db';
 import { logger } from '../../lib/logger.js';
-import { Sentry } from '../../lib/sentry.js';
-import {
-  AuthenticationError,
-  ConflictError,
-  NotFoundError,
-  ValidationError,
-} from '../../errors/index.js';
+import { AuthenticationError, ConflictError, NotFoundError } from '../../errors/index.js';
 import { PasswordService } from './password.service.js';
 import { JwtService } from './jwt.service.js';
 import { OtpService } from './otp.service.js';
@@ -26,7 +19,6 @@ import type {
   VerifyOtpDTO,
   GoogleAuthDTO,
   ForgotPasswordDTO,
-  ResetPasswordDTO,
   RefreshTokenDTO,
   OtpSendResponse,
   AuthTokens,

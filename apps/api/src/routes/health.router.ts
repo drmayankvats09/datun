@@ -8,7 +8,7 @@ import { BRAND, API_VERSION } from '@repo/shared';
 import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
 import { JwtService } from '../services/auth/jwt.service.js';
-import { verifyRedis, isRedisHealthy } from '../lib/redis.js';
+import { verifyRedis } from '../lib/redis.js';
 
 export const healthRouter = Router();
 

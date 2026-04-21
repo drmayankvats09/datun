@@ -14,7 +14,7 @@ import type { WhatsAppProvider, WhatsAppSendResult, TemplateComponent } from './
 import { normalizeIndianPhone } from '../../utils/phone.js';
 
 // ── Provider Chain (Meta → future Gupshup → future AiSensy) ──
-let providers: WhatsAppProvider[] = [];
+const providers: WhatsAppProvider[] = [];
 
 function getProviders(): WhatsAppProvider[] {
   if (providers.length > 0) return providers;

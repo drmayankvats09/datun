@@ -7,7 +7,7 @@
 
 import { logger } from '../../lib/logger.js';
 import { cache, TTL } from '../../lib/redis.js';
-import type { CostEntry, ProviderName } from './types.js';
+import type { CostEntry } from './types.js';
 
 interface DailyTotals {
   date: string;

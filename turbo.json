@@ -1,7 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "DATABASE_URL"],
+  "globalEnv": ["NODE_ENV", "DATABASE_URL", "LOGTAIL_SOURCE_TOKEN", "LOG_LEVEL", "SENTRY_DSN"],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "^db:generate"],
