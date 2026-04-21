@@ -1,14 +1,11 @@
-# ═══════════════════════════════════════════════════════════════
-# PR TITLE LINT — Enforce conventional commit format
-# Squash merge pe clean git history milti hai.
-# Pattern: Angular, Nx, Turborepo — all use conventional commits.
-# ═══════════════════════════════════════════════════════════════
-
 name: PR Title
 
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
 
 jobs:
   lint-title:
