@@ -14,8 +14,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 # Cancel in-progress runs for same branch/PR (saves GitHub minutes)
 concurrency:
@@ -103,28 +101,25 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   # ─────────────────────────────────────────────────────────
-  # JOB 3: CODEQL — GitHub's security analysis (SAST)
-  # FAANG standard — finds SQL injection, XSS, path traversal
+  # JOB 3: SEMGREP — SAST security analysis (free for private repos)
+  # Finds SQL injection, XSS, path traversal, insecure crypto.
+  # Same as CodeQL but works on private repos without paid license.
+  # Pattern: Dropbox, Figma, Slack — all use Semgrep.
   # ─────────────────────────────────────────────────────────
-  codeql:
-    name: CodeQL Security Analysis
+  semgrep:
+    name: Security Analysis (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    container:
+      image: semgrep/semgrep
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Run Semgrep
+        run: semgrep scan --config auto --error --severity ERROR
 
   # ─────────────────────────────────────────────────────────
   # JOB 4: AUTO-LABEL PRs based on changed files
