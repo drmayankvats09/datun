@@ -18,11 +18,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "18"
-  PNPM_VERSION: "9"
+  NODE_VERSION: '18'
   # Prisma generate needs DATABASE_URL in schema — dummy for CI
   # (generate only reads schema file, does NOT connect to DB)
-  DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+  DATABASE_URL: 'postgresql://dummy:dummy@localhost:5432/dummy'
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
@@ -40,14 +39,12 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+          cache: 'pnpm'
 
       # ── Turbo cache (repeated builds 70-80% faster) ──
       - name: Cache Turbo
@@ -77,8 +74,8 @@ jobs:
       - name: Build
         run: pnpm turbo run build
         env:
-          NEXT_PUBLIC_APP_URL: "https://datunai.com"
-          NEXT_PUBLIC_API_URL: "https://dentscan-ai-backend-production.up.railway.app"
+          NEXT_PUBLIC_APP_URL: 'https://datunai.com'
+          NEXT_PUBLIC_API_URL: 'https://dentscan-ai-backend-production.up.railway.app'
 
   # ─────────────────────────────────────────────────────────
   # JOB 2: SECURITY — gitleaks secret scanning
@@ -109,6 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: read
       security-events: write
 
     steps:
