@@ -177,7 +177,13 @@ export async function getMe(): Promise<ApiResponse<AuthUser>> {
   return authFetch<AuthUser>('/auth/me');
 }
 
-export function logout(): void {
+export async function logout(): Promise<void> {
+  // Blacklist token on backend (Redis) — token invalid on all devices
+  try {
+    await authFetch('/auth/logout', { method: 'POST' });
+  } catch {
+    // Even if backend call fails, clear local tokens
+  }
   clearTokens();
   window.location.href = '/login';
 }

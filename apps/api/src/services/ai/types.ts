@@ -81,6 +81,8 @@ export interface CompletionOptions {
   timeoutMs?: number;
   /** Number of retries before giving up (default: 2) */
   maxRetries?: number;
+  /** Skip Redis response cache (use for follow-up conversations) */
+  skipCache?: boolean;
 }
 
 // ── Health Manager Types ──

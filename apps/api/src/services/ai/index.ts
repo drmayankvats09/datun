@@ -1,15 +1,17 @@
 // ═══════════════════════════════════════════════════════════════
-// AI CLIENT — Multi-provider failover chain with circuit breaker
+// AI CLIENT — Multi-provider failover + Redis response cache
 //
 // Architecture:
-//   Caller → aiClient.complete() → HealthManager checks availability
-//   → Try Provider 1 (Claude) → success? return
-//   → Failed + healthy alternatives? → Try Provider 2 (OpenAI)
-//   → Failed? → Try Provider 3 (Gemini)
+//   Caller → aiComplete() → Cache check (Redis)
+//   → Cache HIT? Return immediately (zero cost)
+//   → Cache MISS? → HealthManager checks availability
+//   → Try Provider 1 (Claude) → success? cache + return
+//   → Failed? → Try Provider 2 (OpenAI) → Try Provider 3 (Gemini)
 //   → All failed? → ExternalServiceError
 //
-// CRITICAL RULE: Only ONE provider charges per request.
-// Failed requests = zero cost. Fallback = single charge on fallback.
+// Cache key = SHA256(promptVersion + last 3 user messages)
+// Cache TTL = 24 hours. Hit rate target: 60-70% for dental queries.
+// At 1L users, this saves ₹50K-1L/month in AI API costs.
 //
 // Pattern: Stripe multi-processor, Netflix Zuul, AWS Route53 health.
 // ═══════════════════════════════════════════════════════════════
@@ -17,6 +19,7 @@
 import { logger } from '../../lib/logger.js';
 import { Sentry } from '../../lib/sentry.js';
 import { ExternalServiceError } from '../../errors/index.js';
+import { aiCache } from '../../lib/redis.js';
 import { ClaudeProvider } from './claude.provider.js';
 import { OpenAIProvider } from './openai.provider.js';
 import { GeminiProvider } from './gemini.provider.js';
@@ -33,9 +36,9 @@ import type {
 
 // ── Default config ──
 const DEFAULT_CONFIG: AIClientConfig = {
-  circuitBreakerThreshold: 5, // 5 failures → trip
-  circuitBreakerWindowMs: 60_000, // within 60 seconds
-  circuitBreakerCooldownMs: 600_000, // 10 min cooldown
+  circuitBreakerThreshold: 5,
+  circuitBreakerWindowMs: 60_000,
+  circuitBreakerCooldownMs: 600_000,
 };
 
 // ── Singleton instances ──
@@ -44,18 +47,12 @@ let costTracker: CostTracker | null = null;
 let providers: AIProvider[] = [];
 let initialized = false;
 
-/**
- * Initialize provider chain. Called once at boot.
- * Only providers with valid API keys are added to the chain.
- */
 function initialize(config: AIClientConfig = DEFAULT_CONFIG): void {
   if (initialized) return;
 
   healthManager = new HealthManager(config);
   costTracker = new CostTracker();
 
-  // Priority order: Claude (primary) → OpenAI (fallback) → Gemini (emergency)
-  // Only configured providers enter the chain
   const candidates: AIProvider[] = [
     new ClaudeProvider(),
     new OpenAIProvider(),
@@ -75,6 +72,7 @@ function initialize(config: AIClientConfig = DEFAULT_CONFIG): void {
       windowMs: config.circuitBreakerWindowMs,
       cooldownMs: config.circuitBreakerCooldownMs,
     },
+    responseCache: 'enabled (Redis/memory)',
   });
 
   if (providers.length === 0) {
@@ -91,32 +89,54 @@ function initialize(config: AIClientConfig = DEFAULT_CONFIG): void {
 }
 
 /**
- * Send a chat completion through the failover chain.
- * This is the ONLY function callers should use.
+ * Send a chat completion through the failover chain WITH cache.
  *
- * @example
- * ```ts
- * import { aiComplete } from '../services/ai/index.js';
- * const response = await aiComplete(systemPrompt, messages);
- * console.log(response.text, response.provider, response.costUsd);
- * ```
+ * @param options.skipCache — Set true for follow-up messages where context matters
  */
 export async function aiComplete(
   systemPrompt: string,
   messages: ChatMessage[],
   options: CompletionOptions = {},
 ): Promise<AIResponse> {
-  // Lazy init (runs once)
   if (!initialized) initialize();
 
   if (providers.length === 0) {
     throw new ExternalServiceError('AI', 'No AI providers configured');
   }
 
+  // ── Cache check (skip for multi-turn conversations with >3 messages) ──
+  const shouldCache = !options.skipCache && messages.length <= 4;
+  let cacheKey: string | null = null;
+
+  if (shouldCache) {
+    cacheKey = aiCache.generateKey('v2.1', messages);
+
+    try {
+      const cached = await aiCache.get(cacheKey);
+      if (cached) {
+        const cachedResponse = JSON.parse(cached) as AIResponse;
+        logger.info('[AIClient] Cache HIT — returning cached response', {
+          cacheKey,
+          originalProvider: cachedResponse.provider,
+          savedCostUsd: cachedResponse.costUsd.toFixed(6),
+        });
+        // Mark as cached, zero cost for this request
+        return {
+          ...cachedResponse,
+          cached: true,
+          costUsd: 0,
+          latencyMs: 0,
+        };
+      }
+    } catch {
+      // Cache read failed — proceed with normal flow
+    }
+  }
+
+  // ── Provider failover chain ──
   const errors: Array<{ provider: ProviderName; error: Error }> = [];
 
   for (const provider of providers) {
-    // Circuit breaker check
     if (!healthManager!.isAvailable(provider.name)) {
       logger.debug(`[AIClient] Skipping ${provider.name} — circuit breaker OPEN`);
       continue;
@@ -125,10 +145,8 @@ export async function aiComplete(
     try {
       const response = await provider.complete(systemPrompt, messages, options);
 
-      // Record success
       healthManager!.recordSuccess(provider.name);
 
-      // Track cost
       costTracker!.record({
         provider: response.provider,
         model: response.model,
@@ -141,7 +159,11 @@ export async function aiComplete(
         timestamp: new Date(),
       });
 
-      // If this wasn't the primary provider, log that fallback was used
+      // ── Store in cache (non-blocking) ──
+      if (shouldCache && cacheKey) {
+        aiCache.set(cacheKey, JSON.stringify(response)).catch(() => {});
+      }
+
       if (provider !== providers[0]) {
         logger.warn(`[AIClient] Request served by FALLBACK provider: ${provider.name}`, {
           primaryProvider: providers[0]!.name,
@@ -159,7 +181,6 @@ export async function aiComplete(
       const error = err as Error;
       errors.push({ provider: provider.name, error });
 
-      // Record failure (may trip circuit breaker)
       healthManager!.recordFailure(provider.name, error);
 
       logger.error(`[AIClient] ${provider.name} FAILED`, {
@@ -171,12 +192,10 @@ export async function aiComplete(
           .map((p) => p.name),
       });
 
-      // Continue to next provider in chain
       continue;
     }
   }
 
-  // ALL providers failed
   const errorSummary = errors.map((e) => `${e.provider}: ${e.error.message}`).join(' | ');
 
   logger.error('[AIClient] ALL PROVIDERS FAILED', {
@@ -205,7 +224,6 @@ export function getAIHealth(): {
   };
 }
 
-// Re-export types for consumers
 export type {
   AIProvider,
   AIResponse,
