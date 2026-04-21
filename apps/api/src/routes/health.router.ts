@@ -20,7 +20,7 @@ healthRouter.get('/', (_req, res) => {
   });
 });
 
-healthRouter.get('/health', async (_req, res) => {
+healthRouter.get('/health', async (req, res) => {
   const start = Date.now();
   const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
 
@@ -80,6 +80,13 @@ healthRouter.get('/health', async (_req, res) => {
       error: waResult.error,
     };
   }
+
+  // Cloudflare proxy check — verify requests come through CF
+  const cfRay = req.headers['cf-ray'];
+  checks['cloudflare'] = {
+    status: cfRay ? 'ok' : 'warn',
+    ...(cfRay ? { latencyMs: 0 } : { error: 'Request not proxied through Cloudflare' }),
+  };
 
   const criticalChecks = ['database', 'auth'];
   const allCriticalOk = criticalChecks.every((k) => checks[k]?.status === 'ok');

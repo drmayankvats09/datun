@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     template: `%s | ${BRAND.name}`,
   },
   description: BRAND.description,
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://datun.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com'),
   openGraph: {
     title: BRAND.name,
     description: BRAND.description,

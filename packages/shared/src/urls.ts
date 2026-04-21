@@ -3,12 +3,15 @@
 // ═══════════════════════════════════════════════════════════════
 
 export const URLS = {
-  /** Production website (current v1 — vanilla frontend) */
+  /** Production website */
   website: 'datunai.com',
   websiteHttps: 'https://datunai.com',
 
-  /** v2 web app (Next.js on Vercel) */
+  /** v2 web app (Next.js on Vercel — preview/staging) */
   v2Web: 'https://datun.vercel.app',
+
+  /** API base URL */
+  api: 'https://dentscan-ai-backend-production.up.railway.app',
 
   /** Report short URL pattern */
   reportUrl: (consultationId: string) => `datunai.com/report/${consultationId}`,
@@ -22,6 +25,12 @@ export const URLS = {
     'http://localhost:3001',
     'http://127.0.0.1:5500',
   ] as readonly string[],
+
+  /** CDN & infrastructure */
+  cdn: {
+    dashboard: 'https://dash.cloudflare.com',
+    analyticsBeacon: 'https://static.cloudflareinsights.com/beacon.min.js',
+  },
 
   /** Social links */
   social: {
