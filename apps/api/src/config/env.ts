@@ -1,32 +1,36 @@
 // ═══════════════════════════════════════════════════════════════
 // ENV CONFIG — Validated at boot, crash-early if misconfigured
-// Feature flags for optional services prevent silent failures.
-// Pattern: Google Cloud, Stripe, Vercel — all validate env at startup.
 // ═══════════════════════════════════════════════════════════════
 
 import { z } from 'zod';
 
 const envSchema = z.object({
-  // ── Core ──
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
   PORT: z.coerce.number().default(4000),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
-  // ── Auth0 ──
-  AUTH0_DOMAIN: z.string().min(1, 'AUTH0_DOMAIN is required'),
-  AUTH0_AUDIENCE: z.string().min(1, 'AUTH0_AUDIENCE is required'),
+  // ── Auth (own system — NO Auth0) ──
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+
+  // ── Google OAuth (optional) ──
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
+  // ── MSG91 SMS OTP (optional) ──
+  MSG91_AUTH_KEY: z.string().optional(),
+  MSG91_TEMPLATE_ID: z.string().optional(),
 
   // ── AI ──
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   AI_PRIMARY_MODEL: z.string().default('claude-sonnet-4-20250514'),
   AI_FALLBACK_MODEL: z.string().default('claude-haiku-4-5-20251001'),
-  OPENAI_API_KEY: z.string().optional(), // ← ADD THIS LINE
-  GEMINI_API_KEY: z.string().optional(), // ← ADD THIS LINE
+  OPENAI_API_KEY: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
 
-  // ── Sentry (optional in dev) ──
+  // ── Sentry ──
   SENTRY_DSN: z.string().optional(),
 
-  // ── WhatsApp (feature-flagged) ──
+  // ── WhatsApp ──
   WHATSAPP_ENABLED: z
     .string()
     .transform((v) => v === 'true')
@@ -35,8 +39,9 @@ const envSchema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_VERIFY_TOKEN: z.string().optional(),
 
-  // ── Resend (email alerts) ──
+  // ── Resend ──
   RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM_DOMAIN: z.string().default('datunai.com'),
   ALERT_EMAIL_TO: z.string().email().default('hello@datunai.com'),
 
   // ── Better Stack ──
@@ -49,7 +54,6 @@ const envSchema = z.object({
   HEALTHCHECK_DAILY_REPORT_URL: z.string().optional(),
 });
 
-// Post-parse validation: if WhatsApp enabled, token + phone ID required
 const refinedSchema = envSchema.superRefine((data, ctx) => {
   if (data.WHATSAPP_ENABLED) {
     if (!data.WHATSAPP_TOKEN) {
@@ -66,6 +70,20 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
         path: ['WHATSAPP_PHONE_NUMBER_ID'],
       });
     }
+  }
+  if (data.GOOGLE_CLIENT_ID && !data.GOOGLE_CLIENT_SECRET) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'GOOGLE_CLIENT_SECRET required when GOOGLE_CLIENT_ID is set',
+      path: ['GOOGLE_CLIENT_SECRET'],
+    });
+  }
+  if (data.MSG91_AUTH_KEY && !data.MSG91_TEMPLATE_ID) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'MSG91_TEMPLATE_ID required when MSG91_AUTH_KEY is set',
+      path: ['MSG91_TEMPLATE_ID'],
+    });
   }
 });
 

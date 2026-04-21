@@ -1,22 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // TYPE DEFINITIONS — Express augmentation + API contracts
-// req.auth = decoded JWT, req.dbUser = Prisma User row
 // ═══════════════════════════════════════════════════════════════
 
 import type { User } from '@repo/db';
+import type { DecodedToken } from '../services/auth/types.js';
 
-/** Decoded Auth0 JWT payload */
-export interface DecodedToken {
-  sub: string; // "google-oauth2|12345" or "auth0|67890"
-  aud: string | string[];
-  iss: string;
-  iat: number;
-  exp: number;
-  azp?: string;
-  scope?: string;
-}
+export type { DecodedToken };
 
-/** Consistent API response envelope */
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
@@ -31,15 +21,11 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
-/** Augment Express Request */
 declare global {
   namespace Express {
     interface Request {
-      /** Decoded JWT token — set by requireAuth middleware */
       auth?: DecodedToken;
-      /** Full Prisma User row — set by requireUser middleware */
       dbUser?: User;
-      /** Unique request identifier for tracing */
       requestId?: string;
     }
   }

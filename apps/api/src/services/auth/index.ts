@@ -1,19 +1,24 @@
 // ═══════════════════════════════════════════════════════════════
-// AUTH PROVIDER FACTORY — Returns configured auth provider
-// To switch from Auth0 to own auth: change this one file.
+// AUTH — Barrel exports
 // ═══════════════════════════════════════════════════════════════
 
-import type { AuthProvider } from './types.js';
-import { Auth0Provider } from './auth0.provider.js';
-
-let instance: AuthProvider | null = null;
-
-export function getAuthProvider(): AuthProvider {
-  if (!instance) {
-    // Future: switch based on env.AUTH_PROVIDER
-    instance = new Auth0Provider();
-  }
-  return instance;
-}
-
-export type { AuthProvider } from './types.js';
+export { AuthService } from './auth.service.js';
+export { JwtService } from './jwt.service.js';
+export { OtpService } from './otp.service.js';
+export { PasswordService } from './password.service.js';
+export { GoogleOAuthService } from './google-oauth.service.js';
+export type {
+  DecodedToken,
+  AuthMethod,
+  AuthResponse,
+  AuthTokens,
+  SignupWithEmailDTO,
+  LoginWithEmailDTO,
+  SendOtpDTO,
+  VerifyOtpDTO,
+  GoogleAuthDTO,
+  ForgotPasswordDTO,
+  ResetPasswordDTO,
+  RefreshTokenDTO,
+  OtpSendResponse,
+} from './types.js';

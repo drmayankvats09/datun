@@ -1,26 +1,22 @@
 // ═══════════════════════════════════════════════════════════════
-// AUTH MIDDLEWARE — Provider-agnostic token verification
-// requireAuth: verifies token only (fast, for webhooks/read routes)
-// requireUser: verifies token + loads Prisma User (for user routes)
+// AUTH MIDDLEWARE — Own JWT verification, RBAC
+// No Auth0. Verifies Datun-issued JWTs only.
 // ═══════════════════════════════════════════════════════════════
 
 import type { Request, Response, NextFunction } from 'express';
-import { getAuthProvider } from '../services/auth/index.js';
 import { prisma } from '@repo/db';
+import type { UserPrimaryRole } from '@repo/db';
 import { logger } from '../lib/logger.js';
-import { AuthenticationError, NotFoundError } from '../errors/index.js';
+import { AuthenticationError, ForbiddenError, NotFoundError } from '../errors/index.js';
+import { JwtService } from '../services/auth/jwt.service.js';
+import type { DecodedToken } from '../services/auth/types.js';
 
-/**
- * Verify JWT only — sets req.auth
- * Use for endpoints that need auth but not user data.
- */
 export async function requireAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const token = extractBearerToken(req);
   if (!token) throw new AuthenticationError('Bearer token required');
 
   try {
-    const provider = getAuthProvider();
-    req.auth = await provider.verifyToken(token);
+    req.auth = JwtService.verifyAccessToken(token);
     next();
   } catch (err) {
     logger.warn('Token verification failed', {
@@ -31,18 +27,12 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
   }
 }
 
-/**
- * Verify JWT + load full User from database — sets req.auth + req.dbUser
- * Use for endpoints that need user context (profile, consultations, etc.)
- */
 export async function requireUser(req: Request, _res: Response, next: NextFunction): Promise<void> {
   const token = extractBearerToken(req);
   if (!token) throw new AuthenticationError('Bearer token required');
 
-  // Verify token
   try {
-    const provider = getAuthProvider();
-    req.auth = await provider.verifyToken(token);
+    req.auth = JwtService.verifyAccessToken(token);
   } catch (err) {
     logger.warn('Token verification failed', {
       requestId: req.requestId,
@@ -51,27 +41,69 @@ export async function requireUser(req: Request, _res: Response, next: NextFuncti
     throw new AuthenticationError('Invalid or expired token');
   }
 
-  // Load user from DB via auth identity
-  const identity = await prisma.userAuthIdentity.findFirst({
-    where: { providerUserId: req.auth.sub },
-    include: { user: true },
+  const user = await prisma.user.findUnique({
+    where: { id: req.auth.sub },
   });
 
-  if (!identity) {
+  if (!user) {
     throw new NotFoundError('User', req.auth.sub);
   }
 
-  req.dbUser = identity.user;
+  if (!user.isActive) {
+    throw new AuthenticationError('Account is deactivated');
+  }
 
-  // Update last login timestamp (fire-and-forget, don't block request)
+  req.dbUser = user;
+
   prisma.user
     .update({
-      where: { id: identity.user.id },
+      where: { id: user.id },
       data: { lastLoginAt: new Date() },
     })
-    .catch(() => {
-      /* silent — non-critical */
-    });
+    .catch(() => {});
+
+  next();
+}
+
+export function requireRole(
+  ...allowedRoles: UserPrimaryRole[]
+): (req: Request, _res: Response, next: NextFunction) => void {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.auth) {
+      throw new AuthenticationError('Authentication required');
+    }
+
+    const userRole = req.auth.role as UserPrimaryRole;
+    if (!allowedRoles.includes(userRole)) {
+      logger.warn('Access denied — insufficient role', {
+        userId: req.auth.sub,
+        userRole,
+        requiredRoles: allowedRoles,
+        requestId: req.requestId,
+      });
+      throw new ForbiddenError(
+        `This action requires one of these roles: ${allowedRoles.join(', ')}`,
+      );
+    }
+
+    next();
+  };
+}
+
+export async function optionalAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = extractBearerToken(req);
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    req.auth = JwtService.verifyAccessToken(token);
+  } catch {}
 
   next();
 }

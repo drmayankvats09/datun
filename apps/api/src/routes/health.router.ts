@@ -1,6 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
 // HEALTH ROUTES — System status + diagnostics
-// These are PUBLIC — no auth required.
 // ═══════════════════════════════════════════════════════════════
 
 import { Router } from 'express';
@@ -8,10 +7,10 @@ import { prisma } from '@repo/db';
 import { BRAND, API_VERSION } from '@repo/shared';
 import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
+import { JwtService } from '../services/auth/jwt.service.js';
 
 export const healthRouter = Router();
 
-// Root — basic liveness
 healthRouter.get('/', (_req, res) => {
   res.json({
     status: `${BRAND.name} API is live 🦷`,
@@ -20,12 +19,10 @@ healthRouter.get('/', (_req, res) => {
   });
 });
 
-// Deep health — checks every dependency
 healthRouter.get('/health', async (_req, res) => {
   const start = Date.now();
   const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
 
-  // Database
   try {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
@@ -34,7 +31,28 @@ healthRouter.get('/health', async (_req, res) => {
     checks['database'] = { status: 'fail', error: (err as Error).message };
   }
 
-  // WhatsApp (if enabled)
+  try {
+    const authStart = Date.now();
+    const testToken = JwtService.generateTokens({
+      userId: 'health-check',
+      email: 'health@datunai.com',
+      role: 'PATIENT',
+    });
+    JwtService.verifyAccessToken(testToken.accessToken);
+    checks['auth'] = { status: 'ok', latencyMs: Date.now() - authStart };
+  } catch (err) {
+    checks['auth'] = { status: 'fail', error: (err as Error).message };
+  }
+
+  checks['email'] = {
+    status: env.RESEND_API_KEY ? 'ok' : 'warn',
+    ...(env.RESEND_API_KEY ? {} : { error: 'RESEND_API_KEY not set' }),
+  };
+  checks['sms'] = {
+    status: env.MSG91_AUTH_KEY ? 'ok' : 'warn',
+    ...(env.MSG91_AUTH_KEY ? {} : { error: 'MSG91_AUTH_KEY not set' }),
+  };
+
   if (env.WHATSAPP_ENABLED) {
     const waResult = await whatsappHealthCheck();
     checks['whatsapp'] = {
@@ -44,11 +62,12 @@ healthRouter.get('/health', async (_req, res) => {
     };
   }
 
-  const allOk = Object.values(checks).every((c) => c.status === 'ok');
+  const criticalChecks = ['database', 'auth'];
+  const allCriticalOk = criticalChecks.every((k) => checks[k]?.status === 'ok');
   const totalMs = Date.now() - start;
 
-  res.status(allOk ? 200 : 503).json({
-    status: allOk ? 'healthy' : 'degraded',
+  res.status(allCriticalOk ? 200 : 503).json({
+    status: allCriticalOk ? 'healthy' : 'degraded',
     version: API_VERSION,
     uptime: Math.floor(process.uptime()),
     checks,
@@ -57,7 +76,6 @@ healthRouter.get('/health', async (_req, res) => {
   });
 });
 
-// PDF short URL redirect
 healthRouter.get('/report/:id', (req, res) => {
   res.redirect(`/api/consultations/${req.params['id']}/pdf`);
 });
