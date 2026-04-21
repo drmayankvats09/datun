@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   # Prisma generate needs DATABASE_URL in schema — dummy for CI
   # (generate only reads schema file, does NOT connect to DB)
   DATABASE_URL: 'postgresql://dummy:dummy@localhost:5432/dummy'
