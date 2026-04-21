@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // DATUN API — Server Entry Point
-// Boot sequence: dotenv → sentry → env validate → db → app → crons → listen
+// Boot sequence: dotenv → sentry → env → redis → db → app → crons → listen
 // Graceful shutdown: SIGTERM → stop accepting → drain → close DB → exit
 // Pattern: Google Cloud Run, AWS ECS, Railway — all expect graceful shutdown.
 // ═══════════════════════════════════════════════════════════════
@@ -13,6 +13,7 @@ initSentry();
 
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
+import { initRedis, verifyRedis } from './lib/redis.js';
 import { createApp } from './app.js';
 import { startCronJobs } from './crons/index.js';
 import { prisma } from '@repo/db';
@@ -22,7 +23,14 @@ import type { Server } from 'node:http';
 let server: Server | null = null;
 
 async function main(): Promise<void> {
-  // ── 1. Verify database connection ──
+  // ── 1. Initialize Redis (non-blocking — falls back to in-memory) ──
+  initRedis();
+  const redisResult = await verifyRedis();
+  if (!redisResult.ok) {
+    logger.warn('Redis not available — OTP/cache/alerts using in-memory fallback');
+  }
+
+  // ── 2. Verify database connection ──
   try {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
@@ -35,18 +43,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // ── 2. Create Express app ──
+  // ── 3. Create Express app ──
   const app = createApp();
 
-  // ── 3. Start cron jobs ──
+  // ── 4. Start cron jobs ──
   startCronJobs();
 
-  // ── 4. Listen ──
+  // ── 5. Listen ──
   server = app.listen(env.PORT, () => {
     logger.info(`${BRAND.name} API started on port ${env.PORT}`, {
       version: API_VERSION,
       env: env.NODE_ENV,
       port: env.PORT,
+      redis: redisResult.ok ? 'connected' : 'fallback (in-memory)',
     });
 
     console.log(`
@@ -55,6 +64,7 @@ async function main(): Promise<void> {
   ║        Port: ${String(env.PORT).padEnd(24)}║
   ║        Version: ${API_VERSION.padEnd(21)}║
   ║        Env: ${env.NODE_ENV.padEnd(25)}║
+  ║        Redis: ${(redisResult.ok ? 'Connected ✅' : 'In-memory ⚠️').padEnd(23)}║
   ╚═══════════════════════════════════════╝
     `);
   });

@@ -8,6 +8,7 @@ import { BRAND, API_VERSION } from '@repo/shared';
 import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
 import { JwtService } from '../services/auth/jwt.service.js';
+import { verifyRedis, isRedisHealthy } from '../lib/redis.js';
 
 export const healthRouter = Router();
 
@@ -23,6 +24,7 @@ healthRouter.get('/health', async (_req, res) => {
   const start = Date.now();
   const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
 
+  // Database check
   try {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
@@ -31,6 +33,7 @@ healthRouter.get('/health', async (_req, res) => {
     checks['database'] = { status: 'fail', error: (err as Error).message };
   }
 
+  // Auth check
   try {
     const authStart = Date.now();
     const testToken = JwtService.generateTokens({
@@ -44,15 +47,31 @@ healthRouter.get('/health', async (_req, res) => {
     checks['auth'] = { status: 'fail', error: (err as Error).message };
   }
 
+  // Redis check
+  if (env.UPSTASH_REDIS_REST_URL) {
+    const redisResult = await verifyRedis();
+    checks['redis'] = {
+      status: redisResult.ok ? 'ok' : 'fail',
+      latencyMs: redisResult.latencyMs,
+      ...(redisResult.ok ? {} : { error: 'Redis ping failed' }),
+    };
+  } else {
+    checks['redis'] = { status: 'warn', error: 'Not configured — using in-memory fallback' };
+  }
+
+  // Email check
   checks['email'] = {
     status: env.RESEND_API_KEY ? 'ok' : 'warn',
     ...(env.RESEND_API_KEY ? {} : { error: 'RESEND_API_KEY not set' }),
   };
+
+  // SMS check
   checks['sms'] = {
     status: env.MSG91_AUTH_KEY ? 'ok' : 'warn',
     ...(env.MSG91_AUTH_KEY ? {} : { error: 'MSG91_AUTH_KEY not set' }),
   };
 
+  // WhatsApp check
   if (env.WHATSAPP_ENABLED) {
     const waResult = await whatsappHealthCheck();
     checks['whatsapp'] = {

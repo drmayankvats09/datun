@@ -29,19 +29,8 @@ import type {
   ResetPasswordDTO,
   RefreshTokenDTO,
   OtpSendResponse,
-  StoredResetToken,
   AuthTokens,
 } from './types.js';
-
-// ── In-memory reset token store (Redis later via Task #29) ──
-const resetTokenStore = new Map<string, StoredResetToken>();
-
-setInterval(() => {
-  const now = new Date();
-  for (const [key, token] of resetTokenStore) {
-    if (token.expiresAt < now || token.used) resetTokenStore.delete(key);
-  }
-}, 900_000);
 
 export class AuthService {
   // ═══════════════════════════════════════════════════════════

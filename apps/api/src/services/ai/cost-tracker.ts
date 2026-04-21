@@ -1,16 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // COST TRACKER — Per-request AI cost logging + cumulative totals
 // Every request logged with provider, tokens, cost, latency.
-// Used for: billing analysis, provider comparison, budget alerts.
-//
-// Current: In-memory running totals + per-request logs (Winston).
-// 📝 SAVE TO NOTES: When Redis comes (Task #29), persist daily
-// totals to Redis sorted set for dashboard graphs.
-// 📝 SAVE TO NOTES: When PostHog comes (Task #49), fire
-// 'ai_request' event with {provider, cost, tokens} for analytics.
+// Daily totals persisted to Redis (survives restart).
+// Fallback: in-memory (same as before).
 // ═══════════════════════════════════════════════════════════════
 
 import { logger } from '../../lib/logger.js';
+import { cache, TTL } from '../../lib/redis.js';
 import type { CostEntry, ProviderName } from './types.js';
 
 interface DailyTotals {
@@ -23,11 +19,16 @@ interface DailyTotals {
   byProvider: Record<string, { cost: number; requests: number }>;
 }
 
+// Redis key pattern for daily cost totals
+const dailyCostKey = (date: string) => `cost:daily:${date}`;
+
 export class CostTracker {
   private daily: DailyTotals;
 
   constructor() {
     this.daily = this.newDailyRecord();
+    // Hydrate from Redis on startup (non-blocking)
+    this.hydrateFromRedis().catch(() => {});
   }
 
   /** Record a completed AI request */
@@ -35,7 +36,7 @@ export class CostTracker {
     // Roll over day if needed
     const today = this.todayString();
     if (this.daily.date !== today) {
-      // Log previous day's summary before resetting
+      // Persist previous day's summary to Redis before resetting
       if (this.daily.requestCount > 0) {
         logger.info('[CostTracker] Daily summary', {
           date: this.daily.date,
@@ -43,6 +44,7 @@ export class CostTracker {
           totalRequests: this.daily.requestCount,
           byProvider: this.daily.byProvider,
         });
+        this.persistToRedis(this.daily).catch(() => {});
       }
       this.daily = this.newDailyRecord();
     }
@@ -74,11 +76,44 @@ export class CostTracker {
       dailyTotalUsd: this.daily.totalCostUsd.toFixed(6),
       dailyRequestCount: this.daily.requestCount,
     });
+
+    // Persist current day to Redis (non-blocking, every request)
+    this.persistToRedis(this.daily).catch(() => {});
   }
 
   /** Get today's running totals — for /health or admin dashboard */
   getDailyTotals(): DailyTotals {
     return { ...this.daily };
+  }
+
+  // ── Redis persistence ──
+
+  private async persistToRedis(totals: DailyTotals): Promise<void> {
+    try {
+      await cache.set(dailyCostKey(totals.date), JSON.stringify(totals), TTL.COST_DAILY);
+    } catch {
+      // Non-critical — Winston logs are the primary record
+    }
+  }
+
+  private async hydrateFromRedis(): Promise<void> {
+    try {
+      const today = this.todayString();
+      const raw = await cache.get(dailyCostKey(today));
+      if (raw) {
+        const saved = JSON.parse(raw) as DailyTotals;
+        if (saved.date === today) {
+          this.daily = saved;
+          logger.info('[CostTracker] Hydrated from Redis', {
+            date: today,
+            requests: saved.requestCount,
+            cost: saved.totalCostUsd.toFixed(6),
+          });
+        }
+      }
+    } catch {
+      // Fresh start — no problem
+    }
   }
 
   private todayString(): string {

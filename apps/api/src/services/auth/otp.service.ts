@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // OTP SERVICE — Email (Resend) + SMS (MSG91)
 // 6-digit codes, 10-min expiry, max 3 verify attempts, rate limited.
-// In-memory storage now, Redis (Task #29) later — interface same.
+// Storage: Redis (Upstash) with in-memory fallback.
 // Pattern: Razorpay OTP, Zomato phone verify, Google 2FA.
 // ═══════════════════════════════════════════════════════════════
 
@@ -11,92 +11,82 @@ import { Resend } from 'resend';
 import axios from 'axios';
 import { env } from '../../config/env.js';
 import { logger } from '../../lib/logger.js';
+import { cache, TTL } from '../../lib/redis.js';
 import { BRAND } from '@repo/shared';
-import type { StoredOtp, OtpSendResponse } from './types.js';
+import type { OtpSendResponse } from './types.js';
 
 // ── Config ──
 const OTP_LENGTH = 6;
-const OTP_EXPIRY_SECONDS = 600; // 10 minutes
+const OTP_EXPIRY_SECONDS = TTL.OTP; // 600 = 10 minutes
 const OTP_MAX_ATTEMPTS = 3;
 const OTP_COOLDOWN_SECONDS = 60; // 1 min between sends
 const OTP_MAX_PER_HOUR = 5; // max 5 OTPs per destination per hour
 const BCRYPT_SALT_ROUNDS = 10;
 
-// ── In-memory OTP store (Redis later via Task #29) ──
-const otpStore = new Map<string, StoredOtp>();
-const sendCountStore = new Map<string, { count: number; windowStart: Date }>();
+// ── Redis key patterns ──
+const otpKey = (channel: string, dest: string) => `otp:${channel}:${dest}`;
+const otpHourlyKey = (channel: string, dest: string) => `otp:hourly:${channel}:${dest}`;
 
-// Cleanup expired OTPs every 5 minutes
-setInterval(() => {
-  const now = new Date();
-  for (const [key, otp] of otpStore) {
-    if (otp.expiresAt < now) otpStore.delete(key);
-  }
-  for (const [key, data] of sendCountStore) {
-    if (now.getTime() - data.windowStart.getTime() > 3600_000) {
-      sendCountStore.delete(key);
-    }
-  }
-}, 300_000);
+// ── OTP data stored in Redis/memory ──
+interface OtpData {
+  hash: string;
+  attempts: number;
+  maxAttempts: number;
+  createdAt: number; // Unix timestamp ms
+}
 
 export class OtpService {
   // ── Send OTP ──
 
   static async send(destination: string, channel: 'email' | 'phone'): Promise<OtpSendResponse> {
-    const storeKey = `${channel}:${destination}`;
+    const key = otpKey(channel, destination);
 
     // Rate limit: cooldown between sends
-    const existing = otpStore.get(storeKey);
-    if (existing) {
-      const secondsSinceSend = (Date.now() - existing.createdAt.getTime()) / 1000;
-      if (secondsSinceSend < OTP_COOLDOWN_SECONDS) {
-        const retryAfter = Math.ceil(OTP_COOLDOWN_SECONDS - secondsSinceSend);
-        return {
-          success: false,
-          maskedDestination: OtpService.maskDestination(destination, channel),
-          expiresInSeconds: 0,
-          retryAfterSeconds: retryAfter,
-        };
+    const existingRaw = await cache.get(key);
+    if (existingRaw) {
+      try {
+        const existing = JSON.parse(existingRaw) as OtpData;
+        const secondsSinceSend = (Date.now() - existing.createdAt) / 1000;
+        if (secondsSinceSend < OTP_COOLDOWN_SECONDS) {
+          const retryAfter = Math.ceil(OTP_COOLDOWN_SECONDS - secondsSinceSend);
+          return {
+            success: false,
+            maskedDestination: OtpService.maskDestination(destination, channel),
+            expiresInSeconds: 0,
+            retryAfterSeconds: retryAfter,
+          };
+        }
+      } catch {
+        // Corrupted data — delete and continue
+        await cache.del(key);
       }
     }
 
-    // Rate limit: max per hour
-    const hourlyKey = `hourly:${storeKey}`;
-    const hourly = sendCountStore.get(hourlyKey);
-    if (hourly) {
-      const elapsed = Date.now() - hourly.windowStart.getTime();
-      if (elapsed < 3600_000 && hourly.count >= OTP_MAX_PER_HOUR) {
-        logger.warn('OTP hourly rate limit hit', { destination: storeKey });
-        return {
-          success: false,
-          maskedDestination: OtpService.maskDestination(destination, channel),
-          expiresInSeconds: 0,
-          retryAfterSeconds: Math.ceil((3600_000 - elapsed) / 1000),
-        };
-      }
-      if (elapsed >= 3600_000) {
-        sendCountStore.set(hourlyKey, { count: 1, windowStart: new Date() });
-      } else {
-        hourly.count++;
-      }
-    } else {
-      sendCountStore.set(hourlyKey, { count: 1, windowStart: new Date() });
+    // Rate limit: max per hour (atomic counter with TTL)
+    const hourlyKey = otpHourlyKey(channel, destination);
+    const hourlyCount = await cache.incr(hourlyKey, TTL.OTP_HOURLY);
+    if (hourlyCount > OTP_MAX_PER_HOUR) {
+      logger.warn('OTP hourly rate limit hit', { destination: `${channel}:${destination}` });
+      return {
+        success: false,
+        maskedDestination: OtpService.maskDestination(destination, channel),
+        expiresInSeconds: 0,
+        retryAfterSeconds: 300, // Try again in 5 min
+      };
     }
 
     // Generate 6-digit OTP
     const code = OtpService.generateCode();
     const hash = await bcrypt.hash(code, BCRYPT_SALT_ROUNDS);
 
-    // Store hashed OTP
-    otpStore.set(storeKey, {
+    // Store hashed OTP with TTL
+    const otpData: OtpData = {
       hash,
-      destination,
-      channel,
-      expiresAt: new Date(Date.now() + OTP_EXPIRY_SECONDS * 1000),
       attempts: 0,
       maxAttempts: OTP_MAX_ATTEMPTS,
-      createdAt: new Date(),
-    });
+      createdAt: Date.now(),
+    };
+    await cache.set(key, JSON.stringify(otpData), OTP_EXPIRY_SECONDS);
 
     // Send via appropriate channel
     try {
@@ -108,14 +98,14 @@ export class OtpService {
     } catch (err) {
       logger.error('Failed to send OTP', {
         channel,
-        destination: storeKey,
+        destination: `${channel}:${destination}`,
         error: (err as Error).message,
       });
-      otpStore.delete(storeKey);
+      await cache.del(key);
       throw new Error(`Failed to send OTP via ${channel}`);
     }
 
-    logger.info('OTP sent', { channel, destination: storeKey });
+    logger.info('OTP sent', { channel, destination: `${channel}:${destination}` });
 
     return {
       success: true,
@@ -132,40 +122,44 @@ export class OtpService {
     channel: 'email' | 'phone',
     code: string,
   ): Promise<boolean> {
-    const storeKey = `${channel}:${destination}`;
-    const stored = otpStore.get(storeKey);
+    const key = otpKey(channel, destination);
+    const raw = await cache.get(key);
 
-    if (!stored) {
-      logger.warn('OTP not found or expired', { destination: storeKey });
+    if (!raw) {
+      logger.warn('OTP not found or expired', { destination: `${channel}:${destination}` });
       return false;
     }
 
-    if (stored.expiresAt < new Date()) {
-      otpStore.delete(storeKey);
-      logger.warn('OTP expired', { destination: storeKey });
+    let otpData: OtpData;
+    try {
+      otpData = JSON.parse(raw) as OtpData;
+    } catch {
+      await cache.del(key);
       return false;
     }
 
-    if (stored.attempts >= stored.maxAttempts) {
-      otpStore.delete(storeKey);
-      logger.warn('OTP max attempts exceeded', { destination: storeKey });
+    if (otpData.attempts >= otpData.maxAttempts) {
+      await cache.del(key);
+      logger.warn('OTP max attempts exceeded', { destination: `${channel}:${destination}` });
       return false;
     }
 
-    stored.attempts++;
+    // Increment attempts
+    otpData.attempts++;
+    await cache.set(key, JSON.stringify(otpData), OTP_EXPIRY_SECONDS);
 
-    const isValid = await bcrypt.compare(code, stored.hash);
+    const isValid = await bcrypt.compare(code, otpData.hash);
 
     if (isValid) {
-      otpStore.delete(storeKey);
-      logger.info('OTP verified', { channel, destination: storeKey });
+      await cache.del(key);
+      logger.info('OTP verified', { channel, destination: `${channel}:${destination}` });
       return true;
     }
 
     logger.warn('OTP verification failed', {
-      destination: storeKey,
-      attemptsUsed: stored.attempts,
-      maxAttempts: stored.maxAttempts,
+      destination: `${channel}:${destination}`,
+      attemptsUsed: otpData.attempts,
+      maxAttempts: otpData.maxAttempts,
     });
 
     return false;

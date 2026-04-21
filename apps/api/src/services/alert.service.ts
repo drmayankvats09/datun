@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // ALERT SERVICE — Admin email notifications + dedup
 // Severity-based alerts with cooldown to prevent spam.
-// TODO: Move dedup state to Redis when Redis is added.
+// Dedup via Redis (survives restart). Fallback: in-memory.
 // ═══════════════════════════════════════════════════════════════
 
 import { Resend } from 'resend';
@@ -9,11 +9,9 @@ import { BRAND, COLORS, CONTACTS, URLS } from '@repo/shared';
 import { env } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { Sentry } from '../lib/sentry.js';
+import { cache } from '../lib/redis.js';
 
 const resendClient = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
-
-// In-memory dedup (TODO: Redis for persistence across restarts)
-const dedup = new Map<string, number>();
 
 type Severity = 'CRITICAL' | 'WARNING' | 'INFO';
 
@@ -25,15 +23,17 @@ export async function alertAdmin(
 ): Promise<void> {
   const cooldownMin = opts.cooldownMin ?? 30;
   const alertKey = opts.alertKey ?? `${severity}:${title}`;
-  const now = Date.now();
+  const redisKey = `alert:dedup:${alertKey}`;
 
-  // Dedup: suppress repeated alerts within cooldown
-  const lastSent = dedup.get(alertKey) ?? 0;
-  if (now - lastSent < cooldownMin * 60_000) {
+  // Dedup: suppress repeated alerts within cooldown (Redis-backed)
+  const lastSentRaw = await cache.get(redisKey);
+  if (lastSentRaw) {
     logger.debug(`Alert suppressed (cooldown): ${alertKey}`);
     return;
   }
-  dedup.set(alertKey, now);
+
+  // Mark as sent with TTL = cooldown duration
+  await cache.set(redisKey, String(Date.now()), cooldownMin * 60);
 
   const emoji = { CRITICAL: '🚨', WARNING: '⚠️', INFO: 'ℹ️' }[severity];
   const color =

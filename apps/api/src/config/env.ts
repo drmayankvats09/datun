@@ -20,6 +20,10 @@ const envSchema = z.object({
   MSG91_AUTH_KEY: z.string().optional(),
   MSG91_TEMPLATE_ID: z.string().optional(),
 
+  // ── Redis (Upstash — optional, falls back to in-memory) ──
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
   // ── AI ──
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   AI_PRIMARY_MODEL: z.string().default('claude-sonnet-4-20250514'),
@@ -83,6 +87,14 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       code: z.ZodIssueCode.custom,
       message: 'MSG91_TEMPLATE_ID required when MSG91_AUTH_KEY is set',
       path: ['MSG91_TEMPLATE_ID'],
+    });
+  }
+  // Redis: both URL and token required together
+  if (data.UPSTASH_REDIS_REST_URL && !data.UPSTASH_REDIS_REST_TOKEN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'UPSTASH_REDIS_REST_TOKEN required when UPSTASH_REDIS_REST_URL is set',
+      path: ['UPSTASH_REDIS_REST_TOKEN'],
     });
   }
 });
