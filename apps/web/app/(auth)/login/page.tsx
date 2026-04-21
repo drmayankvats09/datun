@@ -309,7 +309,7 @@ export default function LoginPage() {
       </Tabs>
 
       <p className="text-muted-foreground text-center text-sm">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/signup" className="text-primary font-medium hover:underline">
           Sign up
         </Link>
