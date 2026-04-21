@@ -1,3 +1,9 @@
+![CI](https://github.com/drmayankvats09/datun/actions/workflows/ci.yml/badge.svg)
+
+# Datun
+
+An AI-powered healthcare platform for India...
+
 # Datun
 
 An AI-powered healthcare platform for India, beginning with dental care and expanding to a unified healthcare aggregation ecosystem.

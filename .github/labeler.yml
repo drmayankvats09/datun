@@ -1,0 +1,36 @@
+# ═══════════════════════════════════════════════════════════════
+# AUTO-LABELER CONFIG — Labels PRs based on changed file paths
+# ═══════════════════════════════════════════════════════════════
+
+web:
+  - changed-files:
+      - any-glob-to-any-file: "apps/web/**"
+
+api:
+  - changed-files:
+      - any-glob-to-any-file: "apps/api/**"
+
+database:
+  - changed-files:
+      - any-glob-to-any-file: "packages/db/**"
+
+shared:
+  - changed-files:
+      - any-glob-to-any-file: "packages/shared/**"
+
+ui:
+  - changed-files:
+      - any-glob-to-any-file: "packages/ui/**"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+config:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "turbo.json"
+          - "pnpm-workspace.yaml"
+          - "package.json"
+          - ".prettierrc"
+          - "tsconfig*.json"

@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════════════════════════════
+# GITLEAKS — Secret scanning configuration
+# Prevents API keys, passwords, tokens from being committed.
+# ═══════════════════════════════════════════════════════════════
+
+title = "Datun AI — Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''pnpm-lock\.yaml''',
+  '''\.turbo''',
+  '''\.next''',
+  '''dist''',
+  '''node_modules''',
+  '''\.env\.example''',
+]

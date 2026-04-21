@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════
+# DEPENDABOT — Auto-create PRs for dependency updates
+# Pattern: Every FAANG company auto-updates dependencies.
+# ═══════════════════════════════════════════════════════════════
+
+version: 2
+
+updates:
+  # ── Root (Turborepo, Husky, Prettier) ──
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - auto-update
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ── Web app (Next.js, React, Tailwind) ──
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - web
+    commit-message:
+      prefix: "chore(deps-web)"
+
+  # ── API (Express, Prisma, Sentry) ──
+  - package-ecosystem: npm
+    directory: /apps/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - api
+    commit-message:
+      prefix: "chore(deps-api)"
+
+  # ── GitHub Actions (keep CI actions updated) ──
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Kolkata
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(deps-ci)"

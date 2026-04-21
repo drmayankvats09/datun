@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════
+# PR TITLE LINT — Enforce conventional commit format
+# Squash merge pe clean git history milti hai.
+# Pattern: Angular, Nx, Turborepo — all use conventional commits.
+# ═══════════════════════════════════════════════════════════════
+
+name: PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint-title:
+    name: Conventional PR Title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Check PR title format
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+            ci
+            build
+          scopes: |
+            web
+            api
+            db
+            shared
+            ui
+            infra
+            auth
+            ai
+            deps
+          requireScope: false
+          subjectPattern: ^.+$
+          subjectPatternError: |
+            PR title must follow: type(scope): description
+            Examples: "feat(web): add login page" or "fix(api): handle null user"

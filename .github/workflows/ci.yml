@@ -1,0 +1,169 @@
+# ═══════════════════════════════════════════════════════════════
+# DATUN AI — CI PIPELINE
+# Runs on every push and PR. Blocks merge if anything fails.
+# Pattern: Vercel, Linear, Cal.com — all use GitHub Actions CI.
+# ═══════════════════════════════════════════════════════════════
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for same branch/PR (saves GitHub minutes)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "18"
+  PNPM_VERSION: "9"
+  # Prisma generate needs DATABASE_URL in schema — dummy for CI
+  # (generate only reads schema file, does NOT connect to DB)
+  DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  # JOB 1: QUALITY — lint + typecheck + build
+  # ─────────────────────────────────────────────────────────
+  quality:
+    name: Lint → Typecheck → Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      # ── Turbo cache (repeated builds 70-80% faster) ──
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Prisma Client generate (needed before build + typecheck) ──
+      - name: Generate Prisma Client
+        run: pnpm turbo run db:generate
+
+      # ── Lint (ESLint — code quality check) ──
+      - name: Lint
+        run: pnpm turbo run lint
+
+      # ── Typecheck (TypeScript — type safety) ──
+      - name: Typecheck
+        run: pnpm turbo run check-types
+
+      # ── Build all packages (Next.js + Express API + shared) ──
+      - name: Build
+        run: pnpm turbo run build
+        env:
+          NEXT_PUBLIC_APP_URL: "https://datunai.com"
+          NEXT_PUBLIC_API_URL: "https://dentscan-ai-backend-production.up.railway.app"
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 2: SECURITY — gitleaks secret scanning
+  # ─────────────────────────────────────────────────────────
+  security:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 3: CODEQL — GitHub's security analysis (SAST)
+  # FAANG standard — finds SQL injection, XSS, path traversal
+  # ─────────────────────────────────────────────────────────
+  codeql:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 4: AUTO-LABEL PRs based on changed files
+  # ─────────────────────────────────────────────────────────
+  label:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Label PR
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 5: CLOUDFLARE CACHE PURGE (only on main push, after build passes)
+  # ─────────────────────────────────────────────────────────
+  purge-cache:
+    name: Cloudflare Cache Purge
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [quality]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Purge Cloudflare Cache
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"purge_everything": true}')
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Cloudflare cache purged successfully"
+          else
+            echo "⚠️ Cache purge returned HTTP $RESPONSE (non-critical)"
+          fi
