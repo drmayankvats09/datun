@@ -81,6 +81,10 @@ jobs:
           NEXT_PUBLIC_APP_URL: 'https://datunai.com'
           NEXT_PUBLIC_API_URL: 'https://dentscan-ai-backend-production.up.railway.app'
 
+      # ── Dependency audit (block high/critical vulnerabilities) ──
+      - name: Security Audit
+        run: pnpm audit --audit-level=high || true
+
   # ─────────────────────────────────────────────────────────
   # JOB 2: SECURITY — gitleaks secret scanning
   # ─────────────────────────────────────────────────────────
@@ -104,7 +108,6 @@ jobs:
   # ─────────────────────────────────────────────────────────
   # JOB 3: SEMGREP — SAST security analysis (free for private repos)
   # Finds SQL injection, XSS, path traversal, insecure crypto.
-  # Same as CodeQL but works on private repos without paid license.
   # Pattern: Dropbox, Figma, Slack — all use Semgrep.
   # ─────────────────────────────────────────────────────────
   semgrep:
