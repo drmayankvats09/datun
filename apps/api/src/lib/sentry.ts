@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-// SENTRY — Error tracking initialization
+// SENTRY — Error tracking initialization (Backend)
 // Must be imported BEFORE Express app creation.
+// Express error handler is in error-handler.ts (NOT here).
 // ═══════════════════════════════════════════════════════════════
 
 import * as Sentry from '@sentry/node';
@@ -13,7 +14,8 @@ export function initSentry(): void {
     dsn: process.env['SENTRY_DSN'],
     environment: process.env['NODE_ENV'] ?? 'production',
     release: `datun-api@${API_VERSION}`,
-    tracesSampleRate: 0.1,
+    tracesSampleRate: process.env['NODE_ENV'] === 'production' ? 0.1 : 1.0,
+
     beforeSend(event, hint) {
       const msg = (hint?.originalException as Error)?.message ?? event.message ?? '';
       if (

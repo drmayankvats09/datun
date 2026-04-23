@@ -1,7 +1,17 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "DATABASE_URL", "LOGTAIL_SOURCE_TOKEN", "LOG_LEVEL", "SENTRY_DSN"],
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL",
+    "LOGTAIL_SOURCE_TOKEN",
+    "LOG_LEVEL",
+    "SENTRY_DSN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT",
+    "SENTRY_AUTH_TOKEN",
+    "NEXT_RUNTIME"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "^db:generate"],

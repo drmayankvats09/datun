@@ -43,13 +43,24 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // ── 3. Create Express app ──
+  // ── 3. Register Prisma audit middleware (DPDP compliance) ──
+  try {
+    const { registerAuditMiddleware } = await import('./lib/prisma-audit.js');
+    registerAuditMiddleware(prisma);
+    logger.info('✅ Prisma audit middleware registered');
+  } catch (err) {
+    logger.warn('⚠️ Prisma audit middleware failed to register', {
+      error: (err as Error).message,
+    });
+  }
+
+  // ── 4. Create Express app ──
   const app = createApp();
 
-  // ── 4. Start cron jobs ──
+  // ── 5. Start cron jobs ──
   startCronJobs();
 
-  // ── 5. Listen ──
+  // ── 6. Listen ──
   server = app.listen(env.PORT, () => {
     logger.info(`${BRAND.name} API started on port ${env.PORT}`, {
       version: API_VERSION,

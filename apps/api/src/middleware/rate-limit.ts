@@ -1,12 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-// RATE LIMITERS — Tiered by endpoint sensitivity
-// AI chat = expensive (Claude API costs). Auth = abuse target.
-// General API = generous for normal usage.
+// RATE LIMITERS — Security events logged when limits hit
 // ═══════════════════════════════════════════════════════════════
 
 import rateLimit from 'express-rate-limit';
+import type { Request } from 'express';
+import { logSecurityEvent } from '../lib/security-logger.js';
 
-/** General API — 500 requests / 15 min per IP */
+function onRateLimitHit(req: Request, limitName: string): void {
+  logSecurityEvent({
+    event: 'rate_limit.hit',
+    ip: (req.headers['x-real-ip'] as string) ?? req.ip ?? 'unknown',
+    userAgent: req.headers['user-agent'],
+    details: { limiter: limitName, path: req.path, method: req.method },
+  });
+}
+
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -16,9 +24,17 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    onRateLimitHit(req, 'general');
+    res
+      .status(429)
+      .json({
+        success: false,
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests. Try again later.' },
+      });
+  },
 });
 
-/** AI Chat — 20 messages / min per IP (Claude costs money) */
 export const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 20,
@@ -28,9 +44,17 @@ export const chatLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    onRateLimitHit(req, 'chat');
+    res
+      .status(429)
+      .json({
+        success: false,
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Slow down! Max 20 messages per minute.' },
+      });
+  },
 });
 
-/** Auth — 10 attempts / 5 min per IP (prevent brute force) */
 export const authLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 10,
@@ -43,4 +67,21 @@ export const authLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    logSecurityEvent({
+      event: 'suspicious.brute_force',
+      ip: (req.headers['x-real-ip'] as string) ?? req.ip ?? 'unknown',
+      userAgent: req.headers['user-agent'],
+      details: { limiter: 'auth', path: req.path, method: req.method },
+    });
+    res
+      .status(429)
+      .json({
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many auth attempts. Try again in 5 minutes.',
+        },
+      });
+  },
 });

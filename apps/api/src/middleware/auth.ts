@@ -11,6 +11,7 @@ import { logger } from '../lib/logger.js';
 import { AuthenticationError, ForbiddenError, NotFoundError } from '../errors/index.js';
 import { JwtService } from '../services/auth/jwt.service.js';
 import { blacklist } from '../lib/redis.js';
+import { logSecurityEvent } from '../lib/security-logger.js';
 
 /**
  * Verify JWT + check blacklist. Lightweight — no DB call.
@@ -26,6 +27,12 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     logger.warn('Token verification failed', {
       requestId: req.requestId,
       error: (err as Error).message,
+    });
+    logSecurityEvent({
+      event: 'suspicious.invalid_token',
+      ip: (req.headers['x-real-ip'] as string) ?? req.ip ?? 'unknown',
+      userAgent: req.headers['user-agent'],
+      details: { reason: (err as Error).message },
     });
     throw new AuthenticationError('Invalid or expired token');
   }
@@ -53,6 +60,12 @@ export async function requireUser(req: Request, _res: Response, next: NextFuncti
     logger.warn('Token verification failed', {
       requestId: req.requestId,
       error: (err as Error).message,
+    });
+    logSecurityEvent({
+      event: 'suspicious.invalid_token',
+      ip: (req.headers['x-real-ip'] as string) ?? req.ip ?? 'unknown',
+      userAgent: req.headers['user-agent'],
+      details: { reason: (err as Error).message },
     });
     throw new AuthenticationError('Invalid or expired token');
   }

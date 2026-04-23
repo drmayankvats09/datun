@@ -16,3 +16,4 @@ export { useOrientation } from './use-orientation';
 export { useReducedMotion } from './use-reduced-motion';
 export { useNetworkQuality } from './use-network-quality';
 export { useKeyboardVisible } from './use-keyboard-visible';
+export { useWebVitals } from './use-web-vitals';

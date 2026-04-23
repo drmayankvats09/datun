@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -13,27 +14,15 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // ── Security Headers ──
-  // Cloudflare adds some headers at edge, but these are origin-level
-  // headers that Cloudflare passes through. Defense in depth.
   async headers() {
     return [
       {
         source: '/(.*)',
         headers: [
-          // Prevent MIME sniffing attacks
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-
-          // Clickjacking protection — only allow embedding from own domain
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-
-          // XSS protection (legacy browsers)
           { key: 'X-XSS-Protection', value: '1; mode=block' },
-
-          // Control referrer information sent with requests
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-
-          // Permissions Policy — disable unused browser APIs
           {
             key: 'Permissions-Policy',
             value: [
@@ -48,8 +37,6 @@ const nextConfig: NextConfig = {
               'accelerometer=()',
             ].join(', '),
           },
-
-          // Content Security Policy — strict but functional
           {
             key: 'Content-Security-Policy',
             value: [
@@ -58,7 +45,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudflare.com",
               "font-src 'self' https://fonts.gstatic.com",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://dentscan-ai-backend-production.up.railway.app'} https://static.cloudflareinsights.com https://cloudflareinsights.com https://va.vercel-scripts.com https://*.sentry.io`,
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://dentscan-ai-backend-production.up.railway.app'} https://static.cloudflareinsights.com https://cloudflareinsights.com https://va.vercel-scripts.com https://*.sentry.io https://*.ingest.sentry.io`,
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "worker-src 'self' blob:",
@@ -69,7 +56,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Static assets — immutable cache (content-hashed by Next.js)
         source: '/_next/static/(.*)',
         headers: [
           {
@@ -79,7 +65,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Favicon + static public assets — 1 week cache
         source: '/(.*)\\.(ico|png|jpg|jpeg|svg|webp|gif|woff|woff2)',
         headers: [
           {
@@ -92,4 +77,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env['SENTRY_ORG'],
+  project: process.env['SENTRY_PROJECT'],
+  silent: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+  authToken: process.env['SENTRY_AUTH_TOKEN'],
+});
