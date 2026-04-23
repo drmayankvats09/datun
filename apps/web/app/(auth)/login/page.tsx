@@ -17,11 +17,13 @@ import {
 } from '@/lib/auth';
 import { Mail, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores';
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +42,7 @@ export default function LoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
+        if (result.data?.user) setUser(result.data.user);
         toast.success('Welcome back!');
         router.push('/');
       } else {
@@ -93,6 +96,7 @@ export default function LoginPage() {
     try {
       const result = await verifyOtp(cleanPhone, 'phone', otp);
       if (result.success) {
+        if (result.data?.user) setUser(result.data.user);
         toast.success(result.data?.isNewUser ? 'Account created!' : 'Welcome back!');
         router.push('/');
       } else {
@@ -112,6 +116,7 @@ export default function LoginPage() {
       const redirectUri = getGoogleRedirectUri();
       const result = await loginWithGoogleCode(code, redirectUri);
       if (result.success) {
+        if (result.data?.user) setUser(result.data.user);
         toast.success(result.data?.isNewUser ? 'Account created!' : 'Welcome back!');
         router.push('/');
       } else {

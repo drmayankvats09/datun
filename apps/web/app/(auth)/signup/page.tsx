@@ -14,11 +14,13 @@ import {
 } from '@/lib/auth';
 import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores';
 
 export default function SignupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -49,6 +51,7 @@ export default function SignupPage() {
         : undefined;
       const result = await signup(email, password, name, cleanPhone);
       if (result.success) {
+        if (result.data?.user) setUser(result.data.user);
         toast.success('Account created! Welcome to Datun AI');
         router.push('/');
       } else {
@@ -68,6 +71,7 @@ export default function SignupPage() {
       const redirectUri = getGoogleRedirectUri();
       const result = await loginWithGoogleCode(code, redirectUri);
       if (result.success) {
+        if (result.data?.user) setUser(result.data.user);
         toast.success('Account created! Welcome to Datun AI');
         router.push('/');
       } else {

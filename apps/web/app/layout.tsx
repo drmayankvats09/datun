@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { BRAND } from '@repo/shared';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { AppProvider } from '@/components/providers/app-provider';
 import './globals.css';
 
 const inter = Inter({
@@ -52,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <AppProvider>{children}</AppProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
