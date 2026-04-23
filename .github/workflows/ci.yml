@@ -14,7 +14,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
 
 # Cancel in-progress runs for same branch/PR (saves GitHub minutes)
 concurrency:
@@ -33,7 +33,7 @@ jobs:
   # JOB 1: QUALITY — lint + typecheck + build
   # ─────────────────────────────────────────────────────────
   quality:
-    name: Lint → Typecheck → Build
+    name: Lint → Typecheck → Build → Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -80,6 +80,22 @@ jobs:
         env:
           NEXT_PUBLIC_APP_URL: 'https://datunai.com'
           NEXT_PUBLIC_API_URL: 'https://dentscan-ai-backend-production.up.railway.app'
+
+          # ── Tests (unit + integration — merge blocked if any fail) ──
+      - name: Test with Coverage
+        run: pnpm turbo run test:coverage
+        env:
+          NODE_ENV: 'test'
+          JWT_SECRET: 'ci-jwt-secret-minimum-32-characters-long-for-testing'
+          ANTHROPIC_API_KEY: 'sk-ant-ci-test-key'
+
+      # ── Coverage report comment on PR ──
+      - name: Coverage Report
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          vite-config-path: ./apps/api/vitest.config.ts
+          json-summary-path: ./apps/api/coverage/coverage-summary.json
 
       # ── Dependency audit (block high/critical vulnerabilities) ──
       - name: Security Audit

@@ -13,7 +13,10 @@
     "db:migrate:dev": "turbo run db:migrate:dev --filter=@repo/db",
     "db:migrate:deploy": "turbo run db:migrate:deploy --filter=@repo/db",
     "db:studio": "turbo run db:studio --filter=@repo/db",
-    "db:seed": "turbo run db:seed --filter=@repo/db"
+    "db:seed": "turbo run db:seed --filter=@repo/db",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,md,css,mjs,yaml}": [
@@ -21,12 +24,15 @@
     ]
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.5",
+    "fast-check": "^4.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.9.6",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.5"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
