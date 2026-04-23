@@ -6,12 +6,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { getTestApp } from '../helpers/test-app.js';
-import { JwtService } from '../../services/auth/jwt.service.js';
 
 describe('Security — Auth Bypass Prevention', () => {
   it('rejects request without Bearer token — no data leakage', async () => {
     const res = await getTestApp().post('/api/chat');
-    // Must NOT return 200 — either 401 (auth blocked) or 400 (validation) or 404
     expect(res.status).toBeGreaterThanOrEqual(400);
     expect(res.status).not.toBe(200);
   });
@@ -43,12 +41,12 @@ describe('Security — Auth Bypass Prevention', () => {
 
   it('no protected endpoint returns 200 without valid token', async () => {
     const endpoints = [
-      { method: 'post', path: '/api/chat' },
-      { method: 'get', path: '/api/users/profile' },
-      { method: 'post', path: '/api/consultations/start' },
+      { method: 'post' as const, path: '/api/chat' },
+      { method: 'get' as const, path: '/api/users/profile' },
+      { method: 'post' as const, path: '/api/consultations/start' },
     ];
     for (const ep of endpoints) {
-      const res = await (getTestApp() as any)[ep.method](ep.path);
+      const res = await getTestApp()[ep.method](ep.path);
       expect(res.status).not.toBe(200);
       expect(res.status).not.toBe(201);
     }
@@ -61,7 +59,6 @@ describe('Security — Injection Prevention', () => {
       email: "admin'--",
       password: 'anything',
     });
-    // Zod validates email format → rejects before SQL ever runs
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
@@ -83,9 +80,6 @@ describe('Security — XSS Prevention', () => {
       password: 'StrongPass1',
       name: '<script>alert("xss")</script>',
     });
-    // Even if it passes validation, the response should not execute scripts
-    // Helmet sets X-Content-Type-Options: nosniff
-    // React auto-escapes output. This test verifies Helmet headers.
     if (res.status === 200 || res.status === 201) {
       expect(res.headers['x-content-type-options']).toBe('nosniff');
     }
@@ -101,7 +95,7 @@ describe('Security — XSS Prevention', () => {
 
 describe('Security — Request Size Limits', () => {
   it('rejects oversized JSON body', async () => {
-    const hugePayload = { data: 'x'.repeat(25 * 1024 * 1024) }; // 25MB > 20MB limit
+    const hugePayload = { data: 'x'.repeat(25 * 1024 * 1024) };
     const res = await getTestApp().post('/api/auth/login').send(hugePayload);
     expect(res.status).toBeGreaterThanOrEqual(400);
   });

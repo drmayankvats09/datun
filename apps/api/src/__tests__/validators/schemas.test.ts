@@ -3,7 +3,6 @@ import * as fc from 'fast-check';
 import {
   signupEmailSchema,
   loginEmailSchema,
-  sendOtpSchema,
   verifyOtpSchema,
   chatMessageSchema,
   profileUpdateSchema,
