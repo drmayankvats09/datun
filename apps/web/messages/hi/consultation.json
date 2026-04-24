@@ -1,0 +1,62 @@
+{
+  "chat": {
+    "title": "परामर्श",
+    "startNew": "नया परामर्श शुरू करें",
+    "welcomeMessage": "नमस्ते! मैं आपका AI दंत सहायक हूं। आज मैं आपकी कैसे मदद कर सकता हूं?",
+    "inputPlaceholder": "अपनी दंत समस्या बताएं...",
+    "send": "भेजें",
+    "thinking": "सोच रहा हूं...",
+    "statusActive": "जारी है",
+    "statusComplete": "पूर्ण",
+    "statusIdle": "तैयार",
+    "deepLinkWorking": "डीप लिंकिंग काम कर रहा है — इस URL को बुकमार्क करें, शेयर करें, रीलोड करें — आप हमेशा यहीं आएंगे।"
+  },
+  "intake": {
+    "nameQuestion": "आपका नाम क्या है?",
+    "ageQuestion": "आपकी उम्र कितनी है?",
+    "genderQuestion": "आपका लिंग क्या है?",
+    "allergyQuestion": "क्या आपको कोई एलर्जी है?",
+    "complaintQuestion": "आपको कौन सी दांत की समस्या हो रही है?",
+    "male": "पुरुष",
+    "female": "महिला",
+    "other": "अन्य",
+    "noAllergies": "कोई एलर्जी नहीं",
+    "yes": "हां",
+    "no": "नहीं"
+  },
+  "assessment": {
+    "condition": "🩺 संभावित बीमारी",
+    "urgency": "⚡ आवश्यकता",
+    "dos": "✅ क्या करें",
+    "donts": "❌ क्या न करें",
+    "remedies": "🏠 घरेलू नुस्खे",
+    "medicine": "💊 दवाई",
+    "xray": "🔬 एक्स-रे / जांच",
+    "treatment": "📍 उपचार योजना",
+    "photo": "📷 फ़ोटो विश्लेषण"
+  },
+  "chips": {
+    "toothPain": "दांत में दर्द",
+    "gumBleeding": "मसूड़ों से खून",
+    "sensitivity": "ठंडा-गरम लगना",
+    "brokenTooth": "दांत टूटा",
+    "badBreath": "मुंह से बदबू",
+    "swelling": "सूजन",
+    "cavities": "कैविटी",
+    "wisdomTooth": "अक्ल दाढ़",
+    "uploadPhoto": "फ़ोटो भेजें",
+    "moreOptions": "और विकल्प"
+  },
+  "history": {
+    "title": "परामर्श इतिहास",
+    "noHistory": "अभी तक कोई परामर्श नहीं",
+    "noHistoryDesc": "अपना पहला AI दंत परामर्श शुरू करें",
+    "startFirst": "अपना पहला परामर्श शुरू करें →",
+    "viewReport": "रिपोर्ट देखें",
+    "downloadPdf": "PDF डाउनलोड करें"
+  },
+  "language": {
+    "chatLanguageLabel": "चैट भाषा",
+    "chatLanguageDesc": "AI आपकी चुनी हुई भाषा में जवाब देगा"
+  }
+}

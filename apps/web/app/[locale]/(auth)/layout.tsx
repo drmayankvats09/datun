@@ -1,7 +1,10 @@
 import { BRAND } from '@repo/shared';
 import { FormLayout } from '@/components/layout';
+import { useTranslations } from 'next-intl';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('common');
+
   return (
     <main className="bg-background flex min-h-screen flex-col items-center justify-center px-4 py-6 sm:py-8">
       <FormLayout maxWidth="md">
@@ -10,11 +13,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <span className="text-foreground">{BRAND.name.replace(' AI', '')}</span>
             <span className="text-primary"> AI</span>
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">{BRAND.tagline}</p>
+          <p className="text-muted-foreground mt-2 text-sm">{t('brand.tagline')}</p>
         </div>
         {children}
         <p className="text-muted-foreground/50 mt-6 text-center text-xs sm:mt-8">
-          {BRAND.copyright()}
+          {t('footer.copyright', { year: new Date().getFullYear() })}
         </p>
       </FormLayout>
     </main>

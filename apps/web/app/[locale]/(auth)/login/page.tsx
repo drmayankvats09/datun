@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores';
 
 export default function LoginPage() {
+  const t = useTranslations('auth.login');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -37,19 +39,18 @@ export default function LoginPage() {
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) return;
-
     setLoading(true);
     try {
       const result = await login(email, password);
       if (result.success) {
         if (result.data?.user) setUser(result.data.user);
-        toast.success('Welcome back!');
+        toast.success(t('welcomeBack'));
         router.push('/');
       } else {
-        toast.error(result.error?.message || 'Login failed');
+        toast.error(result.error?.message || t('loginFailed'));
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -58,17 +59,15 @@ export default function LoginPage() {
   async function handleSendOtp() {
     const cleanPhone = phone.startsWith('+91') ? phone : `+91${phone.replace(/\D/g, '')}`;
     if (cleanPhone.length < 13) {
-      toast.error('Please enter a valid 10-digit phone number');
+      toast.error(t('invalidPhone'));
       return;
     }
-
     setLoading(true);
     try {
       const result = await sendOtp(cleanPhone, 'phone');
       if (result.success && result.data) {
         setOtpSent(true);
         toast.success(`OTP sent to ${result.data.maskedDestination}`);
-
         let seconds = result.data.retryAfterSeconds || 60;
         setOtpCooldown(seconds);
         const interval = setInterval(() => {
@@ -77,10 +76,10 @@ export default function LoginPage() {
           if (seconds <= 0) clearInterval(interval);
         }, 1000);
       } else {
-        toast.error(result.error?.message || 'Failed to send OTP');
+        toast.error(result.error?.message || t('genericError'));
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -89,21 +88,19 @@ export default function LoginPage() {
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     if (otp.length !== 6) return;
-
     const cleanPhone = phone.startsWith('+91') ? phone : `+91${phone.replace(/\D/g, '')}`;
-
     setLoading(true);
     try {
       const result = await verifyOtp(cleanPhone, 'phone', otp);
       if (result.success) {
         if (result.data?.user) setUser(result.data.user);
-        toast.success(result.data?.isNewUser ? 'Account created!' : 'Welcome back!');
+        toast.success(result.data?.isNewUser ? t('accountCreated') : t('welcomeBack'));
         router.push('/');
       } else {
-        toast.error(result.error?.message || 'Invalid OTP');
+        toast.error(result.error?.message || t('invalidOtp'));
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('genericError'));
     } finally {
       setLoading(false);
     }
@@ -117,16 +114,14 @@ export default function LoginPage() {
       const result = await loginWithGoogleCode(code, redirectUri);
       if (result.success) {
         if (result.data?.user) setUser(result.data.user);
-        toast.success(result.data?.isNewUser ? 'Account created!' : 'Welcome back!');
+        toast.success(result.data?.isNewUser ? t('accountCreated') : t('welcomeBack'));
         router.push('/');
       } else {
-        toast.error(result.error?.message || 'Google login failed');
+        toast.error(result.error?.message || t('loginFailed'));
       }
     } catch (err) {
       const message = (err as Error).message;
-      if (message !== 'Popup closed') {
-        toast.error(message || 'Google login failed');
-      }
+      if (message !== 'Popup closed') toast.error(message || t('loginFailed'));
     } finally {
       setGoogleLoading(false);
     }
@@ -162,7 +157,7 @@ export default function LoginPage() {
             />
           </svg>
         )}
-        Continue with Google
+        {t('googleButton')}
       </Button>
 
       <div className="relative">
@@ -170,7 +165,7 @@ export default function LoginPage() {
           <span className="border-border w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">or</span>
+          <span className="bg-background text-muted-foreground px-2">{t('orDivider')}</span>
         </div>
       </div>
 
@@ -178,44 +173,43 @@ export default function LoginPage() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="email" className="gap-2">
             <Mail className="h-4 w-4" />
-            Email
+            {t('emailTab')}
           </TabsTrigger>
           <TabsTrigger value="phone" className="gap-2">
             <Phone className="h-4 w-4" />
-            Phone
+            {t('phoneTab')}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="email">
           <form onSubmit={handleEmailLogin} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('emailLabel')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
               />
             </div>
-
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Link
                   href="/forgot-password"
                   className="text-primary text-xs font-medium hover:underline"
                 >
-                  Forgot password?
+                  {t('forgotPassword')}
                 </Link>
               </div>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  placeholder={t('passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -232,10 +226,9 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-
             <Button type="submit" className="w-full py-5" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Sign In
+              {t('signInButton')}
             </Button>
           </form>
         </TabsContent>
@@ -245,7 +238,7 @@ export default function LoginPage() {
             {!otpSent ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('phoneLabel')}</Label>
                   <div className="flex gap-2">
                     <div className="bg-muted text-muted-foreground flex items-center rounded-md px-3 text-sm font-medium">
                       +91
@@ -253,7 +246,7 @@ export default function LoginPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="99531 35340"
+                      placeholder={t('phonePlaceholder')}
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                       maxLength={10}
@@ -267,21 +260,21 @@ export default function LoginPage() {
                   disabled={loading || phone.replace(/\D/g, '').length < 10}
                 >
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Send OTP
+                  {t('sendOtp')}
                 </Button>
               </>
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <p className="text-muted-foreground text-center text-sm">
-                  Enter the 6-digit code sent to +91 {phone}
+                  {t('otpSent', { phone })}
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="otp">Verification Code</Label>
+                  <Label htmlFor="otp">{t('otpLabel')}</Label>
                   <Input
                     id="otp"
                     type="text"
                     inputMode="numeric"
-                    placeholder="000000"
+                    placeholder={t('otpPlaceholder')}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
@@ -295,7 +288,7 @@ export default function LoginPage() {
                   disabled={loading || otp.length !== 6}
                 >
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Verify & Sign In
+                  {t('verifyButton')}
                 </Button>
                 <div className="text-center">
                   <button
@@ -304,7 +297,7 @@ export default function LoginPage() {
                     onClick={handleSendOtp}
                     disabled={otpCooldown > 0 || loading}
                   >
-                    {otpCooldown > 0 ? `Resend in ${otpCooldown}s` : 'Resend OTP'}
+                    {otpCooldown > 0 ? t('resendIn', { seconds: otpCooldown }) : t('resendOtp')}
                   </button>
                 </div>
               </form>
@@ -314,9 +307,9 @@ export default function LoginPage() {
       </Tabs>
 
       <p className="text-muted-foreground text-center text-sm">
-        Don&apos;t have an account?{' '}
+        {t('noAccount')}{' '}
         <Link href="/signup" className="text-primary font-medium hover:underline">
-          Sign up
+          {t('signUpLink')}
         </Link>
       </p>
     </div>

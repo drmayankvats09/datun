@@ -1,14 +1,9 @@
-// ═══════════════════════════════════════════════════════════════
-// ERROR — Page-level error boundary (common, user-recoverable)
-// Runs INSIDE layout so Tailwind, theme, nav all work.
-// Reports to Sentry automatically.
-// ═══════════════════════════════════════════════════════════════
-
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 
 export default function Error({
   error,
@@ -17,12 +12,11 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('errors');
+
   useEffect(() => {
     Sentry.captureException(error, {
-      tags: {
-        errorBoundary: 'page',
-        digest: error.digest ?? 'none',
-      },
+      tags: { errorBoundary: 'page', digest: error.digest ?? 'none' },
     });
   }, [error]);
 
@@ -32,31 +26,28 @@ export default function Error({
         😔
       </div>
       <h2 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
-        Something went wrong
+        {t('page.errorTitle')}
       </h2>
       <p className="text-muted-foreground mt-2 max-w-md text-sm leading-relaxed sm:text-base">
-        An unexpected error occurred. Our team has been automatically notified.
+        {t('page.errorDescription')}
       </p>
-
       {process.env.NODE_ENV === 'development' && (
         <pre className="bg-muted text-destructive mt-4 max-w-lg overflow-auto rounded-lg p-4 text-left text-xs">
           {error.message}
-          {error.digest && `\nDigest: ${error.digest}`}
         </pre>
       )}
-
       <div className="mt-6 flex gap-3">
         <button
           onClick={reset}
           className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
         >
-          Try again
+          {t('page.tryAgain')}
         </button>
         <Link
           href="/"
           className="border-border text-foreground hover:bg-muted rounded-lg border px-5 py-2.5 text-sm font-medium transition-colors"
         >
-          Go home
+          {t('page.goHome')}
         </Link>
       </div>
     </div>

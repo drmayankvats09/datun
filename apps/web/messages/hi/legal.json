@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "privacy": "गोपनीयता नीति",
+    "terms": "सेवा की शर्तें",
+    "cookies": "कुकी नीति",
+    "dpdp": "DPDP सूचना"
+  },
+  "common": {
+    "lastUpdated": "अंतिम अपडेट",
+    "effectiveDate": "प्रभावी तिथि",
+    "printButton": "यह पेज प्रिंट करें",
+    "backToHome": "← होम पर वापस जाएं"
+  }
+}

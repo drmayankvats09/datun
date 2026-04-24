@@ -1,0 +1,14 @@
+{
+  "nav": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookie Policy",
+    "dpdp": "DPDP Notice"
+  },
+  "common": {
+    "lastUpdated": "Last Updated",
+    "effectiveDate": "Effective Date",
+    "printButton": "Print this page",
+    "backToHome": "← Back to Home"
+  }
+}

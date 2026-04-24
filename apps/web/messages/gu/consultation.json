@@ -1,0 +1,62 @@
+{
+  "chat": {
+    "title": "Consultation",
+    "startNew": "Start New Consultation",
+    "welcomeMessage": "Hello! I'm your AI dental assistant. How can I help you today?",
+    "inputPlaceholder": "Describe your dental concern...",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "statusActive": "In Progress",
+    "statusComplete": "Completed",
+    "statusIdle": "Ready",
+    "deepLinkWorking": "Deep linking works — bookmark this URL, share it, reload it — you always land here."
+  },
+  "intake": {
+    "nameQuestion": "What is your name?",
+    "ageQuestion": "How old are you?",
+    "genderQuestion": "What is your gender?",
+    "allergyQuestion": "Do you have any allergies?",
+    "complaintQuestion": "What dental problem are you facing?",
+    "male": "Male",
+    "female": "Female",
+    "other": "Other",
+    "noAllergies": "No allergies",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "assessment": {
+    "condition": "🩺 Likely Condition",
+    "urgency": "⚡ Urgency",
+    "dos": "✅ Do's",
+    "donts": "❌ Don'ts",
+    "remedies": "🏠 Home Remedies",
+    "medicine": "💊 Medicine",
+    "xray": "🔬 X-Ray / Investigation",
+    "treatment": "📍 Treatment Plan",
+    "photo": "📷 Photo Analysis"
+  },
+  "chips": {
+    "toothPain": "Tooth Pain",
+    "gumBleeding": "Gum Bleeding",
+    "sensitivity": "Sensitivity",
+    "brokenTooth": "Broken Tooth",
+    "badBreath": "Bad Breath",
+    "swelling": "Swelling",
+    "cavities": "Cavities",
+    "wisdomTooth": "Wisdom Tooth",
+    "uploadPhoto": "Upload Photo",
+    "moreOptions": "More Options"
+  },
+  "history": {
+    "title": "Consultation History",
+    "noHistory": "No consultations yet",
+    "noHistoryDesc": "Start your first AI dental consultation",
+    "startFirst": "Start your first consultation →",
+    "viewReport": "View Report",
+    "downloadPdf": "Download PDF"
+  },
+  "language": {
+    "chatLanguageLabel": "Chat Language",
+    "chatLanguageDesc": "AI will respond in your selected language"
+  }
+}

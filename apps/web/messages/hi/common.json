@@ -1,0 +1,68 @@
+{
+  "brand": {
+    "name": "दातुन",
+    "tagline": "हर किसी को डॉक्टर का हक़ है।",
+    "description": "भारत के लिए AI-संचालित दंत चिकित्सा"
+  },
+  "nav": {
+    "home": "होम",
+    "consult": "परामर्श",
+    "history": "इतिहास",
+    "profile": "प्रोफ़ाइल",
+    "settings": "सेटिंग्स",
+    "newConsultation": "नया परामर्श",
+    "backToHome": "← होम पर वापस जाएं"
+  },
+  "actions": {
+    "continue": "जारी रखें",
+    "cancel": "रद्द करें",
+    "save": "सेव करें",
+    "delete": "हटाएं",
+    "retry": "दोबारा कोशिश करें",
+    "goHome": "होम पर जाएं",
+    "learnMore": "और जानें",
+    "getStarted": "शुरू करें",
+    "close": "बंद करें"
+  },
+  "status": {
+    "loading": "लोड हो रहा है...",
+    "saving": "सेव हो रहा है...",
+    "offline": "आप ऑफ़लाइन हैं — कनेक्शन आने पर बदलाव सिंक होंगे",
+    "error": "कुछ गड़बड़ हो गई",
+    "success": "सफल",
+    "notFound": "पेज नहीं मिला",
+    "notFoundDesc": "आप जो पेज ढूंढ रहे हैं वह मौजूद नहीं है या हटा दिया गया है।"
+  },
+  "footer": {
+    "copyright": "© {year} दातुन हेल्थ प्राइवेट लिमिटेड",
+    "legal": "कानूनी",
+    "contact": "संपर्क",
+    "company": "कंपनी"
+  },
+  "language": {
+    "switchLabel": "भाषा",
+    "currentLanguage": "हिन्दी"
+  },
+  "homepage": {
+    "title": "दातुन",
+    "subtitle": "भारत के लिए AI-संचालित दंत चिकित्सा",
+    "devNotice": "संस्करण 2 सक्रिय विकास में है।",
+    "visitCurrent": "वर्तमान प्लेटफॉर्म के लिए, {link} पर जाएं"
+  },
+  "meta": {
+    "homeTitle": "दातुन — भारत के लिए AI दंत चिकित्सा",
+    "homeDescription": "60 करोड़+ भारतीयों के लिए मुफ्त AI दंत मार्गदर्शन। अपनी भाषा में तुरंत दंत सलाह पाएं।",
+    "loginTitle": "साइन इन",
+    "signupTitle": "अकाउंट बनाएं",
+    "privacyTitle": "गोपनीयता नीति",
+    "termsTitle": "सेवा की शर्तें",
+    "cookiesTitle": "कुकी नीति",
+    "dpdpTitle": "DPDP सूचना"
+  },
+  "time": {
+    "justNow": "अभी",
+    "minutesAgo": "{count, plural, one {# मिनट पहले} other {# मिनट पहले}}",
+    "hoursAgo": "{count, plural, one {# घंटा पहले} other {# घंटे पहले}}",
+    "daysAgo": "{count, plural, one {# दिन पहले} other {# दिन पहले}}"
+  }
+}

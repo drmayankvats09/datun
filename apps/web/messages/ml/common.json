@@ -1,0 +1,68 @@
+{
+  "brand": {
+    "name": "Datun",
+    "tagline": "Everyone Deserves a Doctor.",
+    "description": "AI-powered dental care for India"
+  },
+  "nav": {
+    "home": "Home",
+    "consult": "Consult",
+    "history": "History",
+    "profile": "Profile",
+    "settings": "Settings",
+    "newConsultation": "New Consultation",
+    "backToHome": "← Back to Home"
+  },
+  "actions": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "retry": "Try again",
+    "goHome": "Return home",
+    "learnMore": "Learn more",
+    "getStarted": "Get started",
+    "close": "Close"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "offline": "You're offline — changes will sync when you reconnect",
+    "error": "Something went wrong",
+    "success": "Success",
+    "notFound": "Page not found",
+    "notFoundDesc": "The page you are looking for does not exist or has been moved."
+  },
+  "footer": {
+    "copyright": "© {year} Datun Health Private Limited",
+    "legal": "Legal",
+    "contact": "Contact",
+    "company": "Company"
+  },
+  "language": {
+    "switchLabel": "Language",
+    "currentLanguage": "English"
+  },
+  "homepage": {
+    "title": "Datun",
+    "subtitle": "AI-powered dental care for India",
+    "devNotice": "Version 2 is under active development.",
+    "visitCurrent": "For the current platform, visit {link}"
+  },
+  "meta": {
+    "homeTitle": "Datun — AI Dental Care for India",
+    "homeDescription": "Free AI-powered dental guidance for 600M+ underserved Indians. Get instant dental advice in your language.",
+    "loginTitle": "Sign In",
+    "signupTitle": "Create Account",
+    "privacyTitle": "Privacy Policy",
+    "termsTitle": "Terms of Service",
+    "cookiesTitle": "Cookie Policy",
+    "dpdpTitle": "DPDP Notice"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
+    "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+    "daysAgo": "{count, plural, one {# day ago} other {# days ago}}"
+  }
+}
