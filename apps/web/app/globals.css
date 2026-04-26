@@ -311,24 +311,50 @@ body {
   transition: width 300ms ease;
 }
 
-/* ── Text Expansion Handling — Hindi 20-40% longer than English ── */
-button,
-a,
-[role='button'] {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+/* ── Text Expansion Handling — Scoped per-language ──
+ * English buttons: keep words atomic ("Login" never splits).
+ * Hindi/regional buttons: allow word-boundary wrap (graceful overflow).
+ * Pattern: Stripe Checkout, Airbnb i18n CSS — language-scoped wrapping.
+ */
+
+/* Long-form prose wraps everywhere — natural break behavior */
+p,
+.prose {
+  overflow-wrap: break-word;
+}
+
+/* Labels need to fit on small screens regardless of language */
+label {
+  overflow-wrap: break-word;
+}
+
+/* Hindi + 8 Indian regional scripts: allow graceful word wrap inside
+   interactive elements when text is longer than container */
+:is(
+    :lang(hi),
+    :lang(ta),
+    :lang(te),
+    :lang(bn),
+    :lang(mr),
+    :lang(gu),
+    :lang(kn),
+    :lang(ml),
+    :lang(pa)
+  )
+  :is(button, [role='button'], [role='tab']) {
+  overflow-wrap: break-word;
+  word-break: normal;
   hyphens: auto;
 }
 
-/* Ensure labels never clip on smaller screens */
-label,
-.label {
-  overflow-wrap: anywhere;
-}
-
-/* Tab triggers should handle longer text */
+/* Tab triggers: truncate with ellipsis when extreme overflow (all langs) */
 [role='tab'] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Anchor links: never break mid-URL or mid-word */
+a {
+  overflow-wrap: break-word;
 }

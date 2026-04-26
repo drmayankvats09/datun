@@ -32,10 +32,11 @@ describe('Health Routes (Integration)', () => {
     expect(res.body.checks.database.status).toBe('ok');
   });
 
-  it('GET /health auth check generates + verifies JWT', async () => {
+  it('GET /health auth check verifies JWT subsystem readiness', async () => {
     const res = await getTestApp().get('/health');
     expect(res.body.checks.auth.status).toBe('ok');
     expect(res.body.checks.auth.latencyMs).toBeDefined();
+    expect(typeof res.body.checks.auth.latencyMs).toBe('number');
   });
 
   it('GET /health returns proper content-type', async () => {

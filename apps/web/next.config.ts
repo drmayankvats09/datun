@@ -56,15 +56,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+
       {
         source: '/(.*)\\.(ico|png|jpg|jpeg|svg|webp|gif|woff|woff2)',
         headers: [
@@ -80,12 +72,19 @@ const nextConfig: NextConfig = {
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
-export default withSentryConfig(withNextIntl(nextConfig), {
-  org: process.env['SENTRY_ORG'],
-  project: process.env['SENTRY_PROJECT'],
-  silent: true,
-  sourcemaps: {
-    deleteSourcemapsAfterUpload: true,
-  },
-  authToken: process.env['SENTRY_AUTH_TOKEN'],
-});
+const wrappedConfig = withNextIntl(nextConfig);
+
+// Sentry wraps config only in production builds.
+// In dev mode, withSentryConfig + Turbopack causes panics + full-reload loops.
+// Pattern: Vercel docs, Sentry Next.js 16 known limitation.
+export default process.env.NODE_ENV === 'production'
+  ? withSentryConfig(wrappedConfig, {
+      org: process.env['SENTRY_ORG'],
+      project: process.env['SENTRY_PROJECT'],
+      silent: true,
+      sourcemaps: {
+        deleteSourcemapsAfterUpload: true,
+      },
+      authToken: process.env['SENTRY_AUTH_TOKEN'],
+    })
+  : wrappedConfig;

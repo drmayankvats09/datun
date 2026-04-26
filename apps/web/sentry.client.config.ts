@@ -10,45 +10,53 @@
 
 import * as Sentry from '@sentry/nextjs';
 
-Sentry.init({
-  dsn: process.env['NEXT_PUBLIC_SENTRY_DSN'] || '',
+// Skip Sentry init in dev mode — matches server-side gate, prevents
+// Session Replay + Tracing overhead from interfering with Turbopack HMR.
+// Pattern: sentry.server.config.ts already does this via `enabled` flag.
+if (process.env.NODE_ENV !== 'production') {
+  // Stub init — no DSN, no replay, no tracing
+  Sentry.init({ dsn: '', enabled: false });
+} else {
+  Sentry.init({
+    dsn: process.env['NEXT_PUBLIC_SENTRY_DSN'] || '',
 
-  environment: process.env['NODE_ENV'] ?? 'production',
+    environment: process.env['NODE_ENV'] ?? 'production',
 
-  // Performance: sample 10% of transactions in production
-  tracesSampleRate: process.env['NODE_ENV'] === 'production' ? 0.1 : 1.0,
+    // Performance: sample 10% of transactions in production
+    tracesSampleRate: process.env['NODE_ENV'] === 'production' ? 0.1 : 1.0,
 
-  // Session Replay: 5% normal sessions, 100% error sessions
-  replaysSessionSampleRate: 0.05,
-  replaysOnErrorSampleRate: 1.0,
+    // Session Replay: 5% normal sessions, 100% error sessions
+    replaysSessionSampleRate: 0.05,
+    replaysOnErrorSampleRate: 1.0,
 
-  integrations: [
-    Sentry.replayIntegration({
-      // DPDP compliance — mask all PII in replays
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
+    integrations: [
+      Sentry.replayIntegration({
+        // DPDP compliance — mask all PII in replays
+        maskAllText: true,
+        blockAllMedia: true,
+      }),
+    ],
 
-  // Filter noise — don't send non-actionable errors
-  beforeSend(event, hint) {
-    const msg = (hint?.originalException as Error)?.message ?? event.message ?? '';
+    // Filter noise — don't send non-actionable errors
+    beforeSend(event, hint) {
+      const msg = (hint?.originalException as Error)?.message ?? event.message ?? '';
 
-    if (typeof msg === 'string') {
-      if (
-        msg.includes('ResizeObserver loop') ||
-        msg.includes('Non-Error promise rejection') ||
-        msg.includes('Network request failed') ||
-        msg.includes('Load failed') ||
-        msg.includes('ChunkLoadError')
-      ) {
-        return null;
+      if (typeof msg === 'string') {
+        if (
+          msg.includes('ResizeObserver loop') ||
+          msg.includes('Non-Error promise rejection') ||
+          msg.includes('Network request failed') ||
+          msg.includes('Load failed') ||
+          msg.includes('ChunkLoadError')
+        ) {
+          return null;
+        }
       }
-    }
 
-    return event;
-  },
+      return event;
+    },
 
-  // Only enable in production (save quota in dev)
-  enabled: process.env['NODE_ENV'] === 'production',
-});
+    // Only enable in production (save quota in dev)
+    enabled: process.env['NODE_ENV'] === 'production',
+  });
+}

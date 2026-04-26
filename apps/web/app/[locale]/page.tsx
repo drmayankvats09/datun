@@ -32,11 +32,15 @@ export default async function HomePage({ params }: Props) {
       </div>
 
       <PageShell maxWidth="lg" className="flex flex-col items-center text-center">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+        <div className="mb-8 flex flex-col items-center sm:mb-10">
+          <h1 className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             {t('brand.name')}
           </h1>
-          <div className="bg-primary mx-auto mt-3 h-1 w-12 rounded-full" />
+          <div
+            className="bg-primary mt-3 h-1 w-12 rounded-full"
+            role="presentation"
+            aria-hidden="true"
+          />
         </div>
 
         <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">

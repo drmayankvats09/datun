@@ -16,6 +16,7 @@ import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
 import type { Metadata } from 'next';
 import { LocaleFont } from '@/components/locale-font';
+import { TranslationBanner } from '@/components/translation-banner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -81,6 +82,7 @@ export default async function LocaleLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <TranslationBanner />
             <AppProvider>{children}</AppProvider>
             <Toaster richColors position="top-right" />
           </ThemeProvider>
