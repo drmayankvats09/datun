@@ -13,6 +13,9 @@ import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/providers/app-provider';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
+import { LOCALES } from '@/i18n/config';
+import type { Metadata } from 'next';
+import { LocaleFont } from '@/components/locale-font';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,6 +26,28 @@ const inter = Inter({
 // Generate static params for all locales (SSG)
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com';
+
+  return {
+    alternates: {
+      canonical: `${baseUrl}/${locale}`,
+      languages: Object.fromEntries(LOCALES.map((loc) => [loc, `${baseUrl}/${loc}`])),
+    },
+    openGraph: {
+      locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
+      alternateLocale: LOCALES.filter((l) => l !== locale).map((l) =>
+        l === 'hi' ? 'hi_IN' : l === 'en' ? 'en_IN' : `${l}_IN`,
+      ),
+    },
+  };
 }
 
 export default async function LocaleLayout({
@@ -49,6 +74,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider messages={messages}>
+          <LocaleFont />
           <ThemeProvider
             attribute="class"
             defaultTheme="light"

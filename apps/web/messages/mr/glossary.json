@@ -1,0 +1,22 @@
+{
+  "cavity": "Cavity (tooth decay)",
+  "rootCanal": "Root Canal Treatment",
+  "extraction": "Tooth Extraction",
+  "scaling": "Scaling & Polishing",
+  "filling": "Dental Filling",
+  "crown": "Dental Crown",
+  "bridge": "Dental Bridge",
+  "implant": "Dental Implant",
+  "braces": "Orthodontic Braces",
+  "denture": "Denture (false teeth)",
+  "abscess": "Dental Abscess (infection)",
+  "gingivitis": "Gingivitis (gum inflammation)",
+  "periodontitis": "Periodontitis (gum disease)",
+  "pulpitis": "Pulpitis (nerve inflammation)",
+  "malocclusion": "Malocclusion (bite problem)",
+  "impaction": "Impaction (stuck tooth)",
+  "fluoride": "Fluoride Treatment",
+  "sealant": "Pit & Fissure Sealant",
+  "xray": "Dental X-Ray",
+  "opg": "OPG (Full Mouth X-Ray)"
+}

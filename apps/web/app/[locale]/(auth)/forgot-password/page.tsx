@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,10 +13,10 @@ import { toast } from 'sonner';
 type Step = 'email' | 'otp' | 'success';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth.forgotPassword');
   const router = useRouter();
   const [step, setStep] = useState<Step>('email');
   const [loading, setLoading] = useState(false);
-
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,14 +25,13 @@ export default function ForgotPasswordPage() {
   async function handleSendReset(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
-
     setLoading(true);
     try {
       await forgotPassword(email);
       setStep('otp');
-      toast.success('If an account exists, a reset code has been sent.');
+      toast.success(t('codeSent'));
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('resetFailed'));
     } finally {
       setLoading(false);
     }
@@ -41,19 +40,18 @@ export default function ForgotPasswordPage() {
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
     if (otp.length !== 6 || newPassword.length < 8) return;
-
     setLoading(true);
     try {
       const result = await resetPassword(email, otp, newPassword);
       if (result.success) {
         setStep('success');
-        toast.success('Password reset! Redirecting...');
+        toast.success(t('successTitle'));
         setTimeout(() => router.push('/'), 1500);
       } else {
-        toast.error(result.error?.message || 'Reset failed');
+        toast.error(result.error?.message || t('resetFailed'));
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('resetFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,20 +63,20 @@ export default function ForgotPasswordPage() {
         href="/login"
         className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to sign in
+        <ArrowLeft className="h-4 w-4" /> {t('backToSignIn')}
       </Link>
 
       {step === 'email' && (
         <>
           <div>
-            <h2 className="text-foreground text-xl font-semibold">Reset your password</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Enter your email and we&apos;ll send you a verification code.
-            </p>
+            <h2 className="text-foreground text-xl font-semibold">{t('title')}</h2>
+            <p className="text-muted-foreground mt-1 text-sm">{t('description')}</p>
           </div>
           <form onSubmit={handleSendReset} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">Email</Label>
+              <Label htmlFor="reset-email">
+                {t('sendButton').replace('Send Reset Code', 'Email')}
+              </Label>
               <Input
                 id="reset-email"
                 type="email"
@@ -92,7 +90,7 @@ export default function ForgotPasswordPage() {
             </div>
             <Button type="submit" className="w-full py-5" disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Send Reset Code
+              {t('sendButton')}
             </Button>
           </form>
         </>
@@ -101,15 +99,12 @@ export default function ForgotPasswordPage() {
       {step === 'otp' && (
         <>
           <div>
-            <h2 className="text-foreground text-xl font-semibold">Check your email</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Enter the 6-digit code sent to{' '}
-              <span className="text-foreground font-medium">{email}</span> and your new password.
-            </p>
+            <h2 className="text-foreground text-xl font-semibold">{t('checkEmail')}</h2>
+            <p className="text-muted-foreground mt-1 text-sm">{t('checkEmailDesc', { email })}</p>
           </div>
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-otp">Verification Code</Label>
+              <Label htmlFor="reset-otp">{t('checkEmail')}</Label>
               <Input
                 id="reset-otp"
                 type="text"
@@ -123,7 +118,7 @@ export default function ForgotPasswordPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
+              <Label htmlFor="new-password">{t('newPasswordLabel')}</Label>
               <div className="relative">
                 <Input
                   id="new-password"
@@ -145,9 +140,7 @@ export default function ForgotPasswordPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-muted-foreground text-xs">
-                Minimum 8 characters with uppercase, lowercase, and a number.
-              </p>
+              <p className="text-muted-foreground text-xs">{t('newPasswordHint')}</p>
             </div>
             <Button
               type="submit"
@@ -155,14 +148,14 @@ export default function ForgotPasswordPage() {
               disabled={loading || otp.length !== 6 || newPassword.length < 8}
             >
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Reset Password
+              {t('resetButton')}
             </Button>
             <button
               type="button"
               className="text-primary block w-full text-center text-sm font-medium hover:underline"
               onClick={() => setStep('email')}
             >
-              Didn&apos;t receive it? Try again
+              {t('didntReceive')}
             </button>
           </form>
         </>
@@ -181,8 +174,8 @@ export default function ForgotPasswordPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-foreground text-xl font-semibold">Password Reset</h2>
-          <p className="text-muted-foreground mt-2 text-sm">Redirecting you to the app...</p>
+          <h2 className="text-foreground text-xl font-semibold">{t('successTitle')}</h2>
+          <p className="text-muted-foreground mt-2 text-sm">{t('successDesc')}</p>
         </div>
       )}
     </div>

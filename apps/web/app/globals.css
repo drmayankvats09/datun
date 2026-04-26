@@ -310,3 +310,25 @@ body {
   background: var(--primary);
   transition: width 300ms ease;
 }
+
+/* ── Text Expansion Handling — Hindi 20-40% longer than English ── */
+button,
+a,
+[role='button'] {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Ensure labels never clip on smaller screens */
+label,
+.label {
+  overflow-wrap: anywhere;
+}
+
+/* Tab triggers should handle longer text */
+[role='tab'] {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

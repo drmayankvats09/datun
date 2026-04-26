@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/stores';
 
 export default function SignupPage() {
+  const t = useTranslations('auth.signup');
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -38,10 +40,9 @@ export default function SignupPage() {
     e.preventDefault();
     if (!name || !email || !password) return;
     if (!isPasswordValid) {
-      toast.error('Please meet all password requirements');
+      toast.error(t('passwordRequirements'));
       return;
     }
-
     setLoading(true);
     try {
       const cleanPhone = phone
@@ -52,13 +53,13 @@ export default function SignupPage() {
       const result = await signup(email, password, name, cleanPhone);
       if (result.success) {
         if (result.data?.user) setUser(result.data.user);
-        toast.success('Account created! Welcome to Datun AI');
+        toast.success(t('welcome'));
         router.push('/');
       } else {
-        toast.error(result.error?.message || 'Signup failed');
+        toast.error(result.error?.message || t('signupFailed'));
       }
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('signupFailed'));
     } finally {
       setLoading(false);
     }
@@ -72,14 +73,14 @@ export default function SignupPage() {
       const result = await loginWithGoogleCode(code, redirectUri);
       if (result.success) {
         if (result.data?.user) setUser(result.data.user);
-        toast.success('Account created! Welcome to Datun AI');
+        toast.success(t('welcome'));
         router.push('/');
       } else {
-        toast.error(result.error?.message || 'Google signup failed');
+        toast.error(result.error?.message || t('signupFailed'));
       }
     } catch (err) {
       const message = (err as Error).message;
-      if (message !== 'Popup closed') toast.error(message || 'Google signup failed');
+      if (message !== 'Popup closed') toast.error(message || t('signupFailed'));
     } finally {
       setGoogleLoading(false);
     }
@@ -128,7 +129,7 @@ export default function SignupPage() {
             />
           </svg>
         )}
-        Continue with Google
+        {t('googleButton')}
       </Button>
 
       <div className="relative">
@@ -136,39 +137,37 @@ export default function SignupPage() {
           <span className="border-border w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">or create account</span>
+          <span className="bg-background text-muted-foreground px-2">{t('orDivider')}</span>
         </div>
       </div>
 
       <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name">{t('nameLabel')}</Label>
           <Input
             id="name"
             type="text"
-            placeholder="Dr. Mayank Vats"
+            placeholder={t('namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             autoComplete="name"
           />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="signup-email">Email</Label>
+          <Label htmlFor="signup-email">{t('emailLabel')}</Label>
           <Input
             id="signup-email"
             type="email"
-            placeholder="you@example.com"
+            placeholder={t('emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
           />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="signup-phone">Phone Number (optional)</Label>
+          <Label htmlFor="signup-phone">{t('phoneLabel')}</Label>
           <div className="flex gap-2">
             <div className="bg-muted text-muted-foreground flex items-center rounded-md px-3 text-sm font-medium">
               +91
@@ -176,7 +175,7 @@ export default function SignupPage() {
             <Input
               id="signup-phone"
               type="tel"
-              placeholder="99531 35340"
+              placeholder={t('phonePlaceholder')}
               value={phone}
               onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
               maxLength={10}
@@ -184,14 +183,13 @@ export default function SignupPage() {
             />
           </div>
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="signup-password">Password</Label>
+          <Label htmlFor="signup-password">{t('passwordLabel')}</Label>
           <div className="relative">
             <Input
               id="signup-password"
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
+              placeholder={t('passwordPlaceholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -209,24 +207,23 @@ export default function SignupPage() {
           </div>
           {password.length > 0 && (
             <div className="grid grid-cols-2 gap-1 pt-1">
-              <PasswordRule met={hasMinLength} label="8+ characters" />
-              <PasswordRule met={hasUppercase} label="Uppercase letter" />
-              <PasswordRule met={hasLowercase} label="Lowercase letter" />
-              <PasswordRule met={hasNumber} label="Number" />
+              <PasswordRule met={hasMinLength} label={t('passwordRules.minLength')} />
+              <PasswordRule met={hasUppercase} label={t('passwordRules.uppercase')} />
+              <PasswordRule met={hasLowercase} label={t('passwordRules.lowercase')} />
+              <PasswordRule met={hasNumber} label={t('passwordRules.number')} />
             </div>
           )}
         </div>
-
         <Button type="submit" className="w-full py-5" disabled={loading || !isPasswordValid}>
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Create Account
+          {t('createButton')}
         </Button>
       </form>
 
       <p className="text-muted-foreground text-center text-sm">
-        Already have an account?{' '}
+        {t('hasAccount')}{' '}
         <Link href="/login" className="text-primary font-medium hover:underline">
-          Sign in
+          {t('signInLink')}
         </Link>
       </p>
     </div>
