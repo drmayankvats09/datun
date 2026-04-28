@@ -8,11 +8,14 @@ import type { ComponentProps } from 'react';
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
   loading?: boolean;
   loadingText?: string;
+  /** Screen reader label shown during loading state. Defaults to "Loading" */
+  srLoadingLabel?: string;
 }
 
 export function LoadingButton({
   loading = false,
   loadingText,
+  srLoadingLabel = 'Loading',
   children,
   disabled,
   className,
@@ -33,7 +36,7 @@ export function LoadingButton({
         <span className="absolute inset-0 flex items-center justify-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           {loadingText && <span>{loadingText}</span>}
-          <span className="sr-only">Loading</span>
+          <span className="sr-only">{srLoadingLabel}</span>
         </span>
       )}
     </Button>

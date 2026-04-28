@@ -7,6 +7,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import * as Sentry from '@sentry/nextjs';
 import { SentryFallback } from '@/components/feedback/sentry-fallback';
 import { useRouteTracker } from '@/hooks/use-route-tracker';
@@ -25,6 +26,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useRouteTracker();
   useBeforeunloadSave();
   useWebVitals();
+  const t = useTranslations('common.status');
 
   useEffect(() => {
     const cleanup = listenCrossTabAuth();
@@ -39,9 +41,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         <SkipToContent />
         <RouteProgress />
         {!isOnline && (
-          <div className="fixed top-0 right-0 left-0 z-[9999] bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950 shadow-sm print:hidden">
-            {typeof window !== 'undefined' ? '📡 ' : ''}Offline — changes will sync when you
-            reconnect
+          <div
+            role="status"
+            className="fixed top-0 right-0 left-0 z-[9999] bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950 shadow-sm print:hidden"
+          >
+            📡 {t('offline')}
           </div>
         )}
         {children}

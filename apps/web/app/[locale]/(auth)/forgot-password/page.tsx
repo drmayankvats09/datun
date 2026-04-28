@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
           </div>
           <form onSubmit={handleSendReset} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">{t('sendButton')}</Label>
+              <Label htmlFor="reset-email">{t('emailLabel')}</Label>
               <Input
                 id="reset-email"
                 type="email"

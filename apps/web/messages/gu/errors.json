@@ -19,6 +19,7 @@
   "page": {
     "errorTitle": "Something went wrong",
     "errorDescription": "An unexpected error occurred. Our team has been automatically notified.",
+    "errorId": "Error ID: {digest}",
     "tryAgain": "Try again",
     "goHome": "Go home",
     "notFoundTitle": "Page not found",
