@@ -115,7 +115,7 @@ jobs:
 
       # Phase 9: Translation completeness — blocks merge if Hindi keys missing
       - name: Translation Check (i18n)
-        run: cd apps/web && npx --yes tsx scripts/check-translations.ts
+        run: cd apps/web && pnpm dlx tsx scripts/check-translations.ts
 
       # API coverage report on PRs
       - name: API Coverage Report
