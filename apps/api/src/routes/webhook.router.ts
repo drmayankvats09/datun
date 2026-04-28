@@ -82,7 +82,17 @@ webhookRouter.post('/', async (req, res) => {
 function verifyWebhookSignature(req: { headers: Record<string, unknown>; body: unknown }): boolean {
   const signature = req.headers['x-hub-signature-256'] as string | undefined;
 
-  if (!signature || !env.WHATSAPP_VERIFY_TOKEN) return true;
+  // P2-F4: Production NEVER bypasses. Dev allows if not configured (sandbox testing).
+  if (env.NODE_ENV === 'production') {
+    if (!signature || !env.WHATSAPP_VERIFY_TOKEN) {
+      logger.error(
+        'Webhook signature verification failed: missing signature or token in production',
+      );
+      return false;
+    }
+  } else {
+    if (!signature || !env.WHATSAPP_VERIFY_TOKEN) return true;
+  }
 
   try {
     const expectedSignature =
@@ -92,7 +102,12 @@ function verifyWebhookSignature(req: { headers: Record<string, unknown>; body: u
         .update(JSON.stringify(req.body))
         .digest('hex');
 
-    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+    // P2-F22: Buffer length check before timingSafeEqual
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expBuf.length) return false;
+
+    return crypto.timingSafeEqual(sigBuf, expBuf);
   } catch {
     return false;
   }
@@ -173,7 +188,13 @@ async function handleIncomingMessage(message: IncomingMessage): Promise<void> {
 
   logger.info('WhatsApp incoming', { from, type: message.type, body: msgBody });
 
-  await trackInboundMessage(from, msgBody);
+  // P2-F19: Fire-and-forget — don't block webhook critical path
+  trackInboundMessage(from, msgBody).catch((err) => {
+    logger.error('Inbound message tracking failed (non-blocking)', {
+      from,
+      error: (err as Error).message,
+    });
+  });
 
   const lower = msgBody.toLowerCase();
 

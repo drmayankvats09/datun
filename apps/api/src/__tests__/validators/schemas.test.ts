@@ -66,6 +66,34 @@ describe('signupEmailSchema', () => {
       { numRuns: 200 },
     );
   });
+
+  // P6-F5: Password strength rules at Zod level
+  it('rejects password without uppercase letter', () => {
+    const result = signupEmailSchema.safeParse({
+      email: 'test@test.com',
+      password: 'alllowercase1',
+      name: 'Test',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects password without number', () => {
+    const result = signupEmailSchema.safeParse({
+      email: 'test@test.com',
+      password: 'NoNumberHere',
+      name: 'Test',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts password meeting all strength rules', () => {
+    const result = signupEmailSchema.safeParse({
+      email: 'test@test.com',
+      password: 'StrongPass1',
+      name: 'Test',
+    });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe('loginEmailSchema', () => {

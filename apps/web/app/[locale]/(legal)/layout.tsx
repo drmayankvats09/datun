@@ -2,9 +2,9 @@
 // LEGAL LAYOUT — Uses shared components, JSON-LD structured data
 // ═══════════════════════════════════════════════════════════════
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS, URLS } from '@repo/shared';
-import { LegalNav } from '@/components/legal/legal-components';
+import { LegalNav } from '@/components/legal/legal-nav';
 
 const LEGAL_PAGES = [
   { href: '/privacy', label: 'Privacy Policy' },
@@ -15,22 +15,22 @@ const LEGAL_PAGES = [
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       {/* ── Top Navigation ── */}
-      <header className="border-border/60 bg-background/80 sticky top-0 z-50 border-b backdrop-blur-xl print:static print:border-0">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl print:static print:border-0">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link
             href="/"
-            className="text-foreground flex items-center gap-2.5 text-lg font-bold tracking-tight transition-opacity hover:opacity-80"
+            className="flex items-center gap-2.5 text-lg font-bold tracking-tight text-foreground transition-opacity hover:opacity-80"
           >
-            <span className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold text-white">
               D
             </span>
             {BRAND.name}
           </Link>
           <Link
             href="/"
-            className="text-muted-foreground hover:text-primary rounded-lg border border-transparent px-4 py-2 text-sm font-medium transition-colors hover:border-current print:hidden"
+            className="rounded-lg border border-transparent px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-current hover:text-primary print:hidden"
           >
             ← Back to Home
           </Link>
@@ -46,17 +46,17 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">{children}</main>
 
       {/* ── Legal Footer ── */}
-      <footer className="border-border/40 border-t print:hidden">
+      <footer className="border-t border-border/40 print:hidden">
         <div className="mx-auto max-w-5xl px-6 py-10">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div>
-              <p className="text-foreground mb-2 text-sm font-semibold">Legal</p>
+              <p className="mb-2 text-sm font-semibold text-foreground">Legal</p>
               <div className="flex flex-col gap-1.5">
                 {LEGAL_PAGES.map((page) => (
                   <Link
                     key={page.href}
                     href={page.href}
-                    className="text-muted-foreground hover:text-primary text-sm transition-colors"
+                    className="text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     {page.label}
                   </Link>
@@ -64,17 +64,17 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
             <div>
-              <p className="text-foreground mb-2 text-sm font-semibold">Contact</p>
-              <div className="text-muted-foreground flex flex-col gap-1.5 text-sm">
+              <p className="mb-2 text-sm font-semibold text-foreground">Contact</p>
+              <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                 <a
                   href={`mailto:${CONTACTS.supportEmail}`}
-                  className="hover:text-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   {CONTACTS.supportEmail}
                 </a>
                 <a
                   href={`mailto:${CONTACTS.defaultAlertEmail}`}
-                  className="hover:text-primary transition-colors"
+                  className="transition-colors hover:text-primary"
                 >
                   {CONTACTS.defaultAlertEmail}
                 </a>
@@ -82,8 +82,8 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
             <div>
-              <p className="text-foreground mb-2 text-sm font-semibold">Company</p>
-              <div className="text-muted-foreground flex flex-col gap-1.5 text-sm">
+              <p className="mb-2 text-sm font-semibold text-foreground">Company</p>
+              <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                 <p>{BRAND.legalName}</p>
                 <p>New Delhi, India</p>
                 <div className="mt-1 flex gap-3">
@@ -91,7 +91,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                     href={URLS.social.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-primary transition-colors"
+                    className="transition-colors hover:text-primary"
                   >
                     Instagram
                   </a>
@@ -99,7 +99,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                     href={URLS.social.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-primary transition-colors"
+                    className="transition-colors hover:text-primary"
                   >
                     LinkedIn
                   </a>
@@ -107,7 +107,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
           </div>
-          <div className="border-border/40 text-muted-foreground/60 mt-8 border-t pt-6 text-center text-xs">
+          <div className="mt-8 border-t border-border/40 pt-6 text-center text-xs text-muted-foreground/60">
             {BRAND.copyright()}
           </div>
         </div>

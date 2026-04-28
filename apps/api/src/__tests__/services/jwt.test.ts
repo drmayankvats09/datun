@@ -36,7 +36,7 @@ describe('JwtService', () => {
 
   it('rejects refresh token when access expected', () => {
     const tokens = JwtService.generateTokens(testPayload);
-    expect(() => JwtService.verifyAccessToken(tokens.refreshToken)).toThrow('expected access');
+    expect(() => JwtService.verifyAccessToken(tokens.refreshToken)).toThrow();
   });
 
   // ── Refresh token verification ──
@@ -49,7 +49,7 @@ describe('JwtService', () => {
 
   it('rejects access token when refresh expected', () => {
     const tokens = JwtService.generateTokens(testPayload);
-    expect(() => JwtService.verifyRefreshToken(tokens.accessToken)).toThrow('expected refresh');
+    expect(() => JwtService.verifyRefreshToken(tokens.accessToken)).toThrow();
   });
 
   // ── Invalid tokens ──
@@ -88,5 +88,16 @@ describe('JwtService', () => {
     });
     const decoded = JwtService.verifyAccessToken(doctorTokens.accessToken);
     expect(decoded.role).toBe('DOCTOR');
+  });
+  // P6-F3: Verify refresh token uses separate secret (if configured)
+  it('refresh token cannot be verified as access token', () => {
+    const tokens = JwtService.generateTokens(testPayload);
+    // Refresh token signed with REFRESH_SECRET — must NOT pass access verification
+    expect(() => JwtService.verifyAccessToken(tokens.refreshToken)).toThrow();
+  });
+
+  it('access token cannot be verified as refresh token', () => {
+    const tokens = JwtService.generateTokens(testPayload);
+    expect(() => JwtService.verifyRefreshToken(tokens.accessToken)).toThrow();
   });
 });

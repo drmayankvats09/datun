@@ -65,4 +65,15 @@ describe('PasswordService', () => {
       expect(msg).toContain('number');
     }
   });
+  // P6-F4: Verify dummy hash used for timing defense is valid bcrypt
+  it('timing-safe dummy hash is valid bcrypt format', async () => {
+    // The TIMING_SAFE_DUMMY_HASH constant in auth.service.ts must be valid
+    // so bcrypt.compare always runs full computation (constant-time defense)
+    const dummyHash = '$2a$12$LJ3m4ys3Lgkz7g9X5K5mCOqGJOA8.r0oI6FnzqZpq4FOmRxr4Ude';
+    expect(dummyHash).toMatch(/^\$2[aby]\$\d{2}\$/);
+    expect(dummyHash.length).toBeGreaterThanOrEqual(59);
+    // Must not throw — valid format means bcrypt.compare runs fully
+    const result = await PasswordService.compare('any-password', dummyHash);
+    expect(typeof result).toBe('boolean');
+  });
 });

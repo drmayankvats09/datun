@@ -8,7 +8,13 @@ import { z } from 'zod';
 
 export const signupEmailSchema = z.object({
   email: z.string().email('Valid email required').max(254),
-  password: z.string().min(8, 'Minimum 8 characters').max(128),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must not exceed 128 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
   name: z.string().min(1, 'Name is required').max(200).trim(),
   phone: z
     .string()
@@ -51,7 +57,13 @@ export const resetPasswordSchema = z.object({
     .string()
     .length(6, 'OTP must be 6 digits')
     .regex(/^\d{6}$/, 'OTP must be numeric'),
-  newPassword: z.string().min(8, 'Minimum 8 characters').max(128),
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must not exceed 128 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
 });
 
 export const refreshTokenSchema = z.object({

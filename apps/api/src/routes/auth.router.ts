@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import { authLimiter } from '../middleware/rate-limit.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireUser } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { AuthService } from '../services/auth/auth.service.js';
 import { blacklist } from '../lib/redis.js';
@@ -149,12 +149,10 @@ authRouter.get('/auth/google/consent-url', (req, res, next) => {
   try {
     const redirectUri = (req.query['redirect_uri'] as string) || '';
     if (!redirectUri) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'redirect_uri query param required' },
-        });
+      res.status(400).json({
+        success: false,
+        error: { code: 'VALIDATION_ERROR', message: 'redirect_uri query param required' },
+      });
       return;
     }
     const url = AuthService.getGoogleConsentUrl(redirectUri);
@@ -229,10 +227,23 @@ authRouter.post('/auth/refresh', validate(refreshTokenSchema), async (req, res, 
   }
 });
 
-authRouter.get('/auth/me', requireAuth, async (req, res, next) => {
+authRouter.get('/auth/me', requireUser, async (req, res, next) => {
   try {
-    const user = await AuthService.getCurrentUser(req.auth!.sub);
-    res.json({ success: true, data: user });
+    // P2-F11: requireUser already loaded user from DB — no second lookup
+    const u = req.dbUser!;
+    res.json({
+      success: true,
+      data: {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        phone: u.phone,
+        avatarUrl: u.avatarUrl,
+        role: u.primaryRole,
+        isEmailVerified: u.isEmailVerified,
+        isPhoneVerified: u.isPhoneVerified,
+      },
+    });
   } catch (err) {
     next(err);
   }

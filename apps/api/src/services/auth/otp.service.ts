@@ -21,6 +21,9 @@ const OTP_EXPIRY_SECONDS = TTL.OTP; // 600 = 10 minutes
 const OTP_MAX_ATTEMPTS = 3;
 const OTP_COOLDOWN_SECONDS = 60; // 1 min between sends
 const OTP_MAX_PER_HOUR = 5; // max 5 OTPs per destination per hour
+// 10 rounds intentional — OTP is 6 digits with 3-attempt limit + 10min expiry.
+// Defense relies on rate limiting, not hash cost. Lower than password's 12 rounds
+// because OTP has minimal entropy (1M combinations).
 const BCRYPT_SALT_ROUNDS = 10;
 
 // ── Redis key patterns ──
@@ -163,6 +166,13 @@ export class OtpService {
     });
 
     return false;
+  }
+
+  // ── P2-F5: Invalidate OTP (on password reset re-request) ──
+  static async invalidate(destination: string, channel: 'email' | 'phone'): Promise<void> {
+    const key = otpKey(channel, destination);
+    await cache.del(key);
+    logger.info('OTP invalidated', { destination: `${channel}:***` });
   }
 
   // ── Private: Generate 6-digit code ──

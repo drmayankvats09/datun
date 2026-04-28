@@ -1,13 +1,12 @@
 // ═══════════════════════════════════════════════════════════════
 // GLOBAL TEST SETUP — Mocks for external dependencies
-// Sentry, Logger, Redis, Prisma — all mocked to prevent
-// real API calls, DB connections, and external service hits.
-// Pattern: Stripe, GitHub — mock external deps, test logic.
+// P6-F1: All Prisma models + $transaction callback
+// P6-F2: Redis incr with counter support
 // ═══════════════════════════════════════════════════════════════
 
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
-// ── Mock Sentry (prevents real error reporting in tests) ──
+// ── Mock Sentry ──
 vi.mock('../lib/sentry.js', () => ({
   initSentry: vi.fn(),
   Sentry: {
@@ -18,7 +17,7 @@ vi.mock('../lib/sentry.js', () => ({
   },
 }));
 
-// ── Mock Logger (silent tests — no console noise) ──
+// ── Mock Logger ──
 vi.mock('../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -28,8 +27,15 @@ vi.mock('../lib/logger.js', () => ({
   },
 }));
 
-// ── Mock Redis (in-memory behavior — no real Upstash calls) ──
+// ── Mock Security Logger ──
+vi.mock('../lib/security-logger.js', () => ({
+  logSecurityEvent: vi.fn(),
+}));
+
+// ── Mock Redis (P6-F2: incr with real counter) ──
 const memoryStore = new Map<string, string>();
+const incrCounters = new Map<string, number>();
+
 vi.mock('../lib/redis.js', () => ({
   initRedis: vi.fn(),
   verifyRedis: vi.fn().mockResolvedValue({ ok: true, latencyMs: 1 }),
@@ -41,9 +47,16 @@ vi.mock('../lib/redis.js', () => ({
     }),
     del: vi.fn((key: string) => {
       memoryStore.delete(key);
+      incrCounters.delete(key);
       return Promise.resolve();
     }),
-    incr: vi.fn().mockResolvedValue(1),
+    // P6-F2: Real counter — can test rate-limit-exceeded path
+    incr: vi.fn((key: string) => {
+      const current = incrCounters.get(key) ?? 0;
+      const next = current + 1;
+      incrCounters.set(key, next);
+      return Promise.resolve(next);
+    }),
   },
   aiCache: {
     generateKey: vi.fn().mockReturnValue('test-cache-key'),
@@ -62,7 +75,7 @@ vi.mock('../lib/redis.js', () => ({
   },
 }));
 
-// ── Mock Request Context (for error handler request ID) ──
+// ── Mock Request Context ──
 vi.mock('../lib/request-context.js', () => ({
   requestStore: {
     run: vi.fn((_ctx: unknown, fn: () => void) => fn()),
@@ -72,24 +85,45 @@ vi.mock('../lib/request-context.js', () => ({
   getRequestDurationMs: vi.fn().mockReturnValue(5),
 }));
 
-// ── Mock Prisma (no real DB connection in tests) ──
+// ── Mock Prisma (P6-F1: All models + $transaction callback) ──
+const mockPrismaModel = () => ({
+  findUnique: vi.fn().mockResolvedValue(null),
+  findFirst: vi.fn().mockResolvedValue(null),
+  findMany: vi.fn().mockResolvedValue([]),
+  create: vi
+    .fn()
+    .mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ id: 'mock-id', ...((args?.data as Record<string, unknown>) ?? {}) }),
+    ),
+  update: vi
+    .fn()
+    .mockImplementation((args: { data: unknown }) =>
+      Promise.resolve({ id: 'mock-id', ...((args?.data as Record<string, unknown>) ?? {}) }),
+    ),
+  delete: vi.fn().mockResolvedValue({}),
+  count: vi.fn().mockResolvedValue(0),
+});
+
 vi.mock('@repo/db', () => ({
   prisma: {
     $queryRaw: vi.fn().mockResolvedValue([{ '?column?': 1 }]),
     $disconnect: vi.fn().mockResolvedValue(undefined),
-    user: {
-      findUnique: vi.fn().mockResolvedValue(null),
-      findFirst: vi.fn().mockResolvedValue(null),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-    consultation: {
-      findUnique: vi.fn().mockResolvedValue(null),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
+    // P6-F1: $transaction executes callback with same prisma mock
+    $transaction: vi.fn().mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+      // Pass the same prisma mock as transaction client
+      const { prisma } = await import('@repo/db');
+      return fn(prisma);
+    }),
+    user: mockPrismaModel(),
+    patient: mockPrismaModel(),
+    consultation: mockPrismaModel(),
+    userAuthIdentity: mockPrismaModel(),
+    userRole: mockPrismaModel(),
+    assessment: mockPrismaModel(),
+    consultationMessage: mockPrismaModel(),
+    whatsAppMessage: mockPrismaModel(),
+    clinicOwner: mockPrismaModel(),
   },
-  // Re-export enums that might be used in type checks
   UserPrimaryRole: {
     PATIENT: 'PATIENT',
     CLINIC_OWNER: 'CLINIC_OWNER',
@@ -100,13 +134,16 @@ vi.mock('@repo/db', () => ({
   },
 }));
 
-// ── Mock WhatsApp (prevent real Meta API calls) ──
+// ── Mock WhatsApp ──
 vi.mock('../services/whatsapp/index.js', () => ({
   whatsappHealthCheck: vi.fn().mockResolvedValue({ ok: true, latencyMs: 50 }),
   sendWhatsAppMessage: vi.fn().mockResolvedValue({ success: true }),
+  sendWhatsAppText: vi.fn().mockResolvedValue({ success: true }),
+  sendWhatsAppTemplate: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 // ── Clean up between tests ──
 afterEach(() => {
   memoryStore.clear();
+  incrCounters.clear();
 });

@@ -23,6 +23,13 @@
     "goHome": "होम पर जाएं",
     "notFoundTitle": "पेज नहीं मिला",
     "notFoundDescription": "आप जो पेज ढूंढ रहे हैं वह मौजूद नहीं है या हटा दिया गया है।",
-    "returnHome": "होम पर लौटें"
+    "returnHome": "होम पर लौटें",
+    "page": {
+      "errorTitle": "कुछ गलत हो गया",
+      "errorDescription": "एक अनपेक्षित त्रुटि हुई। कृपया पुनः प्रयास करें।",
+      "errorId": "त्रुटि ID: {digest}",
+      "retry": "पुनः प्रयास करें",
+      "goHome": "होम पर जाएं"
+    }
   }
 }

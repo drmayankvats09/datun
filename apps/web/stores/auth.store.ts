@@ -43,7 +43,11 @@ export const useAuthStore = create<AuthState>()(
 
         setUser: (user) => {
           set({ user, isLoading: false, lastSyncedAt: Date.now() }, false, 'auth/setUser');
-          // Notify other tabs: user logged in
+          // P3-F3: Don't re-broadcast if this was triggered by another tab's broadcast
+          if (typeof window !== 'undefined' && sessionStorage.getItem('datun-cross-tab-reload')) {
+            sessionStorage.removeItem('datun-cross-tab-reload');
+            return;
+          }
           broadcastAuthEvent('login');
         },
 
@@ -112,14 +116,19 @@ export function listenCrossTabAuth(): () => void {
   const channel = new BroadcastChannel(AUTH_CHANNEL_NAME);
 
   channel.onmessage = (event) => {
-    const { type } = event.data as { type: 'login' | 'logout' };
+    const { type, timestamp } = event.data as { type: 'login' | 'logout'; timestamp: number };
+
+    // P3-F3: Ignore stale messages (>5s old)
+    if (Date.now() - timestamp > 5000) return;
+
     if (type === 'logout') {
-      // Another tab logged out — clear this tab's state too
-      useAuthStore.getState().clearUser();
+      // Clear state WITHOUT re-broadcasting (prevents loop)
+      useAuthStore.setState({ user: null, isLoading: false, lastSyncedAt: null });
       window.location.href = '/login';
     }
     if (type === 'login') {
-      // Another tab logged in — reload to pick up new user state
+      // P3-F3: Mark this as cross-tab originated to prevent re-broadcast
+      sessionStorage.setItem('datun-cross-tab-reload', '1');
       window.location.reload();
     }
   };

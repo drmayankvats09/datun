@@ -1,38 +1,47 @@
-// ═══════════════════════════════════════════════════════════════
-// ROUTE PROGRESS — NProgress-style top loading bar
-// Shows teal bar at top when navigating between pages.
-// YouTube, GitHub, Linear — sab use karte hain.
-// ═══════════════════════════════════════════════════════════════
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 export function RouteProgress() {
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const isFirst = useRef(true);
+  const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Start progress on route change
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+
+    if (trickleRef.current) clearInterval(trickleRef.current);
+    if (completeRef.current) clearTimeout(completeRef.current);
+
+    // P4-F12: Start at 30%, trickle to 90%, complete when pathname settles
     setLoading(true);
     setProgress(30);
 
-    const t1 = setTimeout(() => setProgress(60), 100);
-    const t2 = setTimeout(() => setProgress(80), 200);
-    const t3 = setTimeout(() => {
+    let current = 30;
+    trickleRef.current = setInterval(() => {
+      current = Math.min(current + (90 - current) * 0.1, 90);
+      setProgress(current);
+    }, 200);
+
+    completeRef.current = setTimeout(() => {
+      if (trickleRef.current) clearInterval(trickleRef.current);
       setProgress(100);
       setTimeout(() => {
         setLoading(false);
         setProgress(0);
-      }, 200);
-    }, 400);
+      }, 250);
+    }, 100);
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
+      if (trickleRef.current) clearInterval(trickleRef.current);
+      if (completeRef.current) clearTimeout(completeRef.current);
     };
   }, [pathname]);
 
@@ -45,7 +54,7 @@ export function RouteProgress() {
         style={{
           width: `${progress}%`,
           opacity: progress === 100 ? 0 : 1,
-          transition: 'width 300ms ease, opacity 200ms ease 200ms',
+          transition: 'width 200ms cubic-bezier(0.4,0,0.2,1), opacity 250ms ease',
         }}
       />
     </div>

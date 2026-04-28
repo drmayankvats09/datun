@@ -35,7 +35,7 @@ const INTL_LOCALE_MAP: Record<string, string> = {
  * formatRelativeTime(-2, 'hour'); // "२ घंटे पहले" (in Hindi)
  * ```
  */
-export function useFormatter() {
+export function useDatunFormatter() {
   const locale = useLocale();
   const intlLocale = INTL_LOCALE_MAP[locale] ?? 'en-IN';
 

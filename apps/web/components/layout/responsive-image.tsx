@@ -25,7 +25,7 @@ export function ResponsiveImage({
         fill
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         alt={alt}
-        loading="lazy"
+        // P4-F21: Don't override loading — next/image auto-sets based on priority
         {...props}
       />
     </div>

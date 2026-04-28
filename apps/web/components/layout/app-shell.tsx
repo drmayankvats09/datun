@@ -16,11 +16,12 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { isMobile, isTablet } = useBreakpoint();
-  const showMobileNav = isMobile || isTablet;
+  const { isMobile } = useBreakpoint();
+  // P4-F14: Only phones + portrait tablets get bottom nav
+  const showMobileNav = isMobile;
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Desktop: sidebar */}
         {!showMobileNav && <DesktopSidebar />}

@@ -1,7 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
 // TYPE-SAFE TRANSLATIONS — Build-time check for missing keys
-// If a translation key is missing, TypeScript will error.
-// Pattern: next-intl official recommendation.
 // ═══════════════════════════════════════════════════════════════
 
 import type en_common from './messages/en/common.json';
@@ -9,6 +7,7 @@ import type en_auth from './messages/en/auth.json';
 import type en_consultation from './messages/en/consultation.json';
 import type en_legal from './messages/en/legal.json';
 import type en_errors from './messages/en/errors.json';
+import type en_glossary from './messages/en/glossary.json';
 
 type Messages = {
   common: typeof en_common;
@@ -16,6 +15,7 @@ type Messages = {
   consultation: typeof en_consultation;
   legal: typeof en_legal;
   errors: typeof en_errors;
+  glossary: typeof en_glossary;
 };
 
 declare module 'next-intl' {

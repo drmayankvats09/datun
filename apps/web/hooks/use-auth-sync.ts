@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // USE-AUTH-SYNC — Bridge lib/auth.ts ↔ Zustand auth store
-// On page load: token exists? → fetch user → populate store.
-// Runs ONCE on mount. 5-min cache to avoid hammering API.
+// P3-F9: Network error → 30s retry (not permanent failure)
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -10,15 +9,19 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/stores';
 import { getAccessToken, getMe, clearTokens } from '@/lib/auth';
 
+const SYNC_TTL_MS = 5 * 60 * 1000; // 5 min
+const RETRY_DELAY_MS = 30 * 1000; // 30s after network error
+
 export function useAuthSync(): void {
-  const { setUser, clearUser, setLoading, lastSyncedAt } = useAuthStore();
+  const { setUser, clearUser, setLoading, lastSyncedAt, user } = useAuthStore();
   const syncRef = useRef(false);
+  const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (syncRef.current) return;
     syncRef.current = true;
 
-    async function syncAuth() {
+    async function syncAuth(): Promise<void> {
       const token = getAccessToken();
 
       if (!token) {
@@ -26,8 +29,7 @@ export function useAuthSync(): void {
         return;
       }
 
-      // Skip if synced recently (5 min cache)
-      if (lastSyncedAt && Date.now() - lastSyncedAt < 5 * 60 * 1000) {
+      if (lastSyncedAt && Date.now() - lastSyncedAt < SYNC_TTL_MS) {
         setLoading(false);
         return;
       }
@@ -41,11 +43,21 @@ export function useAuthSync(): void {
           clearUser();
         }
       } catch {
-        // Network error — use cached store data
+        // P3-F9: Network error — keep cached user, retry in 30s
         setLoading(false);
+        if (user) {
+          retryRef.current = setTimeout(() => {
+            syncRef.current = false;
+            syncAuth();
+          }, RETRY_DELAY_MS);
+        }
       }
     }
 
     syncAuth();
-  }, [setUser, clearUser, setLoading, lastSyncedAt]);
+
+    return () => {
+      if (retryRef.current) clearTimeout(retryRef.current);
+    };
+  }, [setUser, clearUser, setLoading, lastSyncedAt, user]);
 }

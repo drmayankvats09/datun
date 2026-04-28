@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   description: BRAND.description,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com'),
   robots: {
-    index: false,
-    follow: false,
+    // Production (datunai.com): allow indexing. Preview/dev: block.
+    index: process.env.NEXT_PUBLIC_APP_URL === 'https://datunai.com',
+    follow: process.env.NEXT_PUBLIC_APP_URL === 'https://datunai.com',
   },
 };
 

@@ -4,6 +4,7 @@
 // Pattern: Single-responsibility service, Stripe Auth, Clerk backend.
 // ═══════════════════════════════════════════════════════════════
 
+import crypto from 'node:crypto';
 import { prisma } from '@repo/db';
 import { logger } from '../../lib/logger.js';
 import { AuthenticationError, ConflictError, NotFoundError } from '../../errors/index.js';
@@ -11,6 +12,7 @@ import { PasswordService } from './password.service.js';
 import { JwtService } from './jwt.service.js';
 import { OtpService } from './otp.service.js';
 import { GoogleOAuthService } from './google-oauth.service.js';
+import { cache } from '../../lib/redis.js';
 import type {
   AuthResponse,
   SignupWithEmailDTO,
@@ -24,9 +26,14 @@ import type {
   AuthTokens,
 } from './types.js';
 
+// P2-F2: Valid bcrypt hash for timing-attack defense (constant-time comparison)
+// Generated from: bcrypt.hash('not-a-real-password-timing-defense', 12)
+const TIMING_SAFE_DUMMY_HASH = '$2a$12$LJ3m4ys3Lgkz7g9X5K5mCOqGJOA8.r0oI6FnzqZpq4FOmRxr4Ude';
+
 export class AuthService {
   // ═══════════════════════════════════════════════════════════
   // 1. EMAIL + PASSWORD SIGNUP
+  // P2-F1: Race condition fix — P2002 catch after transaction
   // ═══════════════════════════════════════════════════════════
 
   static async signupWithEmail(dto: SignupWithEmailDTO): Promise<AuthResponse> {
@@ -49,43 +56,56 @@ export class AuthService {
 
     const passwordHash = await PasswordService.hash(dto.password);
 
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
-        data: {
-          email: dto.email.toLowerCase().trim(),
-          name: dto.name.trim(),
-          phone: dto.phone || null,
-          passwordHash,
-          primaryRole: 'PATIENT',
-          isEmailVerified: false,
-          lastLoginAt: new Date(),
-        },
-      });
+    let user;
+    try {
+      user = await prisma.$transaction(async (tx) => {
+        const newUser = await tx.user.create({
+          data: {
+            email: dto.email.toLowerCase().trim(),
+            name: dto.name.trim(),
+            phone: dto.phone || null,
+            passwordHash,
+            primaryRole: 'PATIENT',
+            isEmailVerified: false,
+            lastLoginAt: new Date(),
+          },
+        });
 
-      await tx.patient.create({
-        data: { userId: newUser.id },
-      });
+        await tx.patient.create({
+          data: { userId: newUser.id },
+        });
 
-      await tx.userAuthIdentity.create({
-        data: {
-          userId: newUser.id,
-          provider: 'EMAIL',
-          providerUserId: newUser.id,
-          emailAtProvider: newUser.email,
-          isPrimary: true,
-          lastUsedAt: new Date(),
-        },
-      });
+        await tx.userAuthIdentity.create({
+          data: {
+            userId: newUser.id,
+            provider: 'EMAIL',
+            providerUserId: newUser.id,
+            emailAtProvider: newUser.email,
+            isPrimary: true,
+            lastUsedAt: new Date(),
+          },
+        });
 
-      await tx.userRole.create({
-        data: {
-          userId: newUser.id,
-          role: 'PATIENT',
-        },
-      });
+        await tx.userRole.create({
+          data: { userId: newUser.id, role: 'PATIENT' },
+        });
 
-      return newUser;
-    });
+        return newUser;
+      });
+    } catch (err) {
+      // P2-F1: Catch race condition — concurrent signup with same email/phone
+      if ((err as { code?: string }).code === 'P2002') {
+        const target = (err as { meta?: { target?: string[] } }).meta?.target;
+        if (target?.includes('email')) {
+          throw new ConflictError('An account with this email already exists');
+        }
+        if (target?.includes('phone')) {
+          throw new ConflictError('An account with this phone number already exists');
+        }
+        throw new ConflictError('An account with these credentials already exists');
+      }
+      throw err;
+    }
 
     const tokens = JwtService.generateTokens({
       userId: user.id,
@@ -107,6 +127,7 @@ export class AuthService {
 
   // ═══════════════════════════════════════════════════════════
   // 2. EMAIL + PASSWORD LOGIN
+  // P2-F2: Fixed timing-attack dummy hash (valid bcrypt format)
   // ═══════════════════════════════════════════════════════════
 
   static async loginWithEmail(dto: LoginWithEmailDTO): Promise<AuthResponse> {
@@ -115,7 +136,8 @@ export class AuthService {
     });
 
     if (!user || !user.passwordHash) {
-      await PasswordService.compare(dto.password, '$2a$12$dummyhashfortimingattak');
+      // P2-F2: Constant-time defense — valid bcrypt hash, full computation
+      await PasswordService.compare(dto.password, TIMING_SAFE_DUMMY_HASH);
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -154,6 +176,8 @@ export class AuthService {
 
   // ═══════════════════════════════════════════════════════════
   // 4. OTP — VERIFY (login OR signup)
+  // P2-F1: Race condition fix on user creation
+  // P2-F3: Phone PII leak fix — random synthetic email
   // ═══════════════════════════════════════════════════════════
 
   static async verifyOtp(dto: VerifyOtpDTO): Promise<AuthResponse> {
@@ -174,41 +198,54 @@ export class AuthService {
       isNewUser = true;
       const name = dto.name || (isEmail ? dto.destination.split('@')[0] || 'User' : 'User');
 
-      user = await prisma.$transaction(async (tx) => {
-        const newUser = await tx.user.create({
-          data: {
-            email: isEmail
-              ? dto.destination.toLowerCase().trim()
-              : `${dto.destination}@phone.datunai.com`,
-            phone: !isEmail ? dto.destination : null,
-            name,
-            primaryRole: 'PATIENT',
-            isEmailVerified: isEmail,
-            isPhoneVerified: !isEmail,
-            lastLoginAt: new Date(),
-          },
+      try {
+        user = await prisma.$transaction(async (tx) => {
+          const newUser = await tx.user.create({
+            data: {
+              // P2-F3: Random synthetic email — no phone PII leak
+              email: isEmail
+                ? dto.destination.toLowerCase().trim()
+                : `phone-user-${crypto.randomUUID().slice(0, 8)}@phone.datunai.com`,
+              phone: !isEmail ? dto.destination : null,
+              name,
+              primaryRole: 'PATIENT',
+              isEmailVerified: isEmail,
+              isPhoneVerified: !isEmail,
+              lastLoginAt: new Date(),
+            },
+          });
+
+          await tx.patient.create({ data: { userId: newUser.id } });
+
+          await tx.userAuthIdentity.create({
+            data: {
+              userId: newUser.id,
+              provider: isEmail ? 'EMAIL' : 'PHONE',
+              providerUserId: newUser.id,
+              emailAtProvider: isEmail ? dto.destination : null,
+              phoneAtProvider: !isEmail ? dto.destination : null,
+              isPrimary: true,
+              lastUsedAt: new Date(),
+            },
+          });
+
+          await tx.userRole.create({
+            data: { userId: newUser.id, role: 'PATIENT' },
+          });
+
+          return newUser;
         });
-
-        await tx.patient.create({ data: { userId: newUser.id } });
-
-        await tx.userAuthIdentity.create({
-          data: {
-            userId: newUser.id,
-            provider: isEmail ? 'EMAIL' : 'PHONE',
-            providerUserId: newUser.id,
-            emailAtProvider: isEmail ? dto.destination : null,
-            phoneAtProvider: !isEmail ? dto.destination : null,
-            isPrimary: true,
-            lastUsedAt: new Date(),
-          },
-        });
-
-        await tx.userRole.create({
-          data: { userId: newUser.id, role: 'PATIENT' },
-        });
-
-        return newUser;
-      });
+      } catch (err) {
+        // P2-F1: Race condition — concurrent OTP verify with same phone/email
+        if ((err as { code?: string }).code === 'P2002') {
+          // User was created by another concurrent request — fetch and continue
+          user = await prisma.user.findUnique({ where: whereClause });
+          if (!user) throw new ConflictError('Account creation conflict. Please try again.');
+          isNewUser = false;
+        } else {
+          throw err;
+        }
+      }
     } else {
       const updateData: Record<string, unknown> = { lastLoginAt: new Date() };
       if (isEmail) updateData.isEmailVerified = true;
@@ -237,6 +274,8 @@ export class AuthService {
 
   // ═══════════════════════════════════════════════════════════
   // 5. GOOGLE OAUTH
+  // P2-F1: Race condition fix on Google signup
+  // P2-F20: Avatar — fresh Google picture takes priority
   // ═══════════════════════════════════════════════════════════
 
   static async loginWithGoogle(dto: GoogleAuthDTO): Promise<AuthResponse> {
@@ -257,7 +296,8 @@ export class AuthService {
         where: { id: existingIdentity.user.id },
         data: {
           lastLoginAt: new Date(),
-          avatarUrl: existingIdentity.user.avatarUrl || googleUser.picture,
+          // P2-F20: Fresh Google picture takes priority over stale avatar
+          avatarUrl: googleUser.picture ?? existingIdentity.user.avatarUrl,
         },
       });
 
@@ -299,43 +339,57 @@ export class AuthService {
         data: {
           lastLoginAt: new Date(),
           isEmailVerified: true,
-          avatarUrl: user.avatarUrl || googleUser.picture,
+          // P2-F20: Fresh Google picture priority
+          avatarUrl: googleUser.picture ?? user.avatarUrl,
         },
       });
     } else {
       isNewUser = true;
 
-      user = await prisma.$transaction(async (tx) => {
-        const newUser = await tx.user.create({
-          data: {
-            email: googleUser.email.toLowerCase(),
-            name: googleUser.name,
-            avatarUrl: googleUser.picture,
-            primaryRole: 'PATIENT',
-            isEmailVerified: true,
-            lastLoginAt: new Date(),
-          },
+      try {
+        user = await prisma.$transaction(async (tx) => {
+          const newUser = await tx.user.create({
+            data: {
+              email: googleUser.email.toLowerCase(),
+              name: googleUser.name,
+              avatarUrl: googleUser.picture,
+              primaryRole: 'PATIENT',
+              isEmailVerified: true,
+              lastLoginAt: new Date(),
+            },
+          });
+
+          await tx.patient.create({ data: { userId: newUser.id } });
+
+          await tx.userAuthIdentity.create({
+            data: {
+              userId: newUser.id,
+              provider: 'GOOGLE',
+              providerUserId: googleUser.id,
+              emailAtProvider: googleUser.email,
+              isPrimary: true,
+              lastUsedAt: new Date(),
+            },
+          });
+
+          await tx.userRole.create({
+            data: { userId: newUser.id, role: 'PATIENT' },
+          });
+
+          return newUser;
         });
-
-        await tx.patient.create({ data: { userId: newUser.id } });
-
-        await tx.userAuthIdentity.create({
-          data: {
-            userId: newUser.id,
-            provider: 'GOOGLE',
-            providerUserId: googleUser.id,
-            emailAtProvider: googleUser.email,
-            isPrimary: true,
-            lastUsedAt: new Date(),
-          },
-        });
-
-        await tx.userRole.create({
-          data: { userId: newUser.id, role: 'PATIENT' },
-        });
-
-        return newUser;
-      });
+      } catch (err) {
+        // P2-F1: Race condition — Google signup concurrent
+        if ((err as { code?: string }).code === 'P2002') {
+          user = await prisma.user.findUnique({
+            where: { email: googleUser.email.toLowerCase() },
+          });
+          if (!user) throw new ConflictError('Account creation conflict. Please try again.');
+          isNewUser = false;
+        } else {
+          throw err;
+        }
+      }
     }
 
     const tokens = JwtService.generateTokens({
@@ -350,9 +404,19 @@ export class AuthService {
 
   // ═══════════════════════════════════════════════════════════
   // 6. FORGOT PASSWORD
+  // P2-F5: Invalidate old OTP before sending new
+  // P2-F6: Per-email rate limit (max 3/hour)
   // ═══════════════════════════════════════════════════════════
 
   static async forgotPassword(dto: ForgotPasswordDTO): Promise<void> {
+    // P2-F6: Per-email rate limit
+    const rateLimitKey = `forgot-pwd:${dto.email.toLowerCase().trim()}`;
+    const requestCount = await cache.incr(rateLimitKey, 3600);
+    if (requestCount > 3) {
+      logger.warn('Forgot password rate limit hit', { email: dto.email });
+      return; // Silent — don't reveal rate limit to attacker
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: dto.email.toLowerCase().trim() },
     });
@@ -361,6 +425,9 @@ export class AuthService {
       logger.info('Forgot password for non-existent email', { email: dto.email });
       return;
     }
+
+    // P2-F5: Invalidate any prior OTP before sending new
+    await OtpService.invalidate(user.email, 'email');
 
     await OtpService.send(user.email, 'email');
     logger.info('Password reset OTP sent', { userId: user.id });

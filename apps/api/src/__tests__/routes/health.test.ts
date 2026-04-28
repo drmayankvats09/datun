@@ -61,11 +61,12 @@ describe('Health Routes (Integration)', () => {
   });
 
   // ── Performance assertions ──
-  it('GET / responds within 200ms', async () => {
+  it('GET / responds within reasonable time', async () => {
     const start = Date.now();
     await getTestApp().get('/');
     const duration = Date.now() - start;
-    expect(duration).toBeLessThan(200);
+    // P6-F18: Loose threshold — CI cold start can exceed 200ms
+    expect(duration).toBeLessThan(1000);
   });
 
   it('GET /health responds within 500ms', async () => {

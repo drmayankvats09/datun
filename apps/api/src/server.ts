@@ -16,7 +16,11 @@ import { logger } from './lib/logger.js';
 import { initRedis, verifyRedis } from './lib/redis.js';
 import { createApp } from './app.js';
 import { startCronJobs } from './crons/index.js';
-import { prisma } from '@repo/db';
+import { prisma as basePrisma } from '@repo/db';
+import { registerAuditMiddleware } from './lib/prisma-audit.js';
+
+// P2-F8: $extends returns new client — use this everywhere
+const prisma = registerAuditMiddleware(basePrisma);
 import { BRAND, API_VERSION } from '@repo/shared';
 import type { Server } from 'node:http';
 
@@ -43,16 +47,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // ── 3. Register Prisma audit middleware (DPDP compliance) ──
-  try {
-    const { registerAuditMiddleware } = await import('./lib/prisma-audit.js');
-    registerAuditMiddleware(prisma);
-    logger.info('✅ Prisma audit middleware registered');
-  } catch (err) {
-    logger.warn('⚠️ Prisma audit middleware failed to register', {
-      error: (err as Error).message,
-    });
-  }
+  // ── 3. Prisma audit middleware registered at import time (see top of file) ──
+  logger.info('✅ Prisma audit extension active ($extends pattern)');
 
   // ── 4. Create Express app ──
   const app = createApp();
@@ -69,7 +65,9 @@ async function main(): Promise<void> {
       redis: redisResult.ok ? 'connected' : 'fallback (in-memory)',
     });
 
-    console.log(`
+    // P2-F23: ASCII art only in dev — production uses structured logs
+    if (env.NODE_ENV === 'development') {
+      console.log(`
   ╔═══════════════════════════════════════╗
   ║        ${BRAND.name} API Running 🦷           ║
   ║        Port: ${String(env.PORT).padEnd(24)}║
@@ -77,7 +75,8 @@ async function main(): Promise<void> {
   ║        Env: ${env.NODE_ENV.padEnd(25)}║
   ║        Redis: ${(redisResult.ok ? 'Connected ✅' : 'In-memory ⚠️').padEnd(23)}║
   ╚═══════════════════════════════════════╝
-    `);
+      `);
+    }
   });
 }
 
@@ -89,15 +88,22 @@ async function main(): Promise<void> {
 async function shutdown(signal: string): Promise<void> {
   logger.info(`${signal} received — starting graceful shutdown...`);
 
-  // Stop accepting new connections
+  // Stop accepting + drain in-flight (server.close awaits all responses)
   if (server) {
-    server.close(() => {
-      logger.info('HTTP server closed — no new connections');
+    await new Promise<void>((resolve) => {
+      server!.close((err) => {
+        if (err) logger.warn('Error during server close', { error: err.message });
+        else logger.info('HTTP server closed — all in-flight requests completed');
+        resolve();
+      });
+
+      // P2-F16: 25s hard ceiling (Railway gives 30s before SIGKILL)
+      setTimeout(() => {
+        logger.warn('Drain timeout reached — forcing close');
+        resolve();
+      }, 25_000);
     });
   }
-
-  // Give in-flight requests 10 seconds to finish
-  await new Promise((resolve) => setTimeout(resolve, 10_000));
 
   // Close database connection pool
   try {

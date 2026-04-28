@@ -8,6 +8,7 @@
 'use client';
 
 import React from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -31,8 +32,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   override componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    // Future: Sentry.captureException(error, { extra: info });
-    console.error('[ErrorBoundary] Caught:', error, info.componentStack);
+    Sentry.captureException(error, {
+      tags: { errorBoundary: 'a11y-component' },
+      contexts: { react: { componentStack: info.componentStack } },
+    });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[ErrorBoundary] Caught:', error, info.componentStack);
+    }
   }
 
   override render(): React.ReactNode {
@@ -41,11 +47,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
       return (
         <div className="flex min-h-[300px] flex-col items-center justify-center px-6 py-12 text-center">
-          <div className="bg-destructive/10 mb-4 flex h-14 w-14 items-center justify-center rounded-full text-2xl">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-2xl">
             ⚠️
           </div>
-          <h2 className="text-foreground text-lg font-semibold">Something went wrong</h2>
-          <p className="text-muted-foreground mt-2 max-w-sm text-sm">
+          <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
             An unexpected error occurred. Please try refreshing the page.
           </p>
           <button
@@ -53,12 +59,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               this.setState({ hasError: false, error: null });
               window.location.reload();
             }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-6 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors"
+            className="mt-6 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Refresh page
           </button>
           {process.env.NODE_ENV === 'development' && this.state.error && (
-            <pre className="bg-muted text-destructive mt-4 max-w-lg overflow-auto rounded-lg p-4 text-left text-xs">
+            <pre className="mt-4 max-w-lg overflow-auto rounded-lg bg-muted p-4 text-left text-xs text-destructive">
               {this.state.error.message}
             </pre>
           )}

@@ -1,7 +1,6 @@
 # ═══════════════════════════════════════════════════════════════
-# DATUN AI — CI PIPELINE
+# DATUN — CI PIPELINE
 # Runs on every push and PR. Blocks merge if anything fails.
-# Pattern: Vercel, Linear, Cal.com — all use GitHub Actions CI.
 # ═══════════════════════════════════════════════════════════════
 
 name: CI
@@ -9,33 +8,54 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.github/ISSUE_TEMPLATE/**'
 
 permissions:
   contents: read
   pull-requests: write
 
-# Cancel in-progress runs for same branch/PR (saves GitHub minutes)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: '20'
-  # Prisma generate needs DATABASE_URL in schema — dummy for CI
-  # (generate only reads schema file, does NOT connect to DB)
-  DATABASE_URL: 'postgresql://dummy:dummy@localhost:5432/dummy'
+  DATABASE_URL: 'postgresql://test:test@localhost:5432/datun_test'
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-  # ─────────────────────────────────────────────────────────
-  # JOB 1: QUALITY — lint + typecheck + build
-  # ─────────────────────────────────────────────────────────
   quality:
     name: Lint → Typecheck → Build → Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: datun_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -50,7 +70,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
-      # ── Turbo cache (repeated builds 70-80% faster) ──
       - name: Cache Turbo
         uses: actions/cache@v4
         with:
@@ -62,34 +81,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ── Prisma Client generate (needed before build + typecheck) ──
       - name: Generate Prisma Client
         run: pnpm turbo run db:generate
 
-      # ── Lint (ESLint — code quality check) ──
       - name: Lint
         run: pnpm turbo run lint
 
-      # ── Typecheck (TypeScript — type safety) ──
       - name: Typecheck
         run: pnpm turbo run check-types
 
-      # ── Build all packages (Next.js + Express API + shared) ──
       - name: Build
         run: pnpm turbo run build
         env:
-          NEXT_PUBLIC_APP_URL: 'https://datunai.com'
-          NEXT_PUBLIC_API_URL: 'https://dentscan-ai-backend-production.up.railway.app'
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'https://datunai.com' }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.datunai.com' }}
 
-          # ── Tests (unit + integration — merge blocked if any fail) ──
       - name: Test with Coverage
         run: pnpm turbo run test:coverage
         env:
           NODE_ENV: 'test'
           JWT_SECRET: 'ci-jwt-secret-minimum-32-characters-long-for-testing'
+          JWT_REFRESH_SECRET: 'ci-refresh-secret-minimum-32-characters-different'
           ANTHROPIC_API_KEY: 'sk-ant-ci-test-key'
+          DATABASE_URL: 'postgresql://test:test@localhost:5432/datun_test'
 
-      # ── Coverage report comment on PR ──
       - name: Coverage Report
         if: github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
@@ -97,53 +112,37 @@ jobs:
           vite-config-path: ./apps/api/vitest.config.ts
           json-summary-path: ./apps/api/coverage/coverage-summary.json
 
-      # ── Dependency audit (block high/critical vulnerabilities) ──
       - name: Security Audit
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --audit-level=high --prod
+        continue-on-error: false
 
-  # ─────────────────────────────────────────────────────────
-  # JOB 2: SECURITY — gitleaks secret scanning
-  # ─────────────────────────────────────────────────────────
   security:
     name: Secret Scanning
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Run gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-  # ─────────────────────────────────────────────────────────
-  # JOB 3: SEMGREP — SAST security analysis (free for private repos)
-  # Finds SQL injection, XSS, path traversal, insecure crypto.
-  # Pattern: Dropbox, Figma, Slack — all use Semgrep.
-  # ─────────────────────────────────────────────────────────
   semgrep:
     name: Security Analysis (Semgrep)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     container:
       image: semgrep/semgrep
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Run Semgrep
         run: semgrep scan --config auto --error --severity ERROR
 
-  # ─────────────────────────────────────────────────────────
-  # JOB 4: AUTO-LABEL PRs based on changed files
-  # ─────────────────────────────────────────────────────────
   label:
     name: Auto Label PR
     runs-on: ubuntu-latest
@@ -152,23 +151,18 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-
     steps:
       - name: Label PR
         uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-  # ─────────────────────────────────────────────────────────
-  # JOB 5: CLOUDFLARE CACHE PURGE (only on main push, after build passes)
-  # ─────────────────────────────────────────────────────────
   purge-cache:
     name: Cloudflare Cache Purge
     runs-on: ubuntu-latest
     timeout-minutes: 2
     needs: [quality]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
     steps:
       - name: Purge Cloudflare Cache
         run: |

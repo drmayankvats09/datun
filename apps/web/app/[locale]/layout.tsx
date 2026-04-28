@@ -72,7 +72,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={inter.variable} suppressHydrationWarning>
+    <html lang={locale} className={locale === 'en' ? inter.variable : ''} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider messages={messages}>
           <LocaleFont />

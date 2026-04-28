@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // ENV CONFIG — Validated at boot, crash-early if misconfigured
+// Source of truth for all environment variables.
 // ═══════════════════════════════════════════════════════════════
 
 import { z } from 'zod';
@@ -11,6 +12,10 @@ const envSchema = z.object({
 
   // ── Auth (own system — NO Auth0) ──
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(32, 'JWT_REFRESH_SECRET must be at least 32 characters')
+    .optional(),
 
   // ── Google OAuth (optional) ──
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -34,7 +39,7 @@ const envSchema = z.object({
   // ── Sentry ──
   SENTRY_DSN: z.string().optional(),
 
-  // ── WhatsApp ──
+  // ── WhatsApp (Meta Cloud API) ──
   WHATSAPP_ENABLED: z
     .string()
     .transform((v) => v === 'true')
@@ -42,6 +47,11 @@ const envSchema = z.object({
   WHATSAPP_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
+
+  // ── Meta App (for WhatsApp Cloud API auth) ──
+  META_APP_ID: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
 
   // ── Resend ──
   RESEND_API_KEY: z.string().optional(),
@@ -59,6 +69,7 @@ const envSchema = z.object({
 });
 
 const refinedSchema = envSchema.superRefine((data, ctx) => {
+  // WhatsApp: all required vars when enabled
   if (data.WHATSAPP_ENABLED) {
     if (!data.WHATSAPP_TOKEN) {
       ctx.addIssue({
@@ -74,7 +85,15 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
         path: ['WHATSAPP_PHONE_NUMBER_ID'],
       });
     }
+    if (!data.WHATSAPP_BUSINESS_ACCOUNT_ID) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'WHATSAPP_BUSINESS_ACCOUNT_ID required when WHATSAPP_ENABLED=true',
+        path: ['WHATSAPP_BUSINESS_ACCOUNT_ID'],
+      });
+    }
   }
+  // Google OAuth: both ID + secret required together
   if (data.GOOGLE_CLIENT_ID && !data.GOOGLE_CLIENT_SECRET) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -82,6 +101,7 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['GOOGLE_CLIENT_SECRET'],
     });
   }
+  // MSG91: both key + template required together
   if (data.MSG91_AUTH_KEY && !data.MSG91_TEMPLATE_ID) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -96,6 +116,28 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       message: 'UPSTASH_REDIS_REST_TOKEN required when UPSTASH_REDIS_REST_URL is set',
       path: ['UPSTASH_REDIS_REST_TOKEN'],
     });
+  }
+  // P1-F18: Resend API key required if custom alert email
+  if (data.ALERT_EMAIL_TO !== 'hello@datunai.com' && !data.RESEND_API_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'RESEND_API_KEY required when custom ALERT_EMAIL_TO is set',
+      path: ['RESEND_API_KEY'],
+    });
+  }
+  // Meta App: secret required if app ID set
+  if (data.META_APP_ID && !data.META_APP_SECRET) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'META_APP_SECRET required when META_APP_ID is set',
+      path: ['META_APP_SECRET'],
+    });
+  }
+  // Production warning: JWT_REFRESH_SECRET should be set
+  if (data.NODE_ENV === 'production' && !data.JWT_REFRESH_SECRET) {
+    console.warn(
+      '⚠️ JWT_REFRESH_SECRET not set — falling back to JWT_SECRET for refresh tokens. Set a separate secret in production.',
+    );
   }
 });
 

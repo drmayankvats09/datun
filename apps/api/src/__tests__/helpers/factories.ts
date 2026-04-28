@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // TEST FACTORIES — Reusable test data generators
-// Pattern: FactoryBot (Ruby), Fishery (TS), Factory Girl.
-// Change schema once → all tests automatically updated.
+// P6-F16: All auth fields included (passwordHash, primaryRole, etc.)
 // ═══════════════════════════════════════════════════════════════
 
 let counter = 0;
@@ -18,10 +17,15 @@ export const UserFactory = {
       id,
       email: `user-${id}@test.datunai.com`,
       name: `Test User ${id}`,
-      role: 'PATIENT' as const,
-      phone: '919876543210',
+      phone: '+919876543210',
+      passwordHash: '$2a$12$LJ3m4ys3Lgkz7g9X5K5mCOqGJOA8.r0oI6FnzqZpq4FOmRxr4Ude',
+      primaryRole: 'PATIENT' as const,
+      avatarUrl: null,
       isActive: true,
+      isEmailVerified: true,
+      isPhoneVerified: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
       lastLoginAt: new Date(),
       ...overrides,
     };
@@ -48,12 +52,29 @@ export const ConsultationFactory = {
       status: 'IN_PROGRESS' as const,
       language: 'en',
       createdAt: new Date(),
+      updatedAt: new Date(),
       ...overrides,
     };
   },
 };
 
-// Reset counter between test suites
+export const AuthIdentityFactory = {
+  create(overrides: Record<string, unknown> = {}) {
+    return {
+      id: nextId(),
+      userId: nextId(),
+      provider: 'EMAIL' as const,
+      providerUserId: nextId(),
+      emailAtProvider: 'test@datunai.com',
+      phoneAtProvider: null,
+      isPrimary: true,
+      lastUsedAt: new Date(),
+      createdAt: new Date(),
+      ...overrides,
+    };
+  },
+};
+
 export function resetFactories(): void {
   counter = 0;
 }

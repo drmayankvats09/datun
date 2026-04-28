@@ -6,26 +6,48 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-// ── Token Storage (localStorage) ──
+// ── Token Storage (SSR-safe + iOS Safari quota-safe) ──
+// P3-F2: typeof window check on ALL token operations
 
 export function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('datun_access_token');
+  try {
+    return localStorage.getItem('datun_access_token');
+  } catch {
+    return null;
+  }
 }
 
 export function getRefreshToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('datun_refresh_token');
+  try {
+    return localStorage.getItem('datun_refresh_token');
+  } catch {
+    return null;
+  }
 }
 
 export function setTokens(accessToken: string, refreshToken: string): void {
-  localStorage.setItem('datun_access_token', accessToken);
-  localStorage.setItem('datun_refresh_token', refreshToken);
+  // P3-F2: SSR safety + iOS Safari quota error handling
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('datun_access_token', accessToken);
+    localStorage.setItem('datun_refresh_token', refreshToken);
+  } catch {
+    // iOS Safari private mode throws QuotaExceededError — degrade gracefully
+    console.warn('[Auth] localStorage write failed — session will not persist');
+  }
 }
 
 export function clearTokens(): void {
-  localStorage.removeItem('datun_access_token');
-  localStorage.removeItem('datun_refresh_token');
+  // P3-F2: SSR safety
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('datun_access_token');
+    localStorage.removeItem('datun_refresh_token');
+  } catch {
+    // Silent — clearing failing is acceptable
+  }
 }
 
 // ── API Helper ──
@@ -35,6 +57,11 @@ interface ApiResponse<T> {
   data?: T;
   error?: { code: string; message: string; details?: Record<string, string[]> };
 }
+
+// P3-F1: Single-flight refresh — prevents concurrent refresh attempts
+// Multiple 401s during one refresh window → all wait for same Promise.
+// Pattern: Stripe SDK, Auth0 SPA SDK, Apollo Client.
+let refreshInFlight: Promise<boolean> | null = null;
 
 async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
   const url = `${API_BASE}/api${endpoint}`;
@@ -47,20 +74,37 @@ async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promis
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(url, { ...options, headers });
-  const data = (await res.json()) as ApiResponse<T>;
 
-  // If 401 and we have a refresh token, try refreshing
+  // If 401 and we have a refresh token, try refreshing (single-flight)
   if (res.status === 401 && getRefreshToken()) {
-    const refreshed = await refreshAccessToken();
+    // P3-F1: If refresh already in-flight, wait for it (don't start another)
+    if (!refreshInFlight) {
+      refreshInFlight = refreshAccessToken().finally(() => {
+        refreshInFlight = null;
+      });
+    }
+    const refreshed = await refreshInFlight;
+
     if (refreshed) {
+      // Retry original request with NEW token
       headers['Authorization'] = `Bearer ${getAccessToken()}`;
       const retryRes = await fetch(url, { ...options, headers });
       return (await retryRes.json()) as ApiResponse<T>;
     }
+
+    // Refresh failed — clear everything, redirect to login
     clearTokens();
+    if (typeof window !== 'undefined') {
+      // P3-F15: Preserve locale on logout redirect
+      const pathParts = window.location.pathname.split('/');
+      const possibleLocale = pathParts[1];
+      const validLocales = ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'];
+      const localePrefix = validLocales.includes(possibleLocale ?? '') ? `/${possibleLocale}` : '';
+      window.location.href = `${localePrefix}/login`;
+    }
   }
 
-  return data;
+  return (await res.json()) as ApiResponse<T>;
 }
 
 // ── Auth API Calls ──
@@ -113,7 +157,11 @@ export async function sendOtp(
   destination: string,
   channel: 'email' | 'phone',
 ): Promise<
-  ApiResponse<{ maskedDestination: string; expiresInSeconds: number; retryAfterSeconds: number }>
+  ApiResponse<{
+    maskedDestination: string;
+    expiresInSeconds: number;
+    retryAfterSeconds: number;
+  }>
 > {
   return authFetch('/auth/otp/send', {
     method: 'POST',
@@ -177,15 +225,22 @@ export async function getMe(): Promise<ApiResponse<AuthUser>> {
   return authFetch<AuthUser>('/auth/me');
 }
 
+// P3-F15: Logout preserves current locale
 export async function logout(): Promise<void> {
-  // Blacklist token on backend (Redis) — token invalid on all devices
   try {
     await authFetch('/auth/logout', { method: 'POST' });
   } catch {
     // Even if backend call fails, clear local tokens
   }
   clearTokens();
-  window.location.href = '/login';
+
+  if (typeof window !== 'undefined') {
+    const pathParts = window.location.pathname.split('/');
+    const possibleLocale = pathParts[1];
+    const validLocales = ['hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'];
+    const localePrefix = validLocales.includes(possibleLocale ?? '') ? `/${possibleLocale}` : '';
+    window.location.href = `${localePrefix}/login`;
+  }
 }
 
 // ── Token Refresh ──

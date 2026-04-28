@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          // X-XSS-Protection removed (deprecated, replaced by CSP)
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Permissions-Policy',
@@ -40,13 +40,16 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
+            // TODO: Replace unsafe-inline/unsafe-eval with nonce-based CSP (P1-F15)
+            // Requires: nonce generation in proxy.ts + layout injection
+            // Tracked as separate security hardening task
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://static.cloudflareinsights.com https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudflare.com",
               "font-src 'self' https://fonts.gstatic.com",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'https://dentscan-ai-backend-production.up.railway.app'} https://static.cloudflareinsights.com https://cloudflareinsights.com https://va.vercel-scripts.com https://*.sentry.io https://*.ingest.sentry.io`,
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'} https://static.cloudflareinsights.com https://cloudflareinsights.com https://va.vercel-scripts.com https://*.sentry.io https://*.ingest.sentry.io`,
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "worker-src 'self' blob:",
@@ -56,7 +59,6 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-
       {
         source: '/(.*)\\.(ico|png|jpg|jpeg|svg|webp|gif|woff|woff2)',
         headers: [
@@ -75,8 +77,6 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 const wrappedConfig = withNextIntl(nextConfig);
 
 // Sentry wraps config only in production builds.
-// In dev mode, withSentryConfig + Turbopack causes panics + full-reload loops.
-// Pattern: Vercel docs, Sentry Next.js 16 known limitation.
 export default process.env.NODE_ENV === 'production'
   ? withSentryConfig(wrappedConfig, {
       org: process.env['SENTRY_ORG'],

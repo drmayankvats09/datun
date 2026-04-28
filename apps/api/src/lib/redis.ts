@@ -183,10 +183,16 @@ export const cache = {
     const entry = memoryStore.get(key);
     const current = entry ? parseInt(entry.value, 10) || 0 : 0;
     const newVal = current + 1;
+    // P2-F17: Always set expiresAt if ttlSeconds provided (fixes memory leak
+    // when expired entry is re-incremented before cleanup runs)
+    const computedExpiry = ttlSeconds
+      ? entry?.expiresAt && entry.expiresAt > Date.now()
+        ? entry.expiresAt
+        : Date.now() + ttlSeconds * 1000
+      : (entry?.expiresAt ?? null);
     memoryStore.set(key, {
       value: String(newVal),
-      expiresAt:
-        ttlSeconds && newVal === 1 ? Date.now() + ttlSeconds * 1000 : (entry?.expiresAt ?? null),
+      expiresAt: computedExpiry,
     });
     return newVal;
   },

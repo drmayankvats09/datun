@@ -23,7 +23,6 @@ export const URLS = {
     'https://datun.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
-    'http://127.0.0.1:5500',
   ] as readonly string[],
 
   /** CDN & infrastructure */

@@ -64,6 +64,16 @@ export const useUIStore = create<UIState>()(
           welcomeBannerDismissed: state.welcomeBannerDismissed,
           consultationSortOrder: state.consultationSortOrder,
         }),
+        migrate: (persisted, version) => {
+          // Future versions add migrations here
+          if (version === 0) {
+            return {
+              ...(persisted as Record<string, unknown>),
+              consultationSortOrder: 'newest',
+            };
+          }
+          return persisted as Record<string, unknown>;
+        },
       },
     ),
     { name: 'UIStore', enabled: process.env.NODE_ENV === 'development' },

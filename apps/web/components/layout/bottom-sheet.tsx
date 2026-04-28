@@ -46,7 +46,11 @@ export function BottomSheet({
         <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>
-            {description && <SheetDescription>{description}</SheetDescription>}
+            {description ? (
+              <SheetDescription>{description}</SheetDescription>
+            ) : (
+              <SheetDescription className="sr-only">{title}</SheetDescription>
+            )}
           </SheetHeader>
           <div className="mt-4 overflow-y-auto">{children}</div>
         </SheetContent>
@@ -59,7 +63,11 @@ export function BottomSheet({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
+          {description ? (
+            <DialogDescription>{description}</DialogDescription>
+          ) : (
+            <DialogDescription className="sr-only">{title}</DialogDescription>
+          )}
         </DialogHeader>
         <div className="mt-4">{children}</div>
       </DialogContent>

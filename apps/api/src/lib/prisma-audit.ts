@@ -1,8 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
-// PRISMA AUDIT MIDDLEWARE — Audit trail + slow query detection
+// PRISMA AUDIT — Query extension for Prisma v6+
 // DPDP compliance: "kab, kisne, kya access kiya patient data."
-// Uses runtime check for $use (Prisma v6 may have removed it).
-// Gracefully degrades — app never crashes from audit failure.
+// Uses $extends (Prisma v6 native) — replaces deprecated $use.
 // ═══════════════════════════════════════════════════════════════
 
 import type { PrismaClient } from '@repo/db';
@@ -22,50 +21,43 @@ const AUDITED_MODELS = new Set([
 
 const AUDITED_ACTIONS = new Set<string>(['create', 'update', 'delete', 'deleteMany', 'updateMany']);
 
+const SLOW_QUERY_THRESHOLD_MS = 500;
+
 /**
- * Register Prisma audit middleware + slow query detection.
- * Call ONCE after PrismaClient instantiation.
- * Runtime-safe for Prisma v5 AND v6.
+ * Wrap PrismaClient with audit + slow query detection extension.
+ * Returns NEW client instance — caller must use the returned one.
  */
-export function registerAuditMiddleware(client: PrismaClient): void {
-  const clientAny = client as unknown as Record<string, unknown>;
-  if (typeof clientAny['$use'] !== 'function') {
-    logger.warn(
-      '[Audit] Prisma $use middleware not available (v6+). ' +
-        'Audit logging handled by security-logger.ts at service level.',
-    );
-    return;
-  }
+export function registerAuditMiddleware(client: PrismaClient): PrismaClient {
+  return client.$extends({
+    name: 'datun-audit',
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const queryStart = Date.now();
+          const result = await query(args);
+          const queryDuration = Date.now() - queryStart;
 
-  const useMiddleware = clientAny['$use'] as (
-    fn: (
-      params: { model?: string; action: string; args: unknown },
-      next: (params: unknown) => Promise<unknown>,
-    ) => Promise<unknown>,
-  ) => void;
+          // Slow query detection
+          if (queryDuration > SLOW_QUERY_THRESHOLD_MS && model) {
+            logSlowQuery(model, operation, queryDuration);
+          }
 
-  useMiddleware(async (params, next) => {
-    const queryStart = Date.now();
-    const result = await next(params);
-    const queryDuration = Date.now() - queryStart;
+          // Audit trail for sensitive operations
+          if (model && AUDITED_MODELS.has(model) && AUDITED_ACTIONS.has(operation)) {
+            const requestId = getRequestId();
+            logger.info(`[AUDIT] ${model}.${operation}`, {
+              audit: true,
+              model,
+              action: operation,
+              requestId,
+              durationMs: queryDuration,
+              timestamp: new Date().toISOString(),
+            });
+          }
 
-    if (queryDuration > 500 && params.model) {
-      logSlowQuery(params.model, params.action, queryDuration);
-    }
-
-    if (params.model && AUDITED_MODELS.has(params.model) && AUDITED_ACTIONS.has(params.action)) {
-      const requestId = getRequestId();
-
-      logger.info(`[AUDIT] ${params.model}.${params.action}`, {
-        audit: true,
-        model: params.model,
-        action: params.action,
-        requestId,
-        durationMs: queryDuration,
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    return result;
-  });
+          return result;
+        },
+      },
+    },
+  }) as unknown as PrismaClient;
 }

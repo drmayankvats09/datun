@@ -1,7 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // USE-VIEWPORT-SIZE — Reactive viewport width + height
-// For components that need exact pixel values (charts, canvas).
-// Debounced 100ms to prevent resize spam.
+// P3-F17: SSR default = mobile-first (375×667) to minimize layout shift
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -13,19 +12,16 @@ interface ViewportSize {
   height: number;
 }
 
-/**
- * Returns current viewport { width, height } in pixels.
- * Debounced at 100ms to prevent excessive re-renders.
- * SSR-safe: returns 0x0 during server render.
- *
- * @example
- * const { width, height } = useViewportSize();
- * const chartWidth = Math.min(width - 32, 600);
- */
+// Mobile-first default — 95% of Indian users are mobile
+const SSR_DEFAULT: ViewportSize = { width: 375, height: 667 };
+
 export function useViewportSize(): ViewportSize {
-  const [size, setSize] = useState<ViewportSize>({ width: 0, height: 0 });
+  const [size, setSize] = useState<ViewportSize>(SSR_DEFAULT);
 
   useEffect(() => {
+    // Immediate set on mount (no debounce for first read)
+    setSize({ width: window.innerWidth, height: window.innerHeight });
+
     let timeout: ReturnType<typeof setTimeout>;
 
     function update() {
@@ -35,7 +31,6 @@ export function useViewportSize(): ViewportSize {
       }, 100);
     }
 
-    update();
     window.addEventListener('resize', update);
     return () => {
       window.removeEventListener('resize', update);

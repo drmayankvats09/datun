@@ -11,6 +11,10 @@
     "profile": "Profile",
     "settings": "Settings",
     "newConsultation": "New Consultation",
+    "legal": "Legal",
+    "contact": "Contact",
+    "company": "Company",
+    "collapse": "Collapse",
     "backToHome": "← Back to Home"
   },
   "actions": {

@@ -53,6 +53,39 @@ export function setupErrorHandlers(app: Express): void {
       return;
     }
 
+    // P2-F14: Map Prisma errors to user-friendly responses
+    const prismaErr = err as { code?: string; meta?: { target?: string[] } };
+    if (prismaErr.code === 'P2002') {
+      const field = prismaErr.meta?.target?.[0] ?? 'field';
+      logger.warn('Prisma unique constraint violation', { requestId, field });
+      res.status(409).json({
+        success: false,
+        error: { code: 'CONFLICT', message: `A record with this ${field} already exists` },
+        meta: { requestId, durationMs },
+      });
+      return;
+    }
+
+    if (prismaErr.code === 'P2025') {
+      logger.warn('Prisma record not found', { requestId });
+      res.status(404).json({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Resource not found' },
+        meta: { requestId, durationMs },
+      });
+      return;
+    }
+
+    if (prismaErr.code === 'P2003') {
+      logger.warn('Prisma foreign key violation', { requestId });
+      res.status(400).json({
+        success: false,
+        error: { code: 'INVALID_REFERENCE', message: 'Invalid reference to related resource' },
+        meta: { requestId, durationMs },
+      });
+      return;
+    }
+
     // Unknown/programmer errors — log + Sentry, hide from client
     logger.error('Unhandled error', {
       requestId,

@@ -1,9 +1,8 @@
 # ═══════════════════════════════════════════════════════════════
 # GITLEAKS — Secret scanning configuration
-# Prevents API keys, passwords, tokens from being committed.
 # ═══════════════════════════════════════════════════════════════
 
-title = "Datun AI — Gitleaks Config"
+title = "Datun — Gitleaks Config"
 
 [extend]
 useDefault = true
@@ -17,4 +16,7 @@ paths = [
   '''dist''',
   '''node_modules''',
   '''\.env\.example''',
+  '''__tests__''',
+  '''vitest\.config''',
+  '''\.github/workflows/ci\.yml''',
 ]

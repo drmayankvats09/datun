@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
 import {
   Section,
@@ -45,16 +45,16 @@ export default function CookiesPage() {
 
         <HumanSummary>
           <SummaryItem>
-            We use <strong className="text-primary font-semibold">essential cookies only</strong> —
+            We use <strong className="font-semibold text-primary">essential cookies only</strong> —
             for authentication, session management, and security.
           </SummaryItem>
           <SummaryItem>
             We use{' '}
-            <strong className="text-primary font-semibold">privacy-respecting analytics</strong>{' '}
+            <strong className="font-semibold text-primary">privacy-respecting analytics</strong>{' '}
             that do not track you across websites.
           </SummaryItem>
           <SummaryItem>
-            We do <strong className="text-primary font-semibold">not</strong> use advertising
+            We do <strong className="font-semibold text-primary">not</strong> use advertising
             cookies, tracking pixels, or cross-site trackers.
           </SummaryItem>
         </HumanSummary>
@@ -68,19 +68,19 @@ export default function CookiesPage() {
             </p>
             <p>
               Similar technologies include{' '}
-              <strong className="text-foreground font-semibold">local storage</strong> (data stored
+              <strong className="font-semibold text-foreground">local storage</strong> (data stored
               in your browser) and{' '}
-              <strong className="text-foreground font-semibold">session storage</strong> (data
+              <strong className="font-semibold text-foreground">session storage</strong> (data
               stored for the duration of your browser session). This policy covers all such
               technologies collectively.
             </p>
           </Section>
 
           <Section id="cookies-we-use" title="2. Cookies We Use">
-            <div className="border-border my-4 overflow-x-auto rounded-lg border">
+            <div className="my-4 overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50 border-border border-b">
+                  <tr className="border-b border-border bg-muted/50">
                     <th className="px-4 py-3 text-left font-semibold">Cookie</th>
                     <th className="px-4 py-3 text-left font-semibold">Type</th>
                     <th className="px-4 py-3 text-left font-semibold">Purpose</th>
@@ -88,40 +88,40 @@ export default function CookiesPage() {
                   </tr>
                 </thead>
                 <tbody className="text-foreground/80">
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3 font-mono text-xs">datun_session</td>
                     <td className="px-4 py-3">
-                      <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium">
+                      <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         Essential
                       </span>
                     </td>
                     <td className="px-4 py-3">Maintains your authenticated session</td>
                     <td className="px-4 py-3">Session</td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3 font-mono text-xs">datun_token</td>
                     <td className="px-4 py-3">
-                      <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium">
+                      <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         Essential
                       </span>
                     </td>
                     <td className="px-4 py-3">JWT access token for API authentication</td>
                     <td className="px-4 py-3">1 hour</td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3 font-mono text-xs">datun_refresh</td>
                     <td className="px-4 py-3">
-                      <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium">
+                      <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         Essential
                       </span>
                     </td>
                     <td className="px-4 py-3">Refresh token for seamless re-authentication</td>
                     <td className="px-4 py-3">7 days</td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3 font-mono text-xs">datun_theme</td>
                     <td className="px-4 py-3">
-                      <span className="bg-muted-foreground/20 text-muted-foreground rounded px-2 py-0.5 text-xs font-medium">
+                      <span className="rounded bg-muted-foreground/20 px-2 py-0.5 text-xs font-medium text-muted-foreground">
                         Functional
                       </span>
                     </td>
@@ -131,7 +131,7 @@ export default function CookiesPage() {
                   <tr>
                     <td className="px-4 py-3 font-mono text-xs">cf_clearance</td>
                     <td className="px-4 py-3">
-                      <span className="bg-primary/10 text-primary rounded px-2 py-0.5 text-xs font-medium">
+                      <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                         Essential
                       </span>
                     </td>
@@ -146,20 +146,20 @@ export default function CookiesPage() {
           <Section id="analytics" title="3. Analytics">
             <p>
               We use{' '}
-              <strong className="text-primary font-semibold">Cloudflare Web Analytics</strong>, a
+              <strong className="font-semibold text-primary">Cloudflare Web Analytics</strong>, a
               privacy-first analytics service that:
             </p>
             <ul>
               <li>
-                Does <strong className="text-primary font-semibold">not</strong> use cookies for
+                Does <strong className="font-semibold text-primary">not</strong> use cookies for
                 tracking.
               </li>
               <li>
-                Does <strong className="text-primary font-semibold">not</strong> collect personally
+                Does <strong className="font-semibold text-primary">not</strong> collect personally
                 identifiable information.
               </li>
               <li>
-                Does <strong className="text-primary font-semibold">not</strong> track users across
+                Does <strong className="font-semibold text-primary">not</strong> track users across
                 websites.
               </li>
               <li>
@@ -180,11 +180,11 @@ export default function CookiesPage() {
             </p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Cloudflare</strong> — security and
+                <strong className="font-semibold text-foreground">Cloudflare</strong> — security and
                 performance (DDoS protection, bot detection).
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Google OAuth</strong> — only if
+                <strong className="font-semibold text-foreground">Google OAuth</strong> — only if
                 you choose to sign in with Google (during the authentication flow).
               </li>
             </ul>
@@ -194,12 +194,12 @@ export default function CookiesPage() {
             <p>You can manage cookies through the following methods:</p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Browser Settings</strong> — most
+                <strong className="font-semibold text-foreground">Browser Settings</strong> — most
                 browsers allow you to refuse or delete cookies through their settings. Note that
                 disabling essential cookies may prevent the platform from functioning correctly.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Account Deletion</strong> —
+                <strong className="font-semibold text-foreground">Account Deletion</strong> —
                 deleting your account removes all associated session data and tokens.
               </li>
             </ul>

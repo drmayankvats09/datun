@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { useUIStore } from '@/stores';
 
 const TRACKABLE_PREFIXES = ['/dashboard', '/consult', '/settings', '/history'];

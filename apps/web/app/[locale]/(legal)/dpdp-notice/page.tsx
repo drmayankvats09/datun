@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
 import {
   Section,
@@ -47,26 +47,26 @@ export default function DpdpNoticePage() {
 
         <HumanSummary>
           <SummaryItem>
-            You are a <strong className="text-primary font-semibold">Data Principal</strong> — your
+            You are a <strong className="font-semibold text-primary">Data Principal</strong> — your
             personal data belongs to you.
           </SummaryItem>
           <SummaryItem>
             You have the right to{' '}
-            <strong className="text-primary font-semibold">access, correct, erase, and port</strong>{' '}
+            <strong className="font-semibold text-primary">access, correct, erase, and port</strong>{' '}
             your personal data.
           </SummaryItem>
           <SummaryItem>
             You can{' '}
-            <strong className="text-primary font-semibold">withdraw consent at any time</strong> —
+            <strong className="font-semibold text-primary">withdraw consent at any time</strong> —
             we will stop processing your data.
           </SummaryItem>
           <SummaryItem>
-            You can file a <strong className="text-primary font-semibold">grievance with us</strong>{' '}
+            You can file a <strong className="font-semibold text-primary">grievance with us</strong>{' '}
             or with the Data Protection Board of India.
           </SummaryItem>
           <SummaryItem>
             Your health data is treated as{' '}
-            <strong className="text-primary font-semibold">sensitive personal data</strong> with
+            <strong className="font-semibold text-primary">sensitive personal data</strong> with
             enhanced protections.
           </SummaryItem>
         </HumanSummary>
@@ -75,7 +75,7 @@ export default function DpdpNoticePage() {
           <Section id="about-notice" title="1. About This Notice">
             <p>
               This notice is issued pursuant to the{' '}
-              <strong className="text-primary font-semibold">
+              <strong className="font-semibold text-primary">
                 Digital Personal Data Protection Act, 2023
               </strong>{' '}
               (DPDP Act) enacted by the Parliament of India. It explains how {BRAND.legalName}{' '}
@@ -96,15 +96,15 @@ export default function DpdpNoticePage() {
           </Section>
 
           <Section id="data-fiduciary" title="2. Data Fiduciary Information">
-            <div className="bg-muted/50 rounded-lg p-5">
-              <p className="text-muted-foreground text-sm">
-                <strong className="text-foreground font-semibold">Data Fiduciary:</strong>{' '}
+            <div className="rounded-lg bg-muted/50 p-5">
+              <p className="text-sm text-muted-foreground">
+                <strong className="font-semibold text-foreground">Data Fiduciary:</strong>{' '}
                 {BRAND.legalName}
                 <br />
-                <strong className="text-foreground font-semibold">Registered Address:</strong> New
+                <strong className="font-semibold text-foreground">Registered Address:</strong> New
                 Delhi, India
                 <br />
-                <strong className="text-foreground font-semibold">Contact Email:</strong>{' '}
+                <strong className="font-semibold text-foreground">Contact Email:</strong>{' '}
                 <a
                   href={`mailto:${CONTACTS.supportEmail}`}
                   className="text-primary hover:underline"
@@ -112,10 +112,10 @@ export default function DpdpNoticePage() {
                   {CONTACTS.supportEmail}
                 </a>
                 <br />
-                <strong className="text-foreground font-semibold">Phone:</strong>{' '}
+                <strong className="font-semibold text-foreground">Phone:</strong>{' '}
                 {CONTACTS.supportPhoneDisplay}
                 <br />
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   Founder &amp; Data Protection Officer:
                 </strong>{' '}
                 Dr. Mayank Vats, BDS
@@ -123,7 +123,7 @@ export default function DpdpNoticePage() {
             </div>
             <p className="mt-4">
               Under the DPDP Act, {BRAND.legalName} is the{' '}
-              <strong className="text-primary font-semibold">Data Fiduciary</strong> — the entity
+              <strong className="font-semibold text-primary">Data Fiduciary</strong> — the entity
               that determines the purpose and means of processing your personal data. As a platform
               handling health-related information, we implement enhanced safeguards appropriate to
               the sensitivity of the data we process.
@@ -134,26 +134,26 @@ export default function DpdpNoticePage() {
             <p>We process the following categories of personal data:</p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Identity Data</strong> — name,
+                <strong className="font-semibold text-foreground">Identity Data</strong> — name,
                 email address, phone number, age, gender.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Health Data (Sensitive)</strong> —
+                <strong className="font-semibold text-foreground">Health Data (Sensitive)</strong> —
                 dental symptoms, medical history, current medications, known allergies, pregnancy
                 status, dental photographs. This data receives{' '}
-                <strong className="text-primary font-semibold">enhanced protection</strong> as
+                <strong className="font-semibold text-primary">enhanced protection</strong> as
                 sensitive personal data.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Authentication Data</strong> —
+                <strong className="font-semibold text-foreground">Authentication Data</strong> —
                 hashed passwords, OAuth tokens, session identifiers.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Communication Data</strong> —
+                <strong className="font-semibold text-foreground">Communication Data</strong> —
                 consultation messages, support correspondence, WhatsApp interactions.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Technical Data</strong> — device
+                <strong className="font-semibold text-foreground">Technical Data</strong> — device
                 type, browser information, IP address (anonymised), and access logs for security
                 monitoring.
               </li>
@@ -162,56 +162,56 @@ export default function DpdpNoticePage() {
 
           <Section id="purpose-of-processing" title="4. Purpose of Processing">
             <p>Your personal data is processed for the following specific, stated purposes:</p>
-            <div className="border-border my-4 overflow-x-auto rounded-lg border">
+            <div className="my-4 overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-muted/50 border-border border-b">
+                  <tr className="border-b border-border bg-muted/50">
                     <th className="px-4 py-3 text-left font-semibold">Purpose</th>
                     <th className="px-4 py-3 text-left font-semibold">Data Categories</th>
                     <th className="px-4 py-3 text-left font-semibold">Legal Basis</th>
                   </tr>
                 </thead>
                 <tbody className="text-foreground/80">
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3">AI dental health guidance</td>
                     <td className="px-4 py-3">Health, Identity</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Consent</span>
+                      <span className="font-medium text-primary">Consent</span>
                     </td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3">Account creation &amp; authentication</td>
                     <td className="px-4 py-3">Identity, Authentication</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Consent</span>
+                      <span className="font-medium text-primary">Consent</span>
                     </td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3">Follow-up &amp; appointment reminders</td>
                     <td className="px-4 py-3">Identity, Communication</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Consent</span>
+                      <span className="font-medium text-primary">Consent</span>
                     </td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3">AI model improvement (anonymised)</td>
                     <td className="px-4 py-3">Anonymised Health Data</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Legitimate Use</span>
+                      <span className="font-medium text-primary">Legitimate Use</span>
                     </td>
                   </tr>
-                  <tr className="border-border border-b">
+                  <tr className="border-b border-border">
                     <td className="px-4 py-3">Platform security &amp; abuse prevention</td>
                     <td className="px-4 py-3">Technical</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Legitimate Use</span>
+                      <span className="font-medium text-primary">Legitimate Use</span>
                     </td>
                   </tr>
                   <tr>
                     <td className="px-4 py-3">Legal compliance</td>
                     <td className="px-4 py-3">All (as required)</td>
                     <td className="px-4 py-3">
-                      <span className="text-primary font-medium">Legal Obligation</span>
+                      <span className="font-medium text-primary">Legal Obligation</span>
                     </td>
                   </tr>
                 </tbody>
@@ -222,7 +222,7 @@ export default function DpdpNoticePage() {
           <Section id="your-rights" title="5. Your Rights as Data Principal">
             <p>
               Under{' '}
-              <strong className="text-primary font-semibold">
+              <strong className="font-semibold text-primary">
                 Chapter III of the DPDP Act, 2023
               </strong>
               , you have the following enforceable rights:
@@ -258,14 +258,14 @@ export default function DpdpNoticePage() {
               To exercise any of these rights, email{' '}
               <a
                 href={`mailto:${CONTACTS.supportEmail}`}
-                className="text-primary font-semibold hover:underline"
+                className="font-semibold text-primary hover:underline"
               >
                 {CONTACTS.supportEmail}
               </a>{' '}
               with the subject line &quot;DPDP Rights Request&quot;. Include your registered email
               address and the specific right(s) you wish to exercise. We will acknowledge receipt
-              within <strong className="text-primary font-semibold">48 hours</strong> and fulfil
-              valid requests within <strong className="text-primary font-semibold">30 days</strong>.
+              within <strong className="font-semibold text-primary">48 hours</strong> and fulfil
+              valid requests within <strong className="font-semibold text-primary">30 days</strong>.
             </p>
           </Section>
 
@@ -273,24 +273,24 @@ export default function DpdpNoticePage() {
             <ul>
               <li>
                 Consent is obtained at the{' '}
-                <strong className="text-foreground font-semibold">point of data collection</strong>{' '}
+                <strong className="font-semibold text-foreground">point of data collection</strong>{' '}
                 — when you create an account, begin a consultation, or upload dental photographs.
               </li>
               <li>
                 Consent is{' '}
-                <strong className="text-primary font-semibold">
+                <strong className="font-semibold text-primary">
                   specific, informed, and unambiguous
                 </strong>
                 . We describe what data we collect and why before you provide consent.
               </li>
               <li>
                 Consent records are{' '}
-                <strong className="text-foreground font-semibold">timestamped and stored</strong> as
+                <strong className="font-semibold text-foreground">timestamped and stored</strong> as
                 part of your account for audit purposes.
               </li>
               <li>
                 You can{' '}
-                <strong className="text-primary font-semibold">withdraw consent at any time</strong>{' '}
+                <strong className="font-semibold text-primary">withdraw consent at any time</strong>{' '}
                 by contacting {CONTACTS.supportEmail} or through your account settings.
               </li>
             </ul>
@@ -301,18 +301,18 @@ export default function DpdpNoticePage() {
             <ul>
               <li>
                 We will notify the{' '}
-                <strong className="text-primary font-semibold">
+                <strong className="font-semibold text-primary">
                   Data Protection Board of India
                 </strong>{' '}
                 as mandated by the DPDP Act.
               </li>
               <li>
                 We will notify{' '}
-                <strong className="text-primary font-semibold">
+                <strong className="font-semibold text-primary">
                   affected Data Principals (you)
                 </strong>{' '}
                 without unreasonable delay, and in any case within{' '}
-                <strong className="text-primary font-semibold">72 hours</strong> of becoming aware
+                <strong className="font-semibold text-primary">72 hours</strong> of becoming aware
                 of the breach.
               </li>
               <li>
@@ -325,34 +325,34 @@ export default function DpdpNoticePage() {
           <Section id="duties-of-data-principal" title="8. Your Duties as Data Principal">
             <p>
               Under{' '}
-              <strong className="text-primary font-semibold">Section 15 of the DPDP Act</strong>,
+              <strong className="font-semibold text-primary">Section 15 of the DPDP Act</strong>,
               Data Principals also have certain duties:
             </p>
             <ul>
               <li>
                 Provide{' '}
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   accurate and complete information
                 </strong>{' '}
                 when sharing personal data with us.
               </li>
               <li>
                 Do not{' '}
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   impersonate another person
                 </strong>{' '}
                 or provide false identity information.
               </li>
               <li>
                 Do not{' '}
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   file frivolous or false complaints
                 </strong>{' '}
                 with the Data Protection Board.
               </li>
               <li>
                 Do not{' '}
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   suppress material information
                 </strong>{' '}
                 when exercising data rights.
@@ -361,12 +361,12 @@ export default function DpdpNoticePage() {
           </Section>
 
           <Section id="grievance-redressal" title="9. Grievance Redressal Mechanism">
-            <div className="bg-muted/50 rounded-lg p-5">
+            <div className="rounded-lg bg-muted/50 p-5">
               <p className="text-sm">
-                <strong className="text-foreground font-semibold">Step 1:</strong> Contact our Data
+                <strong className="font-semibold text-foreground">Step 1:</strong> Contact our Data
                 Protection Officer
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Email:{' '}
                 <a
                   href={`mailto:${CONTACTS.supportEmail}`}
@@ -379,12 +379,12 @@ export default function DpdpNoticePage() {
                 <br />
                 Response: Within 30 days
               </p>
-              <div className="border-border my-4 border-t" />
+              <div className="my-4 border-t border-border" />
               <p className="text-sm">
-                <strong className="text-foreground font-semibold">Step 2:</strong> Data Protection
+                <strong className="font-semibold text-foreground">Step 2:</strong> Data Protection
                 Board of India
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 If unsatisfied with our response, you may file a complaint with the Data Protection
                 Board of India as constituted under Section 18 of the DPDP Act, 2023.
               </p>

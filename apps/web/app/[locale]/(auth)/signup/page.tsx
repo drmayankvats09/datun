@@ -7,6 +7,7 @@ import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LoadingButton } from '@/components/feedback/loading-button';
 import {
   signup,
   openGoogleOAuthPopup,
@@ -14,8 +15,23 @@ import {
   getGoogleRedirectUri,
 } from '@/lib/auth';
 import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react';
+import { GoogleIcon } from '@/components/google-icon';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores';
+
+// P4-F8: Moved outside component — stable reference, no re-creation per render
+function PasswordRule({ met, label }: { met: boolean; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      {met ? (
+        <Check className="h-3 w-3 text-primary" />
+      ) : (
+        <X className="h-3 w-3 text-muted-foreground" />
+      )}
+      <span className={met ? 'text-foreground' : 'text-muted-foreground'}>{label}</span>
+    </div>
+  );
+}
 
 export default function SignupPage() {
   const t = useTranslations('auth.signup');
@@ -86,19 +102,6 @@ export default function SignupPage() {
     }
   }
 
-  function PasswordRule({ met, label }: { met: boolean; label: string }) {
-    return (
-      <div className="flex items-center gap-1.5 text-xs">
-        {met ? (
-          <Check className="text-primary h-3 w-3" />
-        ) : (
-          <X className="text-muted-foreground h-3 w-3" />
-        )}
-        <span className={met ? 'text-foreground' : 'text-muted-foreground'}>{label}</span>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <Button
@@ -107,37 +110,16 @@ export default function SignupPage() {
         onClick={handleGoogleSignup}
         disabled={googleLoading}
       >
-        {googleLoading ? (
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        ) : (
-          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
-            <path
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-              fill="#4285F4"
-            />
-            <path
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              fill="#34A853"
-            />
-            <path
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              fill="#FBBC05"
-            />
-            <path
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              fill="#EA4335"
-            />
-          </svg>
-        )}
+        {googleLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <GoogleIcon />}
         {t('googleButton')}
       </Button>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="border-border w-full border-t" />
+          <span className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background text-muted-foreground px-2">{t('orDivider')}</span>
+          <span className="bg-background px-2 text-muted-foreground">{t('orDivider')}</span>
         </div>
       </div>
 
@@ -169,7 +151,7 @@ export default function SignupPage() {
         <div className="space-y-2">
           <Label htmlFor="signup-phone">{t('phoneLabel')}</Label>
           <div className="flex gap-2">
-            <div className="bg-muted text-muted-foreground flex items-center rounded-md px-3 text-sm font-medium">
+            <div className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-muted-foreground">
               +91
             </div>
             <Input
@@ -198,7 +180,7 @@ export default function SignupPage() {
             />
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
             >
@@ -214,15 +196,19 @@ export default function SignupPage() {
             </div>
           )}
         </div>
-        <Button type="submit" className="w-full py-5" disabled={loading || !isPasswordValid}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        <LoadingButton
+          type="submit"
+          className="w-full py-5"
+          disabled={!isPasswordValid}
+          loading={loading}
+        >
           {t('createButton')}
-        </Button>
+        </LoadingButton>
       </form>
 
-      <p className="text-muted-foreground text-center text-sm">
+      <p className="text-center text-sm text-muted-foreground">
         {t('hasAccount')}{' '}
-        <Link href="/login" className="text-primary font-medium hover:underline">
+        <Link href="/login" className="font-medium text-primary hover:underline">
           {t('signInLink')}
         </Link>
       </p>

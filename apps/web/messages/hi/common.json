@@ -10,6 +10,10 @@
     "history": "इतिहास",
     "profile": "प्रोफ़ाइल",
     "settings": "सेटिंग्स",
+    "legal": "कानूनी",
+    "contact": "संपर्क",
+    "company": "कंपनी",
+    "collapse": "छोटा करें",
     "newConsultation": "नया परामर्श",
     "backToHome": "← होम पर वापस जाएं"
   },
@@ -63,9 +67,11 @@
   },
   "time": {
     "justNow": "अभी",
-    "minutesAgo": "{count, plural, one {# मिनट पहले} other {# मिनट पहले}}",
+    "minutesAgo": "{count} मिनट पहले",
     "hoursAgo": "{count, plural, one {# घंटा पहले} other {# घंटे पहले}}",
-    "welcome": "{gender, select, male {आपका स्वागत है} female {आपका स्वागत है} other {आपका स्वागत है}}",
-    "daysAgo": "{count, plural, one {# दिन पहले} other {# दिन पहले}}"
+    "welcome": "आपका स्वागत है",
+    "daysAgo": "{count} दिन पहले",
+    "monthsAgo": "{count} महीने पहले",
+    "yearsAgo": "{count} साल पहले"
   }
 }

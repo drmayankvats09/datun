@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LoadingButton } from '@/components/feedback/loading-button';
 import { Label } from '@/components/ui/label';
 import { forgotPassword, resetPassword } from '@/lib/auth';
-import { ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Step = 'email' | 'otp' | 'success';
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
     <div className="space-y-6">
       <Link
         href="/login"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> {t('backToSignIn')}
       </Link>
@@ -69,14 +69,12 @@ export default function ForgotPasswordPage() {
       {step === 'email' && (
         <>
           <div>
-            <h2 className="text-foreground text-xl font-semibold">{t('title')}</h2>
-            <p className="text-muted-foreground mt-1 text-sm">{t('description')}</p>
+            <h2 className="text-xl font-semibold text-foreground">{t('title')}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t('description')}</p>
           </div>
           <form onSubmit={handleSendReset} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">
-                {t('sendButton').replace('Send Reset Code', 'Email')}
-              </Label>
+              <Label htmlFor="reset-email">{t('sendButton')}</Label>
               <Input
                 id="reset-email"
                 type="email"
@@ -88,10 +86,9 @@ export default function ForgotPasswordPage() {
                 autoFocus
               />
             </div>
-            <Button type="submit" className="w-full py-5" disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <LoadingButton type="submit" className="w-full py-5" loading={loading}>
               {t('sendButton')}
-            </Button>
+            </LoadingButton>
           </form>
         </>
       )}
@@ -99,8 +96,8 @@ export default function ForgotPasswordPage() {
       {step === 'otp' && (
         <>
           <div>
-            <h2 className="text-foreground text-xl font-semibold">{t('checkEmail')}</h2>
-            <p className="text-muted-foreground mt-1 text-sm">{t('checkEmailDesc', { email })}</p>
+            <h2 className="text-xl font-semibold text-foreground">{t('checkEmail')}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t('checkEmailDesc', { email })}</p>
           </div>
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-2">
@@ -133,26 +130,26 @@ export default function ForgotPasswordPage() {
                 />
                 <button
                   type="button"
-                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-muted-foreground text-xs">{t('newPasswordHint')}</p>
+              <p className="text-xs text-muted-foreground">{t('newPasswordHint')}</p>
             </div>
-            <Button
+            <LoadingButton
               type="submit"
               className="w-full py-5"
-              disabled={loading || otp.length !== 6 || newPassword.length < 8}
+              disabled={otp.length !== 6 || newPassword.length < 8}
+              loading={loading}
             >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {t('resetButton')}
-            </Button>
+            </LoadingButton>
             <button
               type="button"
-              className="text-primary block w-full text-center text-sm font-medium hover:underline"
+              className="block w-full text-center text-sm font-medium text-primary hover:underline"
               onClick={() => setStep('email')}
             >
               {t('didntReceive')}
@@ -163,9 +160,9 @@ export default function ForgotPasswordPage() {
 
       {step === 'success' && (
         <div className="py-8 text-center">
-          <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <svg
-              className="text-primary h-8 w-8"
+              className="h-8 w-8 text-primary"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -174,8 +171,8 @@ export default function ForgotPasswordPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-foreground text-xl font-semibold">{t('successTitle')}</h2>
-          <p className="text-muted-foreground mt-2 text-sm">{t('successDesc')}</p>
+          <h2 className="text-xl font-semibold text-foreground">{t('successTitle')}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{t('successDesc')}</p>
         </div>
       )}
     </div>

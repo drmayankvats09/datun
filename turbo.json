@@ -3,6 +3,7 @@
   "ui": "tui",
   "globalEnv": [
     "NODE_ENV",
+    "PORT",
     "DATABASE_URL",
     "LOGTAIL_SOURCE_TOKEN",
     "LOG_LEVEL",
@@ -14,10 +15,15 @@
     "JWT_SECRET",
     "JWT_REFRESH_SECRET",
     "RESEND_API_KEY",
+    "RESEND_FROM_DOMAIN",
+    "ALERT_EMAIL_TO",
     "MSG91_AUTH_KEY",
+    "MSG91_TEMPLATE_ID",
     "ANTHROPIC_API_KEY",
+    "AI_PRIMARY_MODEL",
+    "AI_FALLBACK_MODEL",
     "OPENAI_API_KEY",
-    "GOOGLE_GEMINI_API_KEY",
+    "GEMINI_API_KEY",
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
     "GOOGLE_CLIENT_ID",
@@ -29,7 +35,14 @@
     "WHATSAPP_BUSINESS_ACCOUNT_ID",
     "META_APP_ID",
     "META_APP_SECRET",
-    "PORT"
+    "HEALTHCHECK_3DAY_URL",
+    "HEALTHCHECK_7DAY_URL",
+    "HEALTHCHECK_WHATSAPP_URL",
+    "HEALTHCHECK_DAILY_REPORT_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "NEXT_PUBLIC_GOOGLE_CLIENT_ID"
   ],
   "tasks": {
     "build": {
@@ -49,35 +62,19 @@
       "persistent": true,
       "dependsOn": ["^db:generate"]
     },
-    "db:generate": {
-      "cache": false
-    },
-    "db:push": {
-      "cache": false
-    },
-    "db:migrate:dev": {
-      "cache": false
-    },
-    "db:migrate:deploy": {
-      "cache": false
-    },
-    "db:studio": {
-      "cache": false,
-      "persistent": true
-    },
-    "db:seed": {
-      "cache": false
-    },
+    "db:generate": { "cache": false },
+    "db:push": { "cache": false },
+    "db:migrate:dev": { "cache": false },
+    "db:migrate:deploy": { "cache": false },
+    "db:studio": { "cache": false, "persistent": true },
+    "db:seed": { "cache": false },
     "test": {
       "dependsOn": ["^db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "vitest.config.*"],
       "outputs": ["coverage/**"],
       "cache": false
     },
-    "test:watch": {
-      "cache": false,
-      "persistent": true
-    },
+    "test:watch": { "cache": false, "persistent": true },
     "test:coverage": {
       "dependsOn": ["^db:generate"],
       "inputs": ["$TURBO_DEFAULT$", "vitest.config.*"],

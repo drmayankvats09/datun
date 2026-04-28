@@ -10,7 +10,6 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
-import { UI_LOCALES } from './i18n/config';
 
 const intlProxy = createMiddleware(routing);
 
@@ -125,14 +124,16 @@ export function proxy(request: NextRequest) {
 
     if (!isMonitoringBot) {
       console.warn(`[SECURITY] Direct access attempt bypassing Cloudflare: ${pathname}`);
+      // P3-F4: Actually BLOCK direct-IP access — force through Cloudflare
+      return new NextResponse('Access denied. Please use https://datunai.com', {
+        status: 403,
+        headers: { 'Content-Type': 'text/plain' },
+      });
     }
   }
 
   return response;
 }
-
-// Suppress unused import warning — UI_LOCALES exported for type checks elsewhere
-void UI_LOCALES;
 
 export const config = {
   matcher: [

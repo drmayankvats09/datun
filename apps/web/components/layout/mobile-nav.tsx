@@ -1,39 +1,43 @@
 // ═══════════════════════════════════════════════════════════════
 // MOBILE NAV — Bottom tab bar (Instagram/Zomato/PhonePe pattern)
-// Thumb-reachable, 5 max items, active state highlighted.
-// Hides when keyboard is open (useKeyboardVisible).
+// P4-F10: i18n navigation (locale-aware links)
+// P4-F15: Home "/" exact match
+// P5-F11: Translation keys instead of hardcoded English
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useKeyboardVisible } from '@/hooks';
 import { Home, MessageCircle, ClipboardList, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/consult', label: 'Consult', icon: MessageCircle },
-  { href: '/history', label: 'History', icon: ClipboardList },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/', labelKey: 'home', icon: Home },
+  { href: '/consult', labelKey: 'consult', icon: MessageCircle },
+  { href: '/history', labelKey: 'history', icon: ClipboardList },
+  { href: '/profile', labelKey: 'profile', icon: User },
 ] as const;
 
 export function MobileNav() {
   const pathname = usePathname();
   const keyboardVisible = useKeyboardVisible();
+  const t = useTranslations('common.nav');
 
-  // Hide when keyboard is open (form input focused)
   if (keyboardVisible) return null;
 
   return (
     <nav
-      className="border-border/60 bg-background/95 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur-xl print:hidden"
+      className="fixed right-0 bottom-0 left-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-xl print:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-1.5">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive =
+            item.href === '/'
+              ? pathname === '/'
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
 
           return (
@@ -46,7 +50,7 @@ export function MobileNav() {
               )}
             >
               <Icon className={cn('h-5 w-5', isActive && 'text-primary')} />
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}

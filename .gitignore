@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Dependencies
 node_modules
 .pnp
@@ -27,15 +25,26 @@ out/
 build
 dist
 
+# TypeScript build info
+*.tsbuildinfo
 
-# Debug
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Misc
+# OS
 .DS_Store
+Thumbs.db
 *.pem
 
-.vercel
-.env*.local
+# Sentry
+.sentryclirc

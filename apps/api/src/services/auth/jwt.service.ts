@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // JWT SERVICE — Own token issuer + verifier
-// HS256 signing. Access token: 1hr. Refresh token: 30 days.
-// No Auth0, no 3rd party. 100% Datun-issued tokens.
+// HS256 signing. Access: 1hr (JWT_SECRET). Refresh: 30d (JWT_REFRESH_SECRET).
+// Different secrets = compromise of one doesn't compromise other.
 // Pattern: Stripe API keys, Google ID tokens, Clerk JWTs.
 // ═══════════════════════════════════════════════════════════════
 
@@ -15,10 +15,10 @@ const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_EXPIRY = '30d';
 const ACCESS_TOKEN_EXPIRY_SECONDS = 3600;
 
+// P2-F7: Separate secret for refresh tokens. Falls back to JWT_SECRET if not set.
+const REFRESH_SECRET = env.JWT_REFRESH_SECRET ?? env.JWT_SECRET;
+
 export class JwtService {
-  /**
-   * Generate access + refresh token pair for a user.
-   */
   static generateTokens(payload: {
     userId: string;
     email: string;
@@ -44,7 +44,7 @@ export class JwtService {
         type: 'refresh' as const,
         iss: ISSUER,
       },
-      env.JWT_SECRET,
+      REFRESH_SECRET,
       { expiresIn: REFRESH_TOKEN_EXPIRY },
     );
 
@@ -55,10 +55,6 @@ export class JwtService {
     };
   }
 
-  /**
-   * Verify and decode an access token.
-   * Throws if expired, malformed, or wrong type.
-   */
   static verifyAccessToken(token: string): DecodedToken {
     const decoded = jwt.verify(token, env.JWT_SECRET, {
       issuer: ISSUER,
@@ -71,12 +67,9 @@ export class JwtService {
     return decoded;
   }
 
-  /**
-   * Verify and decode a refresh token.
-   * Throws if expired, malformed, or wrong type.
-   */
   static verifyRefreshToken(token: string): DecodedToken {
-    const decoded = jwt.verify(token, env.JWT_SECRET, {
+    // P2-F7: Uses separate REFRESH_SECRET
+    const decoded = jwt.verify(token, REFRESH_SECRET, {
       issuer: ISSUER,
     }) as DecodedToken;
 
@@ -87,10 +80,6 @@ export class JwtService {
     return decoded;
   }
 
-  /**
-   * Decode token WITHOUT verification (for debugging/logging).
-   * Never trust the output for authorization.
-   */
   static decodeUnsafe(token: string): DecodedToken | null {
     try {
       return jwt.decode(token) as DecodedToken | null;

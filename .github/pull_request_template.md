@@ -1,29 +1,25 @@
-## What changed?
+## What does this PR do?
 
-<!-- 1-2 sentences mein batao kya change kiya -->
+<!-- Brief description of changes -->
 
-## Why?
+## Type of Change
 
-<!-- Task number ya motivation -->
-
-Task #
-
-## Type of change
-
-- [ ] Feature (new functionality)
-- [ ] Fix (bug fix)
+- [ ] Bug fix
+- [ ] New feature
 - [ ] Refactor (no behavior change)
-- [ ] Infra/CI (build, deploy, config)
-- [ ] Docs (documentation only)
+- [ ] Docs / config
+- [ ] Test coverage
 
 ## Checklist
 
-- [ ] TypeScript compiles (`pnpm check-types`)
-- [ ] ESLint passes (`pnpm lint`)
-- [ ] Build succeeds (`pnpm build`)
-- [ ] No `.env` or secrets in code
-- [ ] Tested locally
+- [ ] `pnpm build` passes locally
+- [ ] `pnpm test:coverage` passes (no regression)
+- [ ] `pnpm lint` clean (zero warnings)
+- [ ] `pnpm check-types` passes
+- [ ] Tested on mobile viewport (375px)
+- [ ] i18n: No hardcoded English strings added
+- [ ] Security: No secrets, PII, or API keys in code
 
 ## Screenshots (if UI change)
 
-<!-- Screenshots paste karo -->
+<!-- Before/after screenshots -->

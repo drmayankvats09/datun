@@ -39,6 +39,9 @@ describe('Security — Auth Bypass Prevention', () => {
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
 
+  // NOTE: /api/chat, /api/users/profile, /api/consultations/start currently return 501
+  // (stub routers). When Tasks #56-58 implement real routes, these tests verify
+  // that auth middleware blocks unauthenticated access with 401.
   it('no protected endpoint returns 200 without valid token', async () => {
     const endpoints = [
       { method: 'post' as const, path: '/api/chat' },
@@ -89,7 +92,8 @@ describe('Security — XSS Prevention', () => {
     const res = await getTestApp().get('/');
     expect(res.headers['x-content-type-options']).toBe('nosniff');
     expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
-    expect(res.headers['x-xss-protection']).toBeDefined();
+    // X-XSS-Protection removed (deprecated) — verify HSTS instead
+    expect(res.headers['strict-transport-security']).toBeDefined();
   });
 });
 

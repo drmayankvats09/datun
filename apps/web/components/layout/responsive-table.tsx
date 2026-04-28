@@ -31,7 +31,7 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
   columns,
   renderCell,
   className,
-  keyField = 'id' as keyof T & string,
+  keyField,
 }: ResponsiveTableProps<T>) {
   const { isMobile } = useBreakpoint();
 
@@ -44,14 +44,17 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
   if (isMobile) {
     return (
       <div className={cn('space-y-3', className)}>
-        {data.map((row) => (
-          <div key={String(row[keyField])} className="border-border bg-card rounded-xl border p-4">
+        {data.map((row, index) => (
+          <div
+            key={keyField ? String(row[keyField]) : `row-${index}`}
+            className="rounded-xl border border-border bg-card p-4"
+          >
             {columns
               .filter((col) => !col.desktopOnly)
               .map((col) => (
                 <div key={col.key} className="flex items-center justify-between py-1.5">
-                  <span className="text-muted-foreground text-xs font-medium">{col.label}</span>
-                  <span className="text-foreground text-sm font-medium">
+                  <span className="text-xs font-medium text-muted-foreground">{col.label}</span>
+                  <span className="text-sm font-medium text-foreground">
                     {render(row[col.key], col.key, row)}
                   </span>
                 </div>
@@ -64,10 +67,10 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
 
   // ── Desktop: Table ──
   return (
-    <div className={cn('border-border overflow-x-auto rounded-xl border', className)}>
+    <div className={cn('overflow-x-auto rounded-xl border border-border', className)}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-muted/50 border-border border-b">
+          <tr className="border-b border-border bg-muted/50">
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -79,13 +82,13 @@ export function ResponsiveTable<T extends Record<string, unknown>>({
           </tr>
         </thead>
         <tbody>
-          {data.map((row) => (
+          {data.map((row, index) => (
             <tr
-              key={String(row[keyField])}
-              className="border-border hover:bg-muted/30 border-b transition-colors last:border-0"
+              key={keyField ? String(row[keyField]) : `row-${index}`}
+              className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
             >
               {columns.map((col) => (
-                <td key={col.key} className="text-foreground px-4 py-3">
+                <td key={col.key} className="px-4 py-3 text-foreground">
                   {render(row[col.key], col.key, row)}
                 </td>
               ))}

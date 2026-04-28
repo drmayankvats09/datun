@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
 import {
   Section,
@@ -48,28 +48,28 @@ export default function PrivacyPage() {
         <HumanSummary>
           <SummaryItem>
             We collect{' '}
-            <strong className="text-primary font-semibold">
+            <strong className="font-semibold text-primary">
               only the health data you voluntarily share
             </strong>{' '}
             — symptoms, age, gender, medications, and dental photos.
           </SummaryItem>
           <SummaryItem>
-            Your data is used <strong className="text-primary font-semibold">exclusively</strong> to
+            Your data is used <strong className="font-semibold text-primary">exclusively</strong> to
             generate AI-powered dental guidance. We do not advertise. We do not sell data. We never
             will.
           </SummaryItem>
           <SummaryItem>
             All data is{' '}
-            <strong className="text-primary font-semibold">encrypted in transit (TLS 1.3)</strong>{' '}
+            <strong className="font-semibold text-primary">encrypted in transit (TLS 1.3)</strong>{' '}
             and at rest. Health data is treated as sensitive personal data under DPDP Act 2023.
           </SummaryItem>
           <SummaryItem>
-            You can <strong className="text-primary font-semibold">request deletion</strong> of all
+            You can <strong className="font-semibold text-primary">request deletion</strong> of all
             your personal data at any time by emailing {CONTACTS.supportEmail}.
           </SummaryItem>
           <SummaryItem>
             AI provides{' '}
-            <strong className="text-primary font-semibold">guidance, not diagnosis</strong>. Always
+            <strong className="font-semibold text-primary">guidance, not diagnosis</strong>. Always
             consult a licensed dental professional for clinical decisions.
           </SummaryItem>
         </HumanSummary>
@@ -77,9 +77,9 @@ export default function PrivacyPage() {
         <div>
           <Section id="who-we-are" title="1. Who We Are">
             <p>
-              <strong className="text-primary font-semibold">{BRAND.legalName}</strong> (&quot;
+              <strong className="font-semibold text-primary">{BRAND.legalName}</strong> (&quot;
               {BRAND.name},&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) operates an{' '}
-              <strong className="text-primary font-semibold">
+              <strong className="font-semibold text-primary">
                 AI-powered dental health platform
               </strong>{' '}
               accessible at{' '}
@@ -105,33 +105,33 @@ export default function PrivacyPage() {
             </p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Health Information</strong> —
+                <strong className="font-semibold text-foreground">Health Information</strong> —
                 symptoms, age, gender, medical history, current medications, known allergies, and
                 pregnancy status as shared during your AI-guided dental consultation.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Dental Photographs</strong> —
+                <strong className="font-semibold text-foreground">Dental Photographs</strong> —
                 images you optionally upload for visual evaluation by our AI system.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Conversation Content</strong> —
+                <strong className="font-semibold text-foreground">Conversation Content</strong> —
                 messages exchanged during your consultation, used solely to generate your
                 personalised assessment.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Account Information</strong> —
+                <strong className="font-semibold text-foreground">Account Information</strong> —
                 name, email address, phone number, and authentication credentials when you create an
                 account.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Usage Analytics</strong> —
+                <strong className="font-semibold text-foreground">Usage Analytics</strong> —
                 anonymised interaction data (page views, session duration, device type) through
                 privacy-respecting analytics. No personally identifiable information is collected
                 through analytics.
               </li>
             </ul>
             <p>
-              We do <strong className="text-primary font-semibold">not</strong> collect financial
+              We do <strong className="font-semibold text-primary">not</strong> collect financial
               information, government identification numbers, or biometric data beyond dental
               photographs you voluntarily upload.
             </p>
@@ -141,25 +141,25 @@ export default function PrivacyPage() {
             <p>Your data is processed exclusively for the following purposes:</p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Service Delivery</strong> —
+                <strong className="font-semibold text-foreground">Service Delivery</strong> —
                 generating AI-powered dental health guidance tailored to your symptoms and medical
                 context.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Consultation Records</strong> —
+                <strong className="font-semibold text-foreground">Consultation Records</strong> —
                 maintaining your consultation history for continuity of care when you return.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">AI Improvement</strong> —
+                <strong className="font-semibold text-foreground">AI Improvement</strong> —
                 improving our AI models using anonymised and aggregated data only. Individual health
                 records are never used in model training without explicit separate consent.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Safety &amp; Compliance</strong> —
+                <strong className="font-semibold text-foreground">Safety &amp; Compliance</strong> —
                 fulfilling legal obligations, preventing misuse, and ensuring platform security.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Communication</strong> — sending
+                <strong className="font-semibold text-foreground">Communication</strong> — sending
                 appointment reminders, follow-up messages, and service updates through WhatsApp or
                 email, only with your consent.
               </li>
@@ -173,30 +173,30 @@ export default function PrivacyPage() {
           <Section id="legal-basis" title="4. Legal Basis for Processing">
             <p>
               Under the{' '}
-              <strong className="text-primary font-semibold">
+              <strong className="font-semibold text-primary">
                 Digital Personal Data Protection Act, 2023
               </strong>{' '}
               (DPDP Act), we process your data on the following lawful bases:
             </p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Consent</strong> — you provide
+                <strong className="font-semibold text-foreground">Consent</strong> — you provide
                 explicit consent when you begin a consultation, create an account, or upload dental
                 photographs.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Legitimate Use</strong> —
+                <strong className="font-semibold text-foreground">Legitimate Use</strong> —
                 processing necessary to provide the service you have requested.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Legal Obligation</strong> —
+                <strong className="font-semibold text-foreground">Legal Obligation</strong> —
                 compliance with applicable Indian law, including data protection and healthcare
                 regulations.
               </li>
             </ul>
             <p>
               You may{' '}
-              <strong className="text-primary font-semibold">withdraw consent at any time</strong>{' '}
+              <strong className="font-semibold text-primary">withdraw consent at any time</strong>{' '}
               by contacting us at{' '}
               <a href={`mailto:${CONTACTS.supportEmail}`} className="text-primary hover:underline">
                 {CONTACTS.supportEmail}
@@ -224,7 +224,7 @@ export default function PrivacyPage() {
               </li>
               <li>
                 We employ a{' '}
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   multi-provider AI architecture
                 </strong>{' '}
                 with built-in safety checks to ensure clinical accuracy and minimise errors.
@@ -243,29 +243,29 @@ export default function PrivacyPage() {
             <p>We share your data only in the following limited circumstances:</p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">AI Service Providers</strong> —
+                <strong className="font-semibold text-foreground">AI Service Providers</strong> —
                 your consultation messages are processed by our AI providers (Anthropic, OpenAI,
                 Google) under strict data processing agreements. These providers do not retain or
                 train on your data.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Infrastructure Providers</strong>{' '}
+                <strong className="font-semibold text-foreground">Infrastructure Providers</strong>{' '}
                 — hosting (Railway, Vercel), database (PostgreSQL), monitoring (Sentry), and
                 communication (WhatsApp Business API, Resend) providers process data as necessary to
                 operate the platform.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Legal Requirements</strong> — if
+                <strong className="font-semibold text-foreground">Legal Requirements</strong> — if
                 required by law, regulation, or valid legal process such as a court order.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Safety</strong> — if we believe in
+                <strong className="font-semibold text-foreground">Safety</strong> — if we believe in
                 good faith that disclosure is necessary to prevent imminent harm to health or
                 safety.
               </li>
             </ul>
             <p>
-              We do <strong className="text-primary font-semibold">not</strong> share your personal
+              We do <strong className="font-semibold text-primary">not</strong> share your personal
               health data with advertisers, data brokers, marketing companies, or any entity seeking
               to use your data for commercial purposes beyond providing our service.
             </p>
@@ -274,31 +274,31 @@ export default function PrivacyPage() {
           <Section id="data-security" title="7. Data Security">
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Encryption in Transit</strong> —
+                <strong className="font-semibold text-foreground">Encryption in Transit</strong> —
                 all data transmitted between your device and our servers is encrypted using{' '}
-                <strong className="text-primary font-semibold">TLS 1.3</strong> with HSTS
+                <strong className="font-semibold text-primary">TLS 1.3</strong> with HSTS
                 enforcement.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Encryption at Rest</strong> —
+                <strong className="font-semibold text-foreground">Encryption at Rest</strong> —
                 database-level encryption protects stored data.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Access Controls</strong> —
+                <strong className="font-semibold text-foreground">Access Controls</strong> —
                 role-based access control (RBAC) limits data access to authorised personnel only.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Password Security</strong> —
+                <strong className="font-semibold text-foreground">Password Security</strong> —
                 passwords are hashed using bcrypt with per-user salts. We never store plaintext
                 passwords.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Infrastructure</strong> — DDoS
+                <strong className="font-semibold text-foreground">Infrastructure</strong> — DDoS
                 protection, bot detection, web application firewall (WAF), and rate limiting are
                 active across all endpoints.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Monitoring</strong> — automated
+                <strong className="font-semibold text-foreground">Monitoring</strong> — automated
                 error tracking, security scanning, and dependency auditing are performed
                 continuously.
               </li>
@@ -307,29 +307,29 @@ export default function PrivacyPage() {
               While we implement industry-standard security measures, no system is completely immune
               to breaches. In the event of a data breach affecting your personal data, we will
               notify you and the relevant authorities within{' '}
-              <strong className="text-primary font-semibold">72 hours</strong> as required by law.
+              <strong className="font-semibold text-primary">72 hours</strong> as required by law.
             </p>
           </Section>
 
           <Section id="data-retention" title="8. Data Retention">
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Consultation Data</strong> —
+                <strong className="font-semibold text-foreground">Consultation Data</strong> —
                 retained for 24 months from the date of consultation to support continuity of care.
                 You may request earlier deletion at any time.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Account Data</strong> — retained
+                <strong className="font-semibold text-foreground">Account Data</strong> — retained
                 for as long as your account is active. Upon account deletion, personal data is
                 erased within 30 days.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Anonymised Data</strong> —
+                <strong className="font-semibold text-foreground">Anonymised Data</strong> —
                 aggregated, de-identified data may be retained indefinitely for service improvement
                 and public health research.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Legal Holds</strong> — data
+                <strong className="font-semibold text-foreground">Legal Holds</strong> — data
                 subject to legal obligations or disputes may be retained beyond standard retention
                 periods as required by law.
               </li>
@@ -338,39 +338,39 @@ export default function PrivacyPage() {
 
           <Section id="your-rights" title="9. Your Rights Under DPDP Act 2023">
             <p>
-              As a <strong className="text-primary font-semibold">Data Principal</strong> under the
+              As a <strong className="font-semibold text-primary">Data Principal</strong> under the
               Digital Personal Data Protection Act, 2023, you have the following rights:
             </p>
             <ul>
               <li>
-                <strong className="text-foreground font-semibold">Right to Access</strong> — request
+                <strong className="font-semibold text-foreground">Right to Access</strong> — request
                 a copy of all personal data we hold about you.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Right to Correction</strong> —
+                <strong className="font-semibold text-foreground">Right to Correction</strong> —
                 request correction of inaccurate or incomplete personal data.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Right to Erasure</strong> —
+                <strong className="font-semibold text-foreground">Right to Erasure</strong> —
                 request complete deletion of your personal data, subject to legal retention
                 requirements.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Right to Withdraw Consent</strong>{' '}
+                <strong className="font-semibold text-foreground">Right to Withdraw Consent</strong>{' '}
                 — withdraw previously given consent at any time.
               </li>
               <li>
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   Right to Grievance Redressal
                 </strong>{' '}
                 — file a complaint with us or with the{' '}
-                <strong className="text-primary font-semibold">
+                <strong className="font-semibold text-primary">
                   Data Protection Board of India
                 </strong>
                 .
               </li>
               <li>
-                <strong className="text-foreground font-semibold">Right to Nominate</strong> —
+                <strong className="font-semibold text-foreground">Right to Nominate</strong> —
                 nominate another individual to exercise your data rights in the event of your death
                 or incapacity.
               </li>
@@ -381,7 +381,7 @@ export default function PrivacyPage() {
                 {CONTACTS.supportEmail}
               </a>
               . We will respond within{' '}
-              <strong className="text-primary font-semibold">30 days</strong> of receiving your
+              <strong className="font-semibold text-primary">30 days</strong> of receiving your
               request.
             </p>
             <p>
@@ -396,7 +396,7 @@ export default function PrivacyPage() {
           <Section id="children" title="10. Children's Privacy">
             <p>
               {BRAND.name} is not intended for use by individuals under the age of{' '}
-              <strong className="text-primary font-semibold">18</strong> without parental or
+              <strong className="font-semibold text-primary">18</strong> without parental or
               guardian supervision. We do not knowingly collect personal data from children without
               verifiable parental consent. If you believe a child has provided us personal data
               without appropriate consent, contact us immediately at{' '}
@@ -410,7 +410,7 @@ export default function PrivacyPage() {
           <Section id="international-transfers" title="11. International Data Transfers">
             <p>
               Your data is primarily stored on servers located in{' '}
-              <strong className="text-primary font-semibold">India</strong>. However, certain
+              <strong className="font-semibold text-primary">India</strong>. However, certain
               service providers (AI model providers, cloud infrastructure) may process data in
               jurisdictions outside India. In such cases, we ensure adequate data protection through
               contractual safeguards, including standard data processing agreements that meet the
@@ -444,13 +444,13 @@ export default function PrivacyPage() {
           </Section>
 
           <Section id="contact" title="14. Contact &amp; Grievance Officer">
-            <div className="bg-muted/50 rounded-lg p-5">
+            <div className="rounded-lg bg-muted/50 p-5">
               <p className="mb-3 text-sm">
-                <strong className="text-foreground font-semibold">
+                <strong className="font-semibold text-foreground">
                   Data Protection Officer &amp; Grievance Officer
                 </strong>
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 {BRAND.legalName}
                 <br />
                 New Delhi, India
@@ -470,7 +470,7 @@ export default function PrivacyPage() {
             </div>
             <p className="mt-4">
               If you are not satisfied with our response, you may file a complaint with the{' '}
-              <strong className="text-primary font-semibold">Data Protection Board of India</strong>{' '}
+              <strong className="font-semibold text-primary">Data Protection Board of India</strong>{' '}
               as established under the DPDP Act 2023.
             </p>
           </Section>

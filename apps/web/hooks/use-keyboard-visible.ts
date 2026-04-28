@@ -29,7 +29,13 @@ export function useKeyboardVisible(): boolean {
       if (!vv) return;
       // Keyboard open = viewport height significantly smaller than window height
       const heightDiff = initialHeight - vv.height;
-      setVisible(heightDiff > 150); // 150px threshold
+      // P4-F16: Only true if input/textarea actually focused (eliminates scroll bounce false positives)
+      const activeEl = document.activeElement;
+      const isInputFocused =
+        activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        (activeEl instanceof HTMLElement && activeEl.isContentEditable);
+      setVisible(heightDiff > 150 && isInputFocused);
     }
 
     vv.addEventListener('resize', onResize);
