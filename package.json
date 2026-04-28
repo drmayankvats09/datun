@@ -7,6 +7,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,css,mjs,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,css,mjs,yaml}\"",
+    "verify": "turbo run check-types lint test:coverage build --force --concurrency=1",
     "check-types": "turbo run check-types",
     "clean": "turbo run build --force && echo 'Cleaned all caches'",
     "fresh": "rm -rf node_modules apps/web/.next apps/api/dist .turbo && pnpm install",
