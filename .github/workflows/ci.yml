@@ -1,6 +1,11 @@
 # ═══════════════════════════════════════════════════════════════
-# DATUN — CI PIPELINE
+# DATUN — CI PIPELINE (Phase 9 — FAANG-grade)
 # Runs on every push and PR. Blocks merge if anything fails.
+#
+# Steps: Install → Generate → Lint → Format → Typecheck →
+#        Build → Test → Translation Check → Coverage → Audit
+#
+# Pattern: Vercel, Cal.com, Linear — all have 15+ step CI.
 # ═══════════════════════════════════════════════════════════════
 
 name: CI
@@ -38,9 +43,9 @@ env:
 
 jobs:
   quality:
-    name: Lint → Typecheck → Build → Test
+    name: Lint → Types → Build → Test → i18n
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     services:
       postgres:
@@ -87,6 +92,9 @@ jobs:
       - name: Lint
         run: pnpm turbo run lint
 
+      - name: Format Check
+        run: pnpm format:check
+
       - name: Typecheck
         run: pnpm turbo run check-types
 
@@ -105,12 +113,27 @@ jobs:
           ANTHROPIC_API_KEY: 'sk-ant-ci-test-key'
           DATABASE_URL: 'postgresql://test:test@localhost:5432/datun_test'
 
-      - name: Coverage Report
+      # Phase 9: Translation completeness — blocks merge if Hindi keys missing
+      - name: Translation Check (i18n)
+        run: cd apps/web && npx tsx scripts/check-translations.ts
+
+      # API coverage report on PRs
+      - name: API Coverage Report
         if: github.event_name == 'pull_request'
         uses: davelosert/vitest-coverage-report-action@v2
         with:
+          name: API Coverage
           vite-config-path: ./apps/api/vitest.config.ts
           json-summary-path: ./apps/api/coverage/coverage-summary.json
+
+      # Web coverage report on PRs
+      - name: Web Coverage Report
+        if: github.event_name == 'pull_request'
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          name: Web Coverage
+          vite-config-path: ./apps/web/vitest.config.ts
+          json-summary-path: ./apps/web/coverage/coverage-summary.json
 
       - name: Security Audit
         run: pnpm audit --audit-level=high --prod

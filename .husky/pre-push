@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+echo "🔒 Pre-push verification — checking types, lint, tests..."
+echo ""
+
+# Run full pipeline (turbo cached — only changed packages re-run)
+pnpm turbo run check-types lint test:coverage
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-push check FAILED — fix errors before pushing."
+  echo "   Run 'pnpm verify' for full forced check."
+  exit 1
+fi
+
+echo ""
+echo "✅ Pre-push check passed — pushing to remote."
