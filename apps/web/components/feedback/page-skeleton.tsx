@@ -31,7 +31,7 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="border-border rounded-xl border p-4">
+        <div key={i} className="rounded-xl border border-border p-4">
           <Skeleton className="mb-3 h-5 w-3/4" />
           <Skeleton className="mb-2 h-4 w-full" />
           <Skeleton className="mb-4 h-4 w-2/3" />

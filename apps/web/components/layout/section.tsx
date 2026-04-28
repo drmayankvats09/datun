@@ -22,12 +22,12 @@ export function Section({ children, className, title, description, id }: Section
       {(title || description) && (
         <div className="mb-5 sm:mb-6">
           {title && (
-            <h2 className="text-foreground text-xl font-bold tracking-tight sm:text-2xl">
+            <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               {title}
             </h2>
           )}
           {description && (
-            <p className="text-muted-foreground mt-1.5 text-sm sm:text-base">{description}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">{description}</p>
           )}
         </div>
       )}

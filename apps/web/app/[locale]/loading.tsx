@@ -6,7 +6,7 @@ import { PageSkeleton } from '@/components/feedback';
 
 export default function Loading() {
   return (
-    <main className="bg-background flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center bg-background">
       <PageSkeleton />
     </main>
   );

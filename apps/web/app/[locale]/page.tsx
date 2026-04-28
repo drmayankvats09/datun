@@ -25,7 +25,7 @@ export default async function HomePage({ params }: Props) {
   const websiteName = URLS.website;
 
   return (
-    <main className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center px-4 sm:px-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground sm:px-6">
       <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
         <LanguageSwitcher />
         <ThemeToggle />
@@ -33,33 +33,33 @@ export default async function HomePage({ params }: Props) {
 
       <PageShell maxWidth="lg" className="flex flex-col items-center text-center">
         <div className="mb-8 flex flex-col items-center sm:mb-10">
-          <h1 className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
             {t('brand.name')}
           </h1>
           <div
-            className="bg-primary mt-3 h-1 w-12 rounded-full"
+            className="mt-3 h-1 w-12 rounded-full bg-primary"
             role="presentation"
             aria-hidden="true"
           />
         </div>
 
-        <p className="text-muted-foreground text-base leading-relaxed sm:text-lg">
+        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
           {t('brand.description')}
         </p>
 
-        <div className="border-border bg-card mt-8 w-full rounded-xl border px-5 py-4 sm:mt-10 sm:px-6 sm:py-5">
-          <p className="text-muted-foreground text-sm font-medium">{t('homepage.devNotice')}</p>
-          <p className="text-muted-foreground/60 mt-1 text-sm">
+        <div className="mt-8 w-full rounded-xl border border-border bg-card px-5 py-4 sm:mt-10 sm:px-6 sm:py-5">
+          <p className="text-sm font-medium text-muted-foreground">{t('homepage.devNotice')}</p>
+          <p className="mt-1 text-sm text-muted-foreground/60">
             {t('homepage.visitCurrent', {
               link: websiteName,
             })}{' '}
-            <a href={websiteLink} className="text-primary font-medium underline underline-offset-4">
+            <a href={websiteLink} className="font-medium text-primary underline underline-offset-4">
               {websiteName}
             </a>
           </p>
         </div>
 
-        <footer className="text-muted-foreground/50 mt-12 text-xs sm:mt-16">
+        <footer className="mt-12 text-xs text-muted-foreground/50 sm:mt-16">
           {t('footer.copyright', { year: new Date().getFullYear() })}
         </footer>
       </PageShell>

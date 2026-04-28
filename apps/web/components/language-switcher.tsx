@@ -45,7 +45,7 @@ export function LanguageSwitcher() {
             <DropdownMenuItem
               key={loc}
               onClick={() => handleLocaleChange(loc)}
-              className={isActive ? 'bg-primary/10 text-primary font-medium' : ''}
+              className={isActive ? 'bg-primary/10 font-medium text-primary' : ''}
             >
               <span className="mr-2 text-base">{meta.flag}</span>
               <span>{meta.nativeName}</span>
