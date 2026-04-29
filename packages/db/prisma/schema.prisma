@@ -1348,3 +1348,35 @@ model EmailLog {
     @@index([createdAt])
     @@map("email_logs")
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 30: WhatsAppProviderHealth
+// Per-provider health snapshot for admin dashboard + observability.
+// Updated by heartbeat cron + circuit breaker state changes.
+// Pattern: similar to admin observability tables in Stripe/Twilio.
+// ═══════════════════════════════════════════════════════════════
+
+enum WhatsAppHealthStatus {
+    HEALTHY
+    DEGRADED
+    UNHEALTHY
+}
+
+model WhatsAppProviderHealth {
+    id                     String               @id @default(uuid()) @db.Uuid
+    provider               WhatsAppProvider
+    status                 WhatsAppHealthStatus @default(HEALTHY)
+    consecutiveFailures    Int                  @default(0)
+    lastSuccessAt          DateTime?
+    lastFailureAt          DateTime?
+    unhealthyUntil         DateTime?
+    totalRequests          Int                  @default(0)
+    totalFailures          Int                  @default(0)
+    lastHeartbeatAt        DateTime?
+    lastHeartbeatLatencyMs Int?
+    lastHeartbeatError     String?              @db.Text
+    updatedAt              DateTime             @updatedAt
+
+    @@unique([provider])
+    @@map("whatsapp_provider_health")
+}

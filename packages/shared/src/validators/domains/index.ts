@@ -3,3 +3,4 @@ export * from './consultation.schema';
 export * from './user.schema';
 export * from './webhook.schema';
 export * from './email.schema';
+export * from './whatsapp.schema';

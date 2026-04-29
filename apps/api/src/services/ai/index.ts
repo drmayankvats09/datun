@@ -181,7 +181,7 @@ export async function aiComplete(
       const error = err as Error;
       errors.push({ provider: provider.name, error });
 
-      healthManager!.recordFailure(provider.name, error);
+      healthManager!.recordFailure(provider.name);
 
       logger.error(`[AIClient] ${provider.name} FAILED`, {
         error: error.message,

@@ -92,6 +92,8 @@ export type HealthStatus = 'healthy' | 'unhealthy' | 'degraded';
 export interface ProviderHealth {
   /** Current status */
   status: HealthStatus;
+  /** Legacy alias for status (for backward compat with old tests) */
+  currentStatus?: HealthStatus;
   /** Consecutive failure count */
   consecutiveFailures: number;
   /** Timestamp of last successful request */

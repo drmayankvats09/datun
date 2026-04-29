@@ -53,6 +53,15 @@ const envSchema = z.object({
   META_APP_ID: z.string().optional(),
   META_APP_SECRET: z.string().optional(),
 
+  // ── Gupshup (WhatsApp fallback provider) ──
+  GUPSHUP_API_KEY: z.string().optional(),
+  GUPSHUP_APP_NAME: z.string().optional(),
+  GUPSHUP_SOURCE_NUMBER: z.string().optional(),
+  GUPSHUP_WEBHOOK_SECRET: z.string().optional(),
+
+  // ── AiSensy (WhatsApp emergency provider — Year 2) ──
+  AISENSY_API_KEY: z.string().optional(),
+
   // ── Resend ──
   RESEND_API_KEY: z.string().optional(),
   RESEND_FROM_DOMAIN: z.string().default('datunai.com'),

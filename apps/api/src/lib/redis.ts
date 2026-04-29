@@ -224,6 +224,42 @@ export const cache = {
     return newVal;
   },
 
+  async setNX(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+    if (redis && redisAvailable) {
+      try {
+        const result = await redis.set(key, value, { nx: true, ex: ttlSeconds });
+        return result === 'OK';
+      } catch (err) {
+        logger.warn('Redis SETNX failed, using memory fallback', {
+          key,
+          error: (err as Error).message,
+        });
+        markUnhealthy();
+      }
+    }
+    // In-memory fallback — atomic check-and-set
+    const entry = memoryStore.get(key);
+    if (entry) {
+      // Key exists — but check if expired
+      if (entry.expiresAt && entry.expiresAt < Date.now()) {
+        // Expired → treat as not exists, set new value
+        memoryStore.set(key, {
+          value,
+          expiresAt: Date.now() + ttlSeconds * 1000,
+        });
+        return true;
+      }
+      // Key exists and not expired → setNX fails
+      return false;
+    }
+    // Key doesn't exist → set it
+    memoryStore.set(key, {
+      value,
+      expiresAt: Date.now() + ttlSeconds * 1000,
+    });
+    return true;
+  },
+
   async exists(key: string): Promise<boolean> {
     if (redis && redisAvailable) {
       try {

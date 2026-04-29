@@ -1,3 +1,8 @@
+> **Note (29 Apr 2026):** DNS migrated from Hostinger to Cloudflare.
+> All DNS records now managed at dash.cloudflare.com → datunai.com → DNS.
+> For Resend records, set proxy status to "DNS only" (gray cloud) — email
+> records must NOT be proxied through Cloudflare.
+
 # Email Infrastructure Setup Guide — Datun AI
 
 ## 1. Resend Setup (PRIMARY — Already Done)
@@ -8,10 +13,10 @@
 2. Click "Add Domain" → Enter `datunai.com`
 3. Resend will show 3 DNS records to add:
 
-### Add DNS Records in Hostinger
+### Add DNS Records in Cloudflare
 
-1. Login to [hpanel.hostinger.com](https://hpanel.hostinger.com)
-2. Go to Domains → datunai.com → DNS Zone
+1. Login to [dash.cloudflare.com](https://dash.cloudflare.com)
+2. Select `datunai.com` → **DNS** tab → Records
 3. Add these records (Resend dashboard shows exact values):
 
 | Type  | Name                 | Value                                                  | TTL   |

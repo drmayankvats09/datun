@@ -32,6 +32,10 @@ export class MetaWhatsAppProvider implements WhatsAppProvider {
     this.phoneNumberId = phoneNumberId;
   }
 
+  isConfigured(): boolean {
+    return !!(this.token && this.phoneNumberId);
+  }
+
   private get messagesUrl(): string {
     return `${GRAPH_API}/${this.phoneNumberId}/messages`;
   }

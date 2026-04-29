@@ -1,72 +1,49 @@
 // ═══════════════════════════════════════════════════════════════
 // EMAIL CLIENT — Multi-provider failover + DB logging
+// REFACTORED (Task #40): uses generic lib/circuit-breaker.
+// Public API unchanged — all existing email tests pass.
 //
-// Architecture (mirrors aiClient):
+// Architecture:
 //   Caller → emailClient.send(template, vars)
 //   → Render template → HTML
 //   → Try Provider 1 (Resend) → success? log + return
 //   → Failed? → Try Provider 2 (SES)
-//   → All failed? → log failure + throw
-//
-// Circuit breaker: 3 failures in 60s → mark unhealthy → 5 min cooldown
-// DB logging: every attempt → EmailLog row (debug + analytics)
-//
-// Pattern: Stripe multi-sender, ai/index.ts provider chain.
+//   → All failed? → log failure + return
 // ═══════════════════════════════════════════════════════════════
 
 import { prisma } from '@repo/db';
 import { logger } from '../../lib/logger.js';
 import { Sentry } from '../../lib/sentry.js';
+import { CircuitBreaker, DEFAULT_CIRCUIT_BREAKER_CONFIG } from '../../lib/circuit-breaker.js';
 import { ResendProvider } from './resend.provider.js';
 import { SesProvider } from './ses.provider.js';
 import { renderEmailTemplate } from './templates.js';
 import type {
   EmailProvider,
   EmailSendResult,
-  EmailClientConfig,
   EmailProviderHealth,
   EmailClientSendOptions,
 } from './types.js';
 
-// ── Config ──
-const DEFAULT_CONFIG: EmailClientConfig = {
-  circuitBreakerThreshold: 3,
-  circuitBreakerWindowMs: 60_000,
-  circuitBreakerCooldownMs: 300_000, // 5 min
-};
-
 // ── State ──
-const healthMap = new Map<string, EmailProviderHealth>();
 let providers: EmailProvider[] = [];
+let breaker: CircuitBreaker<string> | null = null;
 let initialized = false;
 
 function initialize(): void {
   if (initialized) return;
 
   const candidates: EmailProvider[] = [new ResendProvider(), new SesProvider()];
-
   providers = candidates.filter((p) => p.isConfigured());
+  breaker = new CircuitBreaker<string>(DEFAULT_CIRCUIT_BREAKER_CONFIG, '[EmailClient]');
 
   const activeNames = providers.map((p) => p.name);
   const inactiveNames = candidates.filter((p) => !p.isConfigured()).map((p) => p.name);
 
-  // Initialize health for each provider
-  for (const p of providers) {
-    healthMap.set(p.name, {
-      status: 'healthy',
-      consecutiveFailures: 0,
-      lastSuccessAt: null,
-      lastFailureAt: null,
-      unhealthyUntil: null,
-      totalSent: 0,
-      totalFailed: 0,
-    });
-  }
-
   logger.info('[EmailClient] Initialized', {
     activeProviders: activeNames,
     inactiveProviders: inactiveNames,
-    circuitBreaker: DEFAULT_CONFIG,
+    circuitBreaker: DEFAULT_CIRCUIT_BREAKER_CONFIG,
   });
 
   if (providers.length === 0) {
@@ -76,51 +53,18 @@ function initialize(): void {
   initialized = true;
 }
 
-// ── Circuit Breaker ──
+// ── Circuit Breaker (delegates to generic) ──
 
 function isHealthy(providerName: string): boolean {
-  const health = healthMap.get(providerName);
-  if (!health) return false;
-
-  if (health.status === 'healthy') return true;
-
-  // Check if cooldown expired → auto-recover (canary)
-  if (health.unhealthyUntil && Date.now() > health.unhealthyUntil) {
-    health.status = 'healthy';
-    health.consecutiveFailures = 0;
-    logger.info(`[EmailClient] Provider ${providerName} recovered (canary)`);
-    return true;
-  }
-
-  return false;
+  return breaker?.isAvailable(providerName) ?? false;
 }
 
 function recordSuccess(providerName: string): void {
-  const health = healthMap.get(providerName);
-  if (!health) return;
-  health.consecutiveFailures = 0;
-  health.lastSuccessAt = Date.now();
-  health.totalSent++;
-  health.status = 'healthy';
+  breaker?.recordSuccess(providerName);
 }
 
 function recordFailure(providerName: string): void {
-  const health = healthMap.get(providerName);
-  if (!health) return;
-  health.consecutiveFailures++;
-  health.lastFailureAt = Date.now();
-  health.totalFailed++;
-
-  if (health.consecutiveFailures >= DEFAULT_CONFIG.circuitBreakerThreshold) {
-    health.status = 'unhealthy';
-    health.unhealthyUntil = Date.now() + DEFAULT_CONFIG.circuitBreakerCooldownMs;
-    logger.warn(
-      `[EmailClient] Provider ${providerName} marked UNHEALTHY — cooldown ${DEFAULT_CONFIG.circuitBreakerCooldownMs / 1000}s`,
-      {
-        failures: health.consecutiveFailures,
-      },
-    );
-  }
+  breaker?.recordFailure(providerName);
 }
 
 // ── DB Logging ──
@@ -287,14 +231,24 @@ async function sendRaw(options: {
 }
 
 /**
- * Get health status of all providers.
- * Used by: /health endpoint, admin dashboard.
+ * Get health status of all providers (preserves EmailProviderHealth shape
+ * so existing tests pass without changes).
  */
 function getHealth(): Record<string, EmailProviderHealth> {
   initialize();
+  if (!breaker) return {};
+  const states = breaker.getAllHealth();
   const result: Record<string, EmailProviderHealth> = {};
-  for (const [name, health] of healthMap) {
-    result[name] = { ...health };
+  for (const [name, s] of Object.entries(states)) {
+    result[name] = {
+      status: s.status === 'degraded' ? 'healthy' : (s.status as 'healthy' | 'unhealthy'),
+      consecutiveFailures: s.consecutiveFailures,
+      lastSuccessAt: s.lastSuccessAt,
+      lastFailureAt: s.lastFailureAt,
+      unhealthyUntil: s.unhealthyUntil,
+      totalSent: s.totalRequests,
+      totalFailed: s.totalFailures,
+    };
   }
   return result;
 }

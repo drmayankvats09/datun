@@ -22,15 +22,15 @@ describe('HealthManager (Circuit Breaker)', () => {
   });
 
   it('stays healthy below failure threshold', () => {
-    manager.recordFailure('claude', new Error('timeout'));
-    manager.recordFailure('claude', new Error('timeout'));
+    manager.recordFailure('claude');
+    manager.recordFailure('claude');
     // 2 failures < 3 threshold
     expect(manager.isAvailable('claude')).toBe(true);
   });
 
   it('trips circuit breaker at threshold', () => {
     for (let i = 0; i < 3; i++) {
-      manager.recordFailure('claude', new Error('timeout'));
+      manager.recordFailure('claude');
     }
     expect(manager.isAvailable('claude')).toBe(false);
   });
@@ -44,8 +44,8 @@ describe('HealthManager (Circuit Breaker)', () => {
     };
     const mgr = new HealthManager(shortConfig);
 
-    mgr.recordFailure('claude', new Error('fail'));
-    mgr.recordFailure('claude', new Error('fail'));
+    mgr.recordFailure('claude');
+    mgr.recordFailure('claude');
     expect(mgr.isAvailable('claude')).toBe(false);
 
     // Wait for cooldown
@@ -55,8 +55,8 @@ describe('HealthManager (Circuit Breaker)', () => {
   });
 
   it('recordSuccess resets consecutive failures', () => {
-    manager.recordFailure('claude', new Error('fail'));
-    manager.recordFailure('claude', new Error('fail'));
+    manager.recordFailure('claude');
+    manager.recordFailure('claude');
     manager.recordSuccess('claude');
 
     const health = manager.getHealth('claude');
@@ -67,7 +67,7 @@ describe('HealthManager (Circuit Breaker)', () => {
   it('tracks total requests and failures', () => {
     manager.recordSuccess('claude');
     manager.recordSuccess('claude');
-    manager.recordFailure('claude', new Error('fail'));
+    manager.recordFailure('claude');
 
     const health = manager.getHealth('claude');
     expect(health.totalRequests).toBe(3);
@@ -76,7 +76,7 @@ describe('HealthManager (Circuit Breaker)', () => {
 
   it('independent health per provider', () => {
     for (let i = 0; i < 3; i++) {
-      manager.recordFailure('claude', new Error('fail'));
+      manager.recordFailure('claude');
     }
     expect(manager.isAvailable('claude')).toBe(false);
     expect(manager.isAvailable('openai')).toBe(true);

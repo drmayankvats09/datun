@@ -51,3 +51,62 @@ describe('validate middleware', () => {
     }
   });
 });
+
+describe('validateQuery middleware', () => {
+  it('imports validateQuery successfully', async () => {
+    const mod = await import('../../middleware/validate.js');
+    expect(typeof mod.validateQuery).toBe('function');
+  });
+
+  it('calls next() on valid query', async () => {
+    const { validateQuery } = await import('../../middleware/validate.js');
+    const { z } = await import('zod');
+    const schema = z.object({ page: z.coerce.number().int().min(1) });
+    const middleware = validateQuery(schema);
+
+    const req = { query: { page: '5' } } as unknown as Request;
+    const next = vi.fn() as NextFunction;
+    middleware(req, {} as Response, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect((req.query as unknown as { page: number }).page).toBe(5);
+  });
+
+  it('throws ValidationError on invalid query', async () => {
+    const { validateQuery } = await import('../../middleware/validate.js');
+    const { z } = await import('zod');
+    const schema = z.object({ page: z.coerce.number().int().min(1) });
+    const middleware = validateQuery(schema);
+
+    const req = { query: { page: '0' } } as unknown as Request;
+    expect(() => middleware(req, {} as Response, vi.fn() as NextFunction)).toThrow(ValidationError);
+  });
+});
+
+describe('validateParams middleware', () => {
+  it('imports validateParams successfully', async () => {
+    const mod = await import('../../middleware/validate.js');
+    expect(typeof mod.validateParams).toBe('function');
+  });
+
+  it('calls next() on valid params', async () => {
+    const { validateParams } = await import('../../middleware/validate.js');
+    const { z } = await import('zod');
+    const schema = z.object({ id: z.string().uuid() });
+    const middleware = validateParams(schema);
+
+    const req = { params: { id: '550e8400-e29b-41d4-a716-446655440000' } } as unknown as Request;
+    const next = vi.fn() as NextFunction;
+    middleware(req, {} as Response, next);
+    expect(next).toHaveBeenCalledOnce();
+  });
+
+  it('throws ValidationError on invalid params', async () => {
+    const { validateParams } = await import('../../middleware/validate.js');
+    const { z } = await import('zod');
+    const schema = z.object({ id: z.string().uuid() });
+    const middleware = validateParams(schema);
+
+    const req = { params: { id: 'not-a-uuid' } } as unknown as Request;
+    expect(() => middleware(req, {} as Response, vi.fn() as NextFunction)).toThrow(ValidationError);
+  });
+});
