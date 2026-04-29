@@ -1,0 +1,40 @@
+// ═══════════════════════════════════════════════════════════════
+// ERROR CODES — Single source for API error identification
+// Backend: throw new AppError(ERROR_CODES.VALIDATION_FAILED, ...)
+// Frontend: if (error.code === ERROR_CODES.RATE_LIMITED) showRetry()
+// ═══════════════════════════════════════════════════════════════
+
+export const ERROR_CODES = {
+  // Auth
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  TOKEN_EXPIRED: 'TOKEN_EXPIRED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  ACCOUNT_LOCKED: 'ACCOUNT_LOCKED',
+  EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
+  PHONE_ALREADY_EXISTS: 'PHONE_ALREADY_EXISTS',
+  OTP_EXPIRED: 'OTP_EXPIRED',
+  OTP_INVALID: 'OTP_INVALID',
+  OTP_MAX_ATTEMPTS: 'OTP_MAX_ATTEMPTS',
+
+  // Validation
+  VALIDATION_FAILED: 'VALIDATION_FAILED',
+
+  // Rate Limiting
+  RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
+
+  // Resources
+  NOT_FOUND: 'NOT_FOUND',
+  CONFLICT: 'CONFLICT',
+  FORBIDDEN: 'FORBIDDEN',
+
+  // Consultation
+  CONSULTATION_EXPIRED: 'CONSULTATION_EXPIRED',
+  CONSULTATION_ALREADY_COMPLETED: 'CONSULTATION_ALREADY_COMPLETED',
+  AI_SERVICE_UNAVAILABLE: 'AI_SERVICE_UNAVAILABLE',
+
+  // Server
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

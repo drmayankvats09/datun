@@ -4,6 +4,7 @@
 // Pattern: Clerk frontend SDK, Supabase JS client.
 // ═══════════════════════════════════════════════════════════════
 
+import type { AuthUser as SharedAuthUser, AuthResult as SharedAuthResult } from '@repo/shared';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // ── Token Storage (SSR-safe + iOS Safari quota-safe) ──
@@ -109,22 +110,11 @@ async function authFetch<T>(endpoint: string, options: RequestInit = {}): Promis
 
 // ── Auth API Calls ──
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  phone: string | null;
-  avatarUrl: string | null;
-  role: string;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-}
+/** Re-exported from @repo/shared — single source of truth */
+export type AuthUser = SharedAuthUser;
 
-export interface AuthResult {
-  user: AuthUser;
-  tokens: { accessToken: string; refreshToken: string; expiresIn: number };
-  isNewUser: boolean;
-}
+/** Re-exported from @repo/shared — single source of truth */
+export type AuthResult = SharedAuthResult;
 
 export async function signup(
   email: string,

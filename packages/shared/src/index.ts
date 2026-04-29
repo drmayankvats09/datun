@@ -34,3 +34,6 @@ export { PWA } from './pwa';
 
 // ── Email Helpers ──
 export { emailWrapper, emailFooter } from './emails';
+
+// ── Validators (Task #38) ──
+export * from './validators/index';
