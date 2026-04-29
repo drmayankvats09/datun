@@ -58,6 +58,11 @@ const envSchema = z.object({
   RESEND_FROM_DOMAIN: z.string().default('datunai.com'),
   ALERT_EMAIL_TO: z.string().email().default('hello@datunai.com'),
 
+  // ── AWS SES (fallback email provider) ──
+  AWS_SES_ACCESS_KEY: z.string().optional(),
+  AWS_SES_SECRET_KEY: z.string().optional(),
+  AWS_SES_REGION: z.string().default('ap-south-1'),
+
   // ── Better Stack ──
   LOGTAIL_SOURCE_TOKEN: z.string().optional(),
 

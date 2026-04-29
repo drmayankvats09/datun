@@ -1,18 +1,20 @@
 // ═══════════════════════════════════════════════════════════════
-// OTP SERVICE — Email (Resend) + SMS (MSG91)
+// OTP SERVICE — Email (emailClient) + SMS (MSG91)
 // 6-digit codes, 10-min expiry, max 3 verify attempts, rate limited.
 // Storage: Redis (Upstash) with in-memory fallback.
 // Pattern: Razorpay OTP, Zomato phone verify, Google 2FA.
+//
+// TASK #39 MIGRATION: Direct Resend → emailClient.send('otp')
+// Benefit: branded template + circuit breaker + SES fallback + DB log
 // ═══════════════════════════════════════════════════════════════
 
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { Resend } from 'resend';
 import axios from 'axios';
 import { env } from '../../config/env.js';
 import { logger } from '../../lib/logger.js';
 import { cache, TTL } from '../../lib/redis.js';
-import { BRAND } from '@repo/shared';
+import { emailClient } from '../email/index.js';
 import type { OtpSendResponse } from './types.js';
 
 // ── Config ──
@@ -21,9 +23,6 @@ const OTP_EXPIRY_SECONDS = TTL.OTP; // 600 = 10 minutes
 const OTP_MAX_ATTEMPTS = 3;
 const OTP_COOLDOWN_SECONDS = 60; // 1 min between sends
 const OTP_MAX_PER_HOUR = 5; // max 5 OTPs per destination per hour
-// 10 rounds intentional — OTP is 6 digits with 3-attempt limit + 10min expiry.
-// Defense relies on rate limiting, not hash cost. Lower than password's 12 rounds
-// because OTP has minimal entropy (1M combinations).
 const BCRYPT_SALT_ROUNDS = 10;
 
 // ── Redis key patterns ──
@@ -35,7 +34,7 @@ interface OtpData {
   hash: string;
   attempts: number;
   maxAttempts: number;
-  createdAt: number; // Unix timestamp ms
+  createdAt: number;
 }
 
 export class OtpService {
@@ -60,12 +59,11 @@ export class OtpService {
           };
         }
       } catch {
-        // Corrupted data — delete and continue
         await cache.del(key);
       }
     }
 
-    // Rate limit: max per hour (atomic counter with TTL)
+    // Rate limit: max per hour
     const hourlyKey = otpHourlyKey(channel, destination);
     const hourlyCount = await cache.incr(hourlyKey, TTL.OTP_HOURLY);
     if (hourlyCount > OTP_MAX_PER_HOUR) {
@@ -74,7 +72,7 @@ export class OtpService {
         success: false,
         maskedDestination: OtpService.maskDestination(destination, channel),
         expiresInSeconds: 0,
-        retryAfterSeconds: 300, // Try again in 5 min
+        retryAfterSeconds: 300,
       };
     }
 
@@ -147,7 +145,6 @@ export class OtpService {
       return false;
     }
 
-    // Increment attempts
     otpData.attempts++;
     await cache.set(key, JSON.stringify(otpData), OTP_EXPIRY_SECONDS);
 
@@ -168,7 +165,7 @@ export class OtpService {
     return false;
   }
 
-  // ── P2-F5: Invalidate OTP (on password reset re-request) ──
+  // ── Invalidate OTP ──
   static async invalidate(destination: string, channel: 'email' | 'phone'): Promise<void> {
     const key = otpKey(channel, destination);
     await cache.del(key);
@@ -183,36 +180,20 @@ export class OtpService {
     return num.toString().padStart(OTP_LENGTH, '0');
   }
 
-  // ── Private: Send email OTP via Resend ──
+  // ── Private: Send email OTP via emailClient ──
 
   private static async sendEmailOtp(email: string, code: string): Promise<void> {
-    if (!env.RESEND_API_KEY) {
-      logger.warn('RESEND_API_KEY not set — OTP logged to console (dev only)', {
-        email,
-        code,
-      });
-      return;
-    }
-
-    const resend = new Resend(env.RESEND_API_KEY);
-
-    await resend.emails.send({
-      from: `${BRAND.name} <noreply@${env.RESEND_FROM_DOMAIN || 'datunai.com'}>`,
+    // emailClient handles: template rendering, provider selection,
+    // circuit breaker, SES fallback, DB logging — all automatic
+    const result = await emailClient.send({
       to: email,
-      subject: `${code} is your ${BRAND.name} verification code`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-          <h2 style="color: #0A0F1A; margin-bottom: 8px;">${BRAND.name}</h2>
-          <p style="color: #666; font-size: 15px; line-height: 1.5;">Your verification code is:</p>
-          <div style="background: #F5F5F5; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
-            <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #0A0F1A;">${code}</span>
-          </div>
-          <p style="color: #999; font-size: 13px;">This code expires in 10 minutes. Do not share it with anyone.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
-          <p style="color: #bbb; font-size: 12px;">If you didn't request this code, please ignore this email.</p>
-        </div>
-      `,
+      template: 'otp',
+      vars: { code },
     });
+
+    if (!result.success) {
+      throw new Error(`Email send failed: ${result.errorMessage}`);
+    }
   }
 
   // ── Private: Send SMS OTP via MSG91 ──

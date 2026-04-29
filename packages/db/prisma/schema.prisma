@@ -336,6 +336,7 @@ model User {
     whatsappMessages     WhatsAppMessage[]
     auditLogs            AuditLog[]
     consentLogs          ConsentLog[]
+    emailLogs            EmailLog[]
     mediaUploads         MediaAsset[]             @relation("UploadedByUser")
     trainingLabels       TrainingLabel[]
     patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
@@ -705,6 +706,7 @@ model Consultation {
     appointments     Appointment[]
     prescription     Prescription?
     whatsappMessages WhatsAppMessage[]
+    emailLogs        EmailLog[]
 
     @@index([userId, status, updatedAt(sort: Desc)])
     @@index([patientId])
@@ -1304,4 +1306,45 @@ model MediaAsset {
     @@index([entityType, entityId])
     @@index([uploadedById])
     @@map("media_assets")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 29: EmailLog
+// Every email send attempt — delivery status tracked.
+// Debug: "Patient said OTP didn't arrive" → query by email + template.
+// Analytics: daily email volume, bounce rate, provider split.
+// Pattern: mirrors WhatsAppMessage table.
+// ═══════════════════════════════════════════════════════════════
+
+enum EmailStatus {
+    QUEUED
+    SENT
+    DELIVERED
+    BOUNCED
+    FAILED
+}
+
+model EmailLog {
+    id                String        @id @default(uuid()) @db.Uuid
+    to                String
+    template          String // "otp", "welcome", "consultation_complete"
+    subject           String
+    provider          String // "resend", "ses"
+    status            EmailStatus   @default(QUEUED)
+    providerMessageId String? // Resend/SES message ID
+    error             String?       @db.Text
+    userId            String?       @db.Uuid
+    user              User?         @relation(fields: [userId], references: [id])
+    consultationId    String?       @db.Uuid
+    consultation      Consultation? @relation(fields: [consultationId], references: [id])
+    metadata          Json? // Template variables, request context
+    createdAt         DateTime      @default(now())
+
+    @@index([to])
+    @@index([template])
+    @@index([userId])
+    @@index([consultationId])
+    @@index([status])
+    @@index([createdAt])
+    @@map("email_logs")
 }

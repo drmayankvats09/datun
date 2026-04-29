@@ -2,7 +2,9 @@
 // CRON: Patient Follow-up Reminders
 // 3-day: "How are you feeling?"
 // 7-day: "Still need help?"
-// Queries Prisma for consultations completed N days ago.
+//
+// TASK #39: Added EMAIL follow-up alongside WhatsApp.
+// Dual-channel: WhatsApp + Email = 2x engagement.
 // ═══════════════════════════════════════════════════════════════
 
 import { prisma } from '@repo/db';
@@ -11,6 +13,7 @@ import { Sentry } from '../lib/sentry.js';
 import { pingHealthcheck } from '../lib/healthcheck.js';
 import { alertAdmin } from '../services/alert.service.js';
 import { sendWhatsAppTemplate } from '../services/whatsapp/index.js';
+import { emailClient } from '../services/email/index.js';
 import { normalizeIndianPhone } from '../utils/phone.js';
 import { env } from '../config/env.js';
 
@@ -22,57 +25,85 @@ export async function run3DayFollowUp(): Promise<void> {
     const dayStart = new Date(threeDaysAgo.toISOString().split('T')[0]!);
     const dayEnd = new Date(dayStart.getTime() + 86_400_000);
 
-    // Find completed consultations from exactly 3 days ago
-    // that have a phone number and haven't been followed up yet
     const consultations = await prisma.consultation.findMany({
       where: {
         status: 'COMPLETED',
         completedAt: { gte: dayStart, lt: dayEnd },
         deletedAt: null,
         user: { phone: { not: null } },
-        // TODO: Add follow_up_3day_sent tracking field to schema
-        // For now, we rely on WhatsAppMessage dedup
       },
       include: {
-        user: { select: { phone: true, name: true } },
+        user: {
+          select: { id: true, phone: true, email: true, name: true, languagePreference: true },
+        },
       },
-      take: 100, // Safety cap — process max 100 per run
+      take: 100,
     });
 
-    let sent = 0;
+    let whatsappSent = 0;
+    let emailSent = 0;
+
     for (const c of consultations) {
-      if (!c.user.phone) continue;
-      const phone = normalizeIndianPhone(c.user.phone);
-
-      // Check if we already sent a 3-day follow-up to this phone
-      const alreadySent = await prisma.whatsAppMessage.findFirst({
-        where: {
-          phoneNumber: phone,
-          templateName: 'datunai_3day_followup',
-          consultationId: c.id,
-        },
-      });
-      if (alreadySent) continue;
-
-      await sendWhatsAppTemplate(
-        phone,
-        'datunai_3day_followup',
-        [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: c.user.name ?? 'there' },
-              { type: 'text', text: c.chiefComplaint ?? 'your dental concern' },
-            ],
+      // ── WhatsApp (existing) ──
+      if (c.user.phone) {
+        const phone = normalizeIndianPhone(c.user.phone);
+        const alreadySentWa = await prisma.whatsAppMessage.findFirst({
+          where: {
+            phoneNumber: phone,
+            templateName: 'datunai_3day_followup',
+            consultationId: c.id,
           },
-        ],
-        { userId: c.userId, consultationId: c.id },
-      );
-      sent++;
+        });
+
+        if (!alreadySentWa) {
+          await sendWhatsAppTemplate(
+            phone,
+            'datunai_3day_followup',
+            [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: c.user.name ?? 'there' },
+                  { type: 'text', text: c.chiefComplaint ?? 'your dental concern' },
+                ],
+              },
+            ],
+            { userId: c.userId, consultationId: c.id },
+          );
+          whatsappSent++;
+        }
+      }
+
+      // ── Email (NEW — Task #39) ──
+      if (c.user.email) {
+        // Dedup: check EmailLog for existing 3-day follow-up
+        const alreadySentEmail = await prisma.emailLog.findFirst({
+          where: {
+            to: c.user.email,
+            template: 'follow_up_3day',
+            consultationId: c.id,
+          },
+        });
+
+        if (!alreadySentEmail) {
+          await emailClient.send({
+            to: c.user.email,
+            template: 'follow_up_3day',
+            vars: {
+              name: c.user.name ?? 'there',
+              diagnosis: c.chiefComplaint ?? 'your dental concern',
+            },
+            locale: c.user.languagePreference ?? 'en',
+            userId: c.userId,
+            consultationId: c.id,
+          });
+          emailSent++;
+        }
+      }
     }
 
     logger.info(
-      `[Cron] 3-day follow-up complete: ${sent} sent of ${consultations.length} eligible`,
+      `[Cron] 3-day follow-up complete: ${whatsappSent} WhatsApp + ${emailSent} emails sent of ${consultations.length} eligible`,
     );
     await pingHealthcheck(env.HEALTHCHECK_3DAY_URL);
   } catch (err) {
@@ -99,44 +130,76 @@ export async function run7DayFollowUp(): Promise<void> {
         user: { phone: { not: null } },
       },
       include: {
-        user: { select: { phone: true, name: true } },
+        user: {
+          select: { id: true, phone: true, email: true, name: true, languagePreference: true },
+        },
       },
       take: 100,
     });
 
-    let sent = 0;
+    let whatsappSent = 0;
+    let emailSent = 0;
+
     for (const c of consultations) {
-      if (!c.user.phone) continue;
-      const phone = normalizeIndianPhone(c.user.phone);
-
-      const alreadySent = await prisma.whatsAppMessage.findFirst({
-        where: {
-          phoneNumber: phone,
-          templateName: 'datunai_7day_followup',
-          consultationId: c.id,
-        },
-      });
-      if (alreadySent) continue;
-
-      await sendWhatsAppTemplate(
-        phone,
-        'datunai_7day_followup',
-        [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: c.user.name ?? 'there' },
-              { type: 'text', text: c.chiefComplaint ?? 'your dental concern' },
-            ],
+      // ── WhatsApp (existing) ──
+      if (c.user.phone) {
+        const phone = normalizeIndianPhone(c.user.phone);
+        const alreadySentWa = await prisma.whatsAppMessage.findFirst({
+          where: {
+            phoneNumber: phone,
+            templateName: 'datunai_7day_followup',
+            consultationId: c.id,
           },
-        ],
-        { userId: c.userId, consultationId: c.id },
-      );
-      sent++;
+        });
+
+        if (!alreadySentWa) {
+          await sendWhatsAppTemplate(
+            phone,
+            'datunai_7day_followup',
+            [
+              {
+                type: 'body',
+                parameters: [
+                  { type: 'text', text: c.user.name ?? 'there' },
+                  { type: 'text', text: c.chiefComplaint ?? 'your dental concern' },
+                ],
+              },
+            ],
+            { userId: c.userId, consultationId: c.id },
+          );
+          whatsappSent++;
+        }
+      }
+
+      // ── Email (NEW — Task #39) ──
+      if (c.user.email) {
+        const alreadySentEmail = await prisma.emailLog.findFirst({
+          where: {
+            to: c.user.email,
+            template: 'follow_up_7day',
+            consultationId: c.id,
+          },
+        });
+
+        if (!alreadySentEmail) {
+          await emailClient.send({
+            to: c.user.email,
+            template: 'follow_up_7day',
+            vars: {
+              name: c.user.name ?? 'there',
+              diagnosis: c.chiefComplaint ?? 'your dental concern',
+            },
+            locale: c.user.languagePreference ?? 'en',
+            userId: c.userId,
+            consultationId: c.id,
+          });
+          emailSent++;
+        }
+      }
     }
 
     logger.info(
-      `[Cron] 7-day follow-up complete: ${sent} sent of ${consultations.length} eligible`,
+      `[Cron] 7-day follow-up complete: ${whatsappSent} WhatsApp + ${emailSent} emails sent of ${consultations.length} eligible`,
     );
     await pingHealthcheck(env.HEALTHCHECK_7DAY_URL);
   } catch (err) {

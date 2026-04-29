@@ -2,16 +2,17 @@
 // ALERT SERVICE — Admin email notifications + dedup
 // Severity-based alerts with cooldown to prevent spam.
 // Dedup via Redis (survives restart). Fallback: in-memory.
+//
+// TASK #39 MIGRATION: Direct Resend → emailClient.sendRaw()
+// Benefit: circuit breaker + SES fallback + DB logging automatic.
 // ═══════════════════════════════════════════════════════════════
 
-import { Resend } from 'resend';
 import { BRAND, COLORS, CONTACTS, URLS } from '@repo/shared';
 import { env } from '../config/env.js';
 import { logger } from '../lib/logger.js';
 import { Sentry } from '../lib/sentry.js';
 import { cache } from '../lib/redis.js';
-
-const resendClient = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+import { emailClient } from './email/index.js';
 
 type Severity = 'CRITICAL' | 'WARNING' | 'INFO';
 
@@ -55,19 +56,14 @@ export async function alertAdmin(
   <p style="margin-top:24px;font-size:12px;color:${COLORS.muted}">${BRAND.name} · Automated Alert System · ${URLS.website}</p>
 </div>`;
 
-  // Send email
-  if (resendClient) {
-    try {
-      await resendClient.emails.send({
-        from: CONTACTS.systemEmailFrom,
-        to: [env.ALERT_EMAIL_TO],
-        subject,
-        html,
-      });
-    } catch (e) {
-      logger.error('Alert email failed', { error: (e as Error).message });
-    }
-  }
+  // Send via emailClient (circuit breaker + SES fallback + DB logging)
+  await emailClient.sendRaw({
+    to: env.ALERT_EMAIL_TO,
+    subject,
+    html,
+    from: CONTACTS.systemEmailFrom,
+    template: 'admin_alert',
+  });
 
   // Also log + Sentry
   logger.error(`[ALERT][${severity}] ${title}: ${details}`);

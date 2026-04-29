@@ -1,6 +1,8 @@
 // ═══════════════════════════════════════════════════════════════
 // CRON: Daily Business Report (9 AM IST)
 // Queries Prisma for 24h metrics, sends branded email.
+//
+// TASK #39 MIGRATION: Direct Resend → emailClient.sendRaw()
 // ═══════════════════════════════════════════════════════════════
 
 import { prisma } from '@repo/db';
@@ -10,7 +12,7 @@ import { Sentry } from '../lib/sentry.js';
 import { pingHealthcheck } from '../lib/healthcheck.js';
 import { alertAdmin } from '../services/alert.service.js';
 import { env } from '../config/env.js';
-import { Resend } from 'resend';
+import { emailClient } from '../services/email/index.js';
 
 export async function runDailyReport(): Promise<void> {
   logger.info('[Cron] Daily report starting...');
@@ -65,16 +67,14 @@ export async function runDailyReport(): Promise<void> {
   ${emailFooter()}
 </div>`;
 
-    // Send email
-    if (env.RESEND_API_KEY) {
-      const resend = new Resend(env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: CONTACTS.systemEmailFrom,
-        to: [env.ALERT_EMAIL_TO],
-        subject: `📊 ${BRAND.name} Daily Report — ${dateStr}`,
-        html,
-      });
-    }
+    // Send via emailClient (circuit breaker + SES fallback + DB logging)
+    await emailClient.sendRaw({
+      to: env.ALERT_EMAIL_TO,
+      subject: `📊 ${BRAND.name} Daily Report — ${dateStr}`,
+      html,
+      from: CONTACTS.systemEmailFrom,
+      template: 'daily_report',
+    });
 
     logger.info('[Cron] Daily report sent', {
       consultations24h: totalConsultations24h,
