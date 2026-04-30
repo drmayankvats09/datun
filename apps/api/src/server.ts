@@ -5,11 +5,16 @@
 // Pattern: Google Cloud Run, AWS ECS, Railway — all expect graceful shutdown.
 // ═══════════════════════════════════════════════════════════════
 
-import 'dotenv/config';
+// ═══════════════════════════════════════════════════════════════
+// CRITICAL IMPORT ORDER:
+// 1. dotenv/config — loads SENTRY_DSN into process.env
+// 2. ./lib/sentry.js — initializes Sentry as SIDE EFFECT (module load)
+// 3. Everything else — Sentry hooks now active for instrumentation
+// Reference: Sentry v10 docs require init BEFORE Express imports.
+// ═══════════════════════════════════════════════════════════════
 
-// Sentry MUST init before anything else (captures boot errors too)
-import { initSentry, Sentry } from './lib/sentry.js';
-initSentry();
+import 'dotenv/config';
+import { Sentry } from './lib/sentry.js';
 
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
