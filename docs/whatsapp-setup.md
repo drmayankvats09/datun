@@ -14,7 +14,7 @@
 1. Click "Add record"
 2. Type: `CNAME`
 3. Name: `api`
-4. Target: `dentscan-ai-backend-production.up.railway.app`
+4. 4. Target: `api.datunai.com`
 5. Proxy status: **DNS only** (gray cloud — Railway requires direct connection)
 6. TTL: Auto
 7. Save

@@ -10,8 +10,8 @@ describe('URLS constants', () => {
     expect(URLS.websiteHttps).toMatch(/^https:\/\//);
   });
 
-  it('API URL is Railway production', () => {
-    expect(URLS.api).toContain('railway.app');
+  it('API URL is api.datunai.com', () => {
+    expect(URLS.api).toBe('https://api.datunai.com');
   });
 
   it('CORS origins include production + development', () => {
