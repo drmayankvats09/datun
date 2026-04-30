@@ -12,7 +12,10 @@ export default defineConfig({
     include: ['**/__tests__/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     setupFiles: ['./__tests__/setup.ts'],
-    testTimeout: 10_000,
+    // ── Test timeout ──
+    // 30s allows for bcrypt SALT_ROUNDS=12 on Windows (~5s/hash).
+    // Production CI (Linux) runs in <1s. This is safety margin for cross-platform devs.
+    testTimeout: 30_000,
 
     // Coverage — ratchet pattern: only goes UP, never DOWN
     coverage: {
