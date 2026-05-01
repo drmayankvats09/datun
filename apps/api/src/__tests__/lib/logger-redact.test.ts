@@ -43,7 +43,7 @@ describe('Logger redaction — string-level patterns', () => {
   });
 
   it('redacts Stripe live keys (sk_live_*)', () => {
-    const input = 'Stripe key sk_live_abc123def456ghi789jkl012';
+    const input = 'Stripe key sk_live_abc123def456ghi789jkl012'; // nosemgrep: generic.secrets.security.detected-stripe-api-key
     const result = redactString(input);
     expect(result).not.toContain('sk_live_abc');
     expect(result).toContain('[REDACTED]');
@@ -79,7 +79,7 @@ describe('Logger redaction — string-level patterns', () => {
 
   it('redacts JWT tokens (3-segment base64)', () => {
     const jwt =
-      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+      'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTYifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'; // nosemgrep: generic.secrets.security.detected-jwt-token
     const input = `Token: ${jwt}`;
     const result = redactString(input);
     expect(result).not.toContain('eyJhbGci');
@@ -124,7 +124,7 @@ describe('Logger redaction — deep object traversal', () => {
     const input = [
       'normal message',
       'leaked: sk-ant-abc1234567890123456789012',
-      { nested: 'sk_live_abc123def456ghi789jkl012' },
+      { nested: 'sk_live_abc123def456ghi789jkl012' }, // nosemgrep: generic.secrets.security.detected-stripe-api-key
     ];
     const result = redactDeep(input) as typeof input;
     expect(result[0]).toBe('normal message');
