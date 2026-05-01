@@ -18,7 +18,7 @@ export const SEO = {
   locale: 'en_IN',
 
   /** Supported locales for hreflang */
-  locales: ['en', 'hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'pa'] as const,
+  locales: ['en', 'hi', 'ta', 'te', 'bn', 'mr', 'gu', 'kn', 'ml', 'pa'] as const,
 
   /** Open Graph defaults */
   og: {
