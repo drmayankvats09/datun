@@ -1,2 +1,47 @@
 #!/usr/bin/env sh
+# ═══════════════════════════════════════════════════════════════
+# PRE-COMMIT HOOK — Defense Layer 1
+#
+# Runs before every commit. Order matters:
+# 1. lint-staged: Prettier formats staged files
+# 2. gitleaks: Scans staged content for secret patterns
+#    Pattern: Stripe, Linear, Vercel default setup.
+#    Config: .gitleaks.toml (default ruleset + allowlist)
+#
+# If either step fails, commit is BLOCKED before history pollution.
+# Bypass (emergency only): git commit --no-verify
+# ═══════════════════════════════════════════════════════════════
+
+# Step 1: Format staged files with Prettier
 npx lint-staged
+
+LINT_EXIT=$?
+if [ $LINT_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ lint-staged failed. Fix formatting/lint errors before committing."
+  exit $LINT_EXIT
+fi
+
+# Step 2: Gitleaks scan on staged files
+if ! command -v gitleaks > /dev/null 2>&1; then
+  echo ""
+  echo "⚠️  gitleaks not installed — skipping secret scan."
+  echo "    Install: winget install Gitleaks.Gitleaks"
+  echo "    SECURITY RISK: Commit may contain secrets without scan."
+  exit 0
+fi
+
+gitleaks protect --staged --redact --no-banner --config=.gitleaks.toml
+GITLEAKS_EXIT=$?
+if [ $GITLEAKS_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ gitleaks detected secrets in staged changes."
+  echo "    Review the output above carefully."
+  echo "    Remove secrets from staged files, then re-commit."
+  echo ""
+  echo "    Emergency bypass (use ONLY if false positive):"
+  echo "    git commit --no-verify"
+  exit $GITLEAKS_EXIT
+fi
+
+echo "✅ Pre-commit checks passed (lint-staged + gitleaks)"
