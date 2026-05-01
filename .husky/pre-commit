@@ -1,47 +1,81 @@
 #!/usr/bin/env sh
 # ═══════════════════════════════════════════════════════════════
-# PRE-COMMIT HOOK — Defense Layer 1
+# PRE-COMMIT HOOK — Defense Layer 1 (Local)
 #
-# Runs before every commit. Order matters:
-# 1. lint-staged: Prettier formats staged files
-# 2. gitleaks: Scans staged content for secret patterns
-#    Pattern: Stripe, Linear, Vercel default setup.
-#    Config: .gitleaks.toml (default ruleset + allowlist)
+# Order of execution (fail-fast):
+#   1. lint-staged   → Prettier formats + ESLint validates staged files
+#   2. gitleaks      → Scans staged diff for secret patterns
 #
-# If either step fails, commit is BLOCKED before history pollution.
-# Bypass (emergency only): git commit --no-verify
+# Implementation (gitleaks v8.19+ compatibility):
+#   We use `gitleaks git --pre-commit --staged` — the official replacement
+#   for the deprecated `gitleaks protect --staged` command.
+#   Fallback: pipe `git diff --cached` to `gitleaks stdin` if needed.
+#
+# Config:
+#   - .gitleaks.toml      (ruleset + path allowlist)
+#   - .gitleaksignore     (specific fingerprint exclusions)
+#
+# Emergency bypass (false positives only):
+#   git commit --no-verify
+#
+# Standard: Stripe, Vercel, Linear pre-commit conventions
+# Reference: github.com/gitleaks/gitleaks (v8.19+ command syntax)
 # ═══════════════════════════════════════════════════════════════
 
-# Step 1: Format staged files with Prettier
-npx lint-staged
+set -e
 
+# ─── Step 1: lint-staged (Prettier + ESLint) ───────────────────
+npx lint-staged
 LINT_EXIT=$?
-if [ $LINT_EXIT -ne 0 ]; then
+if [ "$LINT_EXIT" -ne 0 ]; then
   echo ""
   echo "❌ lint-staged failed. Fix formatting/lint errors before committing."
-  exit $LINT_EXIT
+  exit "$LINT_EXIT"
 fi
 
-# Step 2: Gitleaks scan on staged files
+# ─── Step 2: gitleaks secret scan ──────────────────────────────
 if ! command -v gitleaks > /dev/null 2>&1; then
   echo ""
   echo "⚠️  gitleaks not installed — skipping secret scan."
-  echo "    Install: winget install Gitleaks.Gitleaks"
-  echo "    SECURITY RISK: Commit may contain secrets without scan."
+  echo "   Install (Windows): winget install Gitleaks.Gitleaks"
+  echo "   Install (macOS):   brew install gitleaks"
+  echo "   Install (Linux):   apt install gitleaks  OR  dnf install gitleaks"
+  echo ""
+  echo "   ⚠️  SECURITY RISK: Commit may contain secrets without scan."
+  echo "   Server-side scanning (GitHub + Semgrep CI) will still catch on push."
   exit 0
 fi
 
-gitleaks protect --staged --redact --no-banner --config=.gitleaks.toml
+# Skip if nothing staged
+if git diff --cached --quiet; then
+  echo "ℹ️  No staged changes to scan."
+  exit 0
+fi
+
+# Run gitleaks scan on staged diff
+# Using stdin mode: most reliable across gitleaks v8.19+ versions
+set +e
+git diff --cached | gitleaks stdin \
+  --redact \
+  --no-banner \
+  --config=.gitleaks.toml \
+  --exit-code 1
 GITLEAKS_EXIT=$?
-if [ $GITLEAKS_EXIT -ne 0 ]; then
+set -e
+
+if [ "$GITLEAKS_EXIT" -ne 0 ]; then
   echo ""
   echo "❌ gitleaks detected secrets in staged changes."
-  echo "    Review the output above carefully."
-  echo "    Remove secrets from staged files, then re-commit."
+  echo "   Review the findings above carefully."
+  echo "   Remove secrets from staged files, then re-commit."
   echo ""
-  echo "    Emergency bypass (use ONLY if false positive):"
-  echo "    git commit --no-verify"
-  exit $GITLEAKS_EXIT
+  echo "   If this is a false positive (e.g., test fixture), add to:"
+  echo "     - .gitleaksignore   (specific fingerprint)"
+  echo "     - .gitleaks.toml    (allowlist rule)"
+  echo ""
+  echo "   Emergency bypass (use ONLY if you've verified false positive):"
+  echo "     git commit --no-verify"
+  exit "$GITLEAKS_EXIT"
 fi
 
 echo "✅ Pre-commit checks passed (lint-staged + gitleaks)"
