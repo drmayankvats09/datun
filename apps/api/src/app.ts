@@ -44,7 +44,23 @@ export function createApp(): express.Express {
   );
 
   // ── Body parsing (20MB for base64 dental photos) ──
-  app.use(express.json({ limit: '20mb' }));
+  // CRITICAL: `verify` callback captures raw bytes BEFORE parsing.
+  // Webhook signature verification (Meta/Gupshup HMAC-SHA256) requires
+  // the EXACT bytes Meta hashed — re-serializing parsed JSON via
+  // JSON.stringify(req.body) produces different bytes (key order, whitespace,
+  // unicode escaping) and breaks HMAC verification intermittently.
+  // Pattern: Stripe webhook docs explicitly warn about this.
+  // The raw body is exposed as `req.rawBody` for downstream handlers.
+  app.use(
+    express.json({
+      limit: '20mb',
+      verify: (req, _res, buf) => {
+        // Attach raw body buffer as UTF-8 string.
+        // Express types don't include rawBody by default — extend via `as any`.
+        (req as unknown as { rawBody: string }).rawBody = buf.toString('utf8');
+      },
+    }),
+  );
 
   // ── CORS — origins from @repo/shared ──
   app.use(

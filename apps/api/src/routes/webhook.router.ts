@@ -63,9 +63,14 @@ webhookRouter.post('/gupshup', async (req: Request, res: Response) => {
 async function handleProviderWebhook(req: Request, provider: WhatsAppProviderName): Promise<void> {
   try {
     // 1. Signature verification
+    // CRITICAL FIX (Day 11): Use raw body captured by express.json verify callback.
+    // JSON.stringify(req.body) re-serializes parsed JSON which produces DIFFERENT bytes
+    // than what Meta/Gupshup hashed. Causes intermittent signature failures.
+    // Fallback to JSON.stringify only for safety (e.g., test environments where
+    // rawBody capture wasn't wired) — production path always uses rawBody.
     const signatureHeader = provider === 'meta' ? 'x-hub-signature-256' : 'x-gs-signature';
     const signature = req.headers[signatureHeader] as string | undefined;
-    const rawBody = JSON.stringify(req.body);
+    const rawBody = (req as unknown as { rawBody?: string }).rawBody ?? JSON.stringify(req.body);
 
     if (!verifyWebhookSignature({ provider, signature, rawBody })) {
       logger.error('[Webhook] Signature verification FAILED — possible spoof', { provider });

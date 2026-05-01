@@ -281,6 +281,22 @@ export class AuthService {
   static async loginWithGoogle(dto: GoogleAuthDTO): Promise<AuthResponse> {
     const googleUser = await GoogleOAuthService.exchangeCodeForUser(dto.code, dto.redirectUri);
 
+    // SECURITY (Day 11 fix): Reject unverified Google emails.
+    // Google's `verified_email: false` indicates the user signed up with a Gmail-like
+    // address but hasn't actually proven ownership. Allowing these creates an account
+    // takeover vector — attacker registers a Gmail-style email they don't own, then
+    // when the real owner verifies, attacker has prior account claim.
+    // Pattern: Auth0 default policy, Clerk default, every serious auth provider.
+    if (!googleUser.emailVerified) {
+      logger.warn('Google OAuth: rejected unverified email', {
+        googleId: googleUser.id,
+        email: googleUser.email,
+      });
+      throw new AuthenticationError(
+        'Your Google account email is not verified. Please verify your email with Google before signing in.',
+      );
+    }
+
     const existingIdentity = await prisma.userAuthIdentity.findUnique({
       where: {
         provider_providerUserId: {
