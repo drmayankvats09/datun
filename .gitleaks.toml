@@ -1,5 +1,18 @@
 # ═══════════════════════════════════════════════════════════════
 # GITLEAKS — Secret scanning configuration
+#
+# Strategy:
+#   - Extend default ruleset (covers AWS/GCP/Azure/Stripe/GitHub/etc.)
+#   - Allowlist test fixtures, lock files, build artifacts at PATH level
+#   - Allowlist common test-data password patterns at REGEX level
+#     (catches realistic test passwords like 'NewStrongPass1' that match
+#      generic-api-key entropy threshold)
+#
+# Used by:
+#   - .husky/pre-commit (local, every commit)
+#   - .github/workflows/ci.yml (server-side, every push — defense layer 2)
+#
+# Standard: Stripe, Vercel, Linear gitleaks configurations
 # ═══════════════════════════════════════════════════════════════
 
 title = "Datun — Gitleaks Config"
@@ -7,16 +20,65 @@ title = "Datun — Gitleaks Config"
 [extend]
 useDefault = true
 
+# ── Global allowlist ───────────────────────────────────────────
+# Paths matching ANY regex below are skipped entirely.
+# Regexes patterns are checked against the FULL relative path.
 [allowlist]
-description = "Global allowlist"
+description = "Global allowlist — paths and known-fixture patterns"
+
 paths = [
+  # Lock files (deterministic content, may contain hashes)
   '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+  '''yarn\.lock''',
+
+  # Build/cache directories (regenerated, never tracked secrets)
   '''\.turbo''',
   '''\.next''',
+  '''\.cache''',
   '''dist''',
+  '''build''',
+  '''coverage''',
   '''node_modules''',
+
+  # Documentation examples (intentionally show example formats)
   '''\.env\.example''',
+  '''\.env\.template''',
+  '''docs/.*\.md''',
+  '''README\.md''',
+  '''CHANGELOG\.md''',
+
+  # Test fixtures (intentionally contain realistic-looking secrets)
   '''__tests__''',
+  '''\.test\.ts''',
+  '''\.test\.tsx''',
+  '''\.spec\.ts''',
   '''vitest\.config''',
-  '''\.github/workflows/ci\.yml''',
+  '''vitest\.setup''',
+  '''playwright\.config''',
+  '''fixtures''',
+
+  # CI workflows (use placeholder values, real secrets via GitHub Secrets)
+  '''\.github/workflows/.*\.yml''',
+  '''\.github/workflows/.*\.yaml''',
+
+  # ADRs and design docs (may reference example tokens)
+  '''docs/adr/''',
+]
+
+# Regex patterns matched against any line — catches test-data shapes
+# even if they slip outside test directories (e.g., copy-pasted into prod by mistake).
+# Pattern: explicitly named test/fake/dummy/example fixtures.
+regexes = [
+  # Test password fixtures (matches "NewStrongPass1", "TestPassword123", etc.)
+  '''(?i)(strong|test|fake|dummy|valid|invalid|example|sample|mock)[a-z]*pass(word)?[0-9]*''',
+
+  # Test JWT/token fixtures (matches "fake-access-token", "test-jwt", etc.)
+  '''(?i)(fake|test|mock|dummy|example|sample)[-_]?(access[-_]?)?(token|jwt|key|secret)[-_]?[a-z0-9]*''',
+
+  # AWS docs example (universally recognized as not-a-real-secret)
+  '''AKIAIOSFODNN7EXAMPLE''',
+
+  # bcrypt placeholder strings used in tests
+  '''(?i)should[-_]?never[-_]?leak[-_]?bcrypt[-_]?hash''',
 ]

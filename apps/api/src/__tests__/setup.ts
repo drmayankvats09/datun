@@ -66,6 +66,7 @@ vi.mock('../lib/redis.js', () => ({
   blacklist: {
     isBlacklisted: vi.fn().mockResolvedValue(false),
     add: vi.fn().mockResolvedValue(undefined),
+    remove: vi.fn().mockResolvedValue(undefined),
   },
   TTL: {
     OTP: 600,
