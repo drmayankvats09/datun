@@ -1,18 +1,41 @@
-import { URLS } from '@repo/shared';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { PageShell } from '@/components/layout';
-import { LanguageSwitcher } from '@/components/language-switcher';
+// ═══════════════════════════════════════════════════════════════
+// COMING SOON PAGE — Datun pre-launch single-viewport hero
+// Replaces v1 on datunai.com (v1 deleted).
+// ═══════════════════════════════════════════════════════════════
+
 import type { Metadata } from 'next';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { BRAND, CONTACTS, URLS } from '@repo/shared';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { AuroraBg } from '@/components/coming-soon/aurora-bg';
+import { BrandMark } from '@/components/coming-soon/brand-mark';
+import { HeroContent } from '@/components/coming-soon/hero-content';
+import { PrimaryActions } from '@/components/coming-soon/primary-actions';
+import { StatusFooter } from '@/components/coming-soon/status-footer';
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'common' });
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || URLS.websiteHttps;
+
   return {
     title: t('meta.homeTitle'),
     description: t('meta.homeDescription'),
+    openGraph: {
+      title: t('meta.homeTitle'),
+      description: t('meta.homeDescription'),
+      url: `${baseUrl}/${locale}`,
+      siteName: BRAND.name,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('meta.homeTitle'),
+      description: t('meta.homeDescription'),
+    },
   };
 }
 
@@ -21,48 +44,83 @@ export default async function HomePage({ params }: Props) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'common' });
 
-  const websiteLink = URLS.websiteHttps;
-  const websiteName = URLS.website;
+  const strings = {
+    brandName: t('brand.name'),
+    mission: t('homepage.mission'),
+    headline: t('homepage.headline'),
+    subheadline: t('homepage.subheadline'),
+    buildStatus: t('homepage.buildStatus'),
+    ctaWhatsApp: t('homepage.ctaWhatsApp'),
+    ctaNotify: t('homepage.ctaNotify'),
+    ctaNotifySubject: t('homepage.ctaNotifySubject'),
+    ctaNotifyBody: t('homepage.ctaNotifyBody'),
+    languages: t('homepage.languages'),
+    copyright: t('footer.copyright', { year: new Date().getFullYear() }),
+  };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground sm:px-6">
-      <div className="fixed top-4 right-4 z-10 flex items-center gap-2">
-        <LanguageSwitcher />
-        <ThemeToggle />
-      </div>
+    <main
+      className="relative flex min-h-svh flex-col overflow-hidden bg-background text-foreground"
+      role="main"
+    >
+      <AuroraBg />
 
-      <PageShell maxWidth="lg" className="flex flex-col items-center text-center">
-        <div className="mb-8 flex flex-col items-center sm:mb-10">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            {t('brand.name')}
-          </h1>
-          <div
-            className="mt-3 h-1 w-12 rounded-full bg-primary"
-            role="presentation"
-            aria-hidden="true"
+      <header className="relative z-10 flex items-center justify-between px-4 py-5 sm:px-8 sm:py-6">
+        <div
+          className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-md"
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
+            border: '1px solid rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <span aria-hidden="true" className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+          </span>
+          <span>{strings.buildStatus}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
+      </header>
+
+      <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
+        <div className="flex w-full max-w-3xl flex-col items-center text-center">
+          <BrandMark brandName={strings.brandName} />
+          <HeroContent
+            mission={strings.mission}
+            headline={strings.headline}
+            subheadline={strings.subheadline}
+          />
+          <PrimaryActions
+            ctaWhatsAppLabel={strings.ctaWhatsApp}
+            ctaNotifyLabel={strings.ctaNotify}
+            whatsappPhone={CONTACTS.supportPhone}
+            notifyEmail={CONTACTS.supportEmail}
+            notifySubject={strings.ctaNotifySubject}
+            notifyBody={strings.ctaNotifyBody}
           />
         </div>
+      </div>
 
-        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
-          {t('brand.description')}
-        </p>
+      <StatusFooter languagesLabel={strings.languages} copyrightLabel={strings.copyright} />
 
-        <div className="mt-8 w-full rounded-xl border border-border bg-card px-5 py-4 sm:mt-10 sm:px-6 sm:py-5">
-          <p className="text-sm font-medium text-muted-foreground">{t('homepage.devNotice')}</p>
-          <p className="mt-1 text-sm text-muted-foreground/60">
-            {t('homepage.visitCurrent', {
-              link: websiteName,
-            })}{' '}
-            <a href={websiteLink} className="font-medium text-primary underline underline-offset-4">
-              {websiteName}
-            </a>
-          </p>
-        </div>
-
-        <footer className="mt-12 text-xs text-muted-foreground/50 sm:mt-16">
-          {t('footer.copyright', { year: new Date().getFullYear() })}
-        </footer>
-      </PageShell>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: BRAND.name,
+            legalName: BRAND.legalName,
+            url: URLS.websiteHttps,
+            description: BRAND.description,
+            sameAs: [URLS.social.instagram, URLS.social.linkedin],
+          }),
+        }}
+      />
     </main>
   );
 }
