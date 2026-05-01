@@ -46,7 +46,11 @@ export default defineConfig({
       },
     },
 
-    // Test env vars — loaded BEFORE any module imports
+    // Test env vars — loaded BEFORE any module imports.
+    // CRITICAL: env.ts validates these at module load time. Tests that mutate
+    // process.env at runtime (e.g., process.env.X = 'foo' in beforeAll) DO NOT
+    // affect already-loaded env module. So all env values needed for
+    // route/handler tests must be declared here.
     env: {
       NODE_ENV: 'test',
       PORT: '4000',
@@ -57,6 +61,10 @@ export default defineConfig({
       SENTRY_DSN: '',
       LOGTAIL_SOURCE_TOKEN: '',
       WHATSAPP_ENABLED: 'false',
+      // Webhook integration test fixtures (loaded into env.ts at module load)
+      WHATSAPP_VERIFY_TOKEN: 'test-verify-token-12345',
+      META_APP_SECRET: 'meta-test-secret-for-webhook-integration',
+      GUPSHUP_WEBHOOK_SECRET: 'gupshup-test-secret',
     },
   },
   resolve: {

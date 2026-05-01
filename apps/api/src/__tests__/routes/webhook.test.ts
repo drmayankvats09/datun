@@ -8,31 +8,51 @@
 // (fixed Day 11) where re-serializing parsed JSON produced different bytes
 // than Meta hashed, causing intermittent signature failures.
 //
-// Pattern: Stripe webhook integration tests, GitHub webhooks tests.
+// IMPORTANT: We READ env.WHATSAPP_VERIFY_TOKEN and process.env.META_APP_SECRET
+// at test time (not hard-coded constants) so this test works regardless of
+// what specific value vitest.config.ts sets — it just needs SOME value.
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import crypto from 'node:crypto';
 import { getTestApp, resetTestApp } from '../helpers/test-app.js';
+import { env } from '../../config/env.js';
 
-// These constants MUST match the values declared in vitest.config.ts `env` block.
-// vitest.config sets these BEFORE any module imports — needed because
-// env.ts (Zod-validated env config) loads at module-load time and freezes
-// values. Mutating process.env at runtime does NOT affect already-loaded env.
-const META_SECRET = 'meta-test-secret-for-webhook-integration';
-const VERIFY_TOKEN = 'test-verify-token-12345';
-const GUPSHUP_SECRET = 'gupshup-test-secret';
+// Read values from env module at test load time.
+// vitest.config.ts must declare these in its `env` block.
+// If any are missing, tests will fail loudly with clear error messages.
+const VERIFY_TOKEN = env.WHATSAPP_VERIFY_TOKEN;
+const META_SECRET = process.env.META_APP_SECRET;
+const GUPSHUP_SECRET = process.env.GUPSHUP_WEBHOOK_SECRET;
 
 beforeAll(() => {
-  // signature-verifier reads process.env directly (not env.ts) — so for
-  // signature tests, runtime mutation IS effective. We override NODE_ENV here
-  // so production-branch signature checks run during these integration tests.
+  // Defensive: fail fast if test env not configured properly
+  if (!VERIFY_TOKEN) {
+    throw new Error(
+      'Test setup error: env.WHATSAPP_VERIFY_TOKEN is not set. ' +
+        'Add WHATSAPP_VERIFY_TOKEN to vitest.config.ts env block.',
+    );
+  }
+  if (!META_SECRET) {
+    throw new Error(
+      'Test setup error: META_APP_SECRET is not set. ' +
+        'Add META_APP_SECRET to vitest.config.ts env block.',
+    );
+  }
+  if (!GUPSHUP_SECRET) {
+    throw new Error(
+      'Test setup error: GUPSHUP_WEBHOOK_SECRET is not set. ' +
+        'Add GUPSHUP_WEBHOOK_SECRET to vitest.config.ts env block.',
+    );
+  }
+
+  // signature-verifier reads NODE_ENV at runtime — set to production so
+  // signature checks actually run (skipping under non-production NODE_ENV)
   process.env.NODE_ENV = 'production';
 });
 
 beforeEach(() => {
-  // Reset app instance so it picks up fresh middleware state (matters because
-  // other test files may mutate process.env mid-suite).
+  // Reset app instance so it picks up fresh middleware state
   resetTestApp();
 });
 
@@ -41,14 +61,14 @@ beforeEach(() => {
  * Format: 'sha256=<hex>'
  */
 function metaSignature(rawBody: string): string {
-  return 'sha256=' + crypto.createHmac('sha256', META_SECRET).update(rawBody).digest('hex');
+  return 'sha256=' + crypto.createHmac('sha256', META_SECRET!).update(rawBody).digest('hex');
 }
 
 describe('Webhook Routes (Integration) — GET verification', () => {
   it('GET /webhook with correct verify_token returns challenge', async () => {
     const res = await getTestApp().get('/webhook').query({
       'hub.mode': 'subscribe',
-      'hub.verify_token': VERIFY_TOKEN,
+      'hub.verify_token': VERIFY_TOKEN, // ← Read from env at runtime
       'hub.challenge': 'CHALLENGE_VALUE_123',
     });
 
@@ -59,7 +79,7 @@ describe('Webhook Routes (Integration) — GET verification', () => {
   it('GET /webhook with wrong verify_token returns 403', async () => {
     const res = await getTestApp().get('/webhook').query({
       'hub.mode': 'subscribe',
-      'hub.verify_token': 'WRONG_TOKEN',
+      'hub.verify_token': 'WRONG_TOKEN_DEFINITELY_NOT_REAL',
       'hub.challenge': 'CHALLENGE_VALUE_123',
     });
 
@@ -111,7 +131,6 @@ describe('Webhook Routes (Integration) — POST signature verification (REGRESSI
       ],
     };
 
-    // Use supertest's raw body sending — payload sent as JSON
     const rawBody = JSON.stringify(payload);
     const sig = metaSignature(rawBody);
 
@@ -121,13 +140,10 @@ describe('Webhook Routes (Integration) — POST signature verification (REGRESSI
       .set('x-hub-signature-256', sig)
       .send(payload);
 
-    // Meta requirement: ALWAYS 200 immediately (no body required)
     expect(res.status).toBe(200);
   });
 
   it('POST /webhook with INVALID signature still returns 200 (silent reject)', async () => {
-    // Critical: Backend must NOT leak signature failure to potential attacker
-    // It returns 200 (Meta won't retry) but logs internally + Sentry alerts
     const payload = { entry: [] };
 
     const res = await getTestApp()
@@ -140,17 +156,12 @@ describe('Webhook Routes (Integration) — POST signature verification (REGRESSI
   });
 
   it('POST /webhook with NO signature header still returns 200', async () => {
-    // Edge case: Meta accidentally drops the signature header — backend
-    // logs error + alerts but doesn't break Meta's retry expectation
     const payload = { entry: [] };
-
     const res = await getTestApp().post('/webhook').send(payload);
-
     expect(res.status).toBe(200);
   });
 
   it('POST /webhook with empty body returns 200', async () => {
-    // Resilience: Meta sends empty test payloads sometimes
     const rawBody = '{}';
     const sig = metaSignature(rawBody);
 
@@ -165,18 +176,8 @@ describe('Webhook Routes (Integration) — POST signature verification (REGRESSI
 });
 
 describe('Webhook Routes (Integration) — POST raw body capture', () => {
-  /**
-   * Direct test of the raw body capture mechanism.
-   * Verifies that express.json verify callback attaches rawBody to req object,
-   * which is what the webhook handler reads for HMAC verification.
-   */
   it('rawBody is captured for downstream handlers', async () => {
-    // We test indirectly: a valid signature that matches rawBody-based HMAC
-    // proves rawBody was captured and used (vs JSON.stringify which would
-    // produce different bytes for nested objects with specific formatting)
     const payload = {
-      // Specific structure that JSON.stringify would re-format differently
-      // (key order preserved by V8 but whitespace removed)
       object: 'whatsapp_business_account',
       entry: [{ id: '123', changes: [] }],
     };
@@ -190,18 +191,15 @@ describe('Webhook Routes (Integration) — POST raw body capture', () => {
       .set('x-hub-signature-256', sig)
       .send(payload);
 
-    // 200 response means handler ran (signature verification passed)
     expect(res.status).toBe(200);
   });
 });
 
 describe('Webhook Routes (Integration) — Gupshup endpoint', () => {
-  // Gupshup secret already declared in vitest.config.ts env block —
-  // available at module-load time for signature-verifier.
   it('POST /webhook/gupshup returns 200', async () => {
     const payload = { type: 'message', payload: {} };
     const rawBody = JSON.stringify(payload);
-    const sig = crypto.createHmac('sha256', GUPSHUP_SECRET).update(rawBody).digest('hex');
+    const sig = crypto.createHmac('sha256', GUPSHUP_SECRET!).update(rawBody).digest('hex');
 
     const res = await getTestApp()
       .post('/webhook/gupshup')
