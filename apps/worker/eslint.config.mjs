@@ -2,6 +2,9 @@ import { config } from '@repo/eslint-config/base';
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
+  {
+    ignores: ['dist/**', 'coverage/**', 'node_modules/**', '*.config.mjs', '*.config.ts'],
+  },
   ...config,
   {
     languageOptions: {
