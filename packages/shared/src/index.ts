@@ -40,4 +40,4 @@ export { emailWrapper, emailFooter } from './emails';
 // ── Validators (Task #38) ──
 export * from './validators/index';
 
-export * from './trace.js';
+export * from './trace';
