@@ -19,6 +19,9 @@ import { Sentry } from './lib/sentry.js';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { initRedis, verifyRedis } from './lib/redis.js';
+import { closeProducerConnection } from './lib/queue/index.js';
+import { closeAllQueues } from './lib/queue/queues.js';
+import { registerScheduledJobs } from './lib/queue/scheduled.js';
 import { createApp } from './app.js';
 import { startCronJobs } from './crons/index.js';
 import { prisma as basePrisma } from '@repo/db';
@@ -60,6 +63,16 @@ async function main(): Promise<void> {
 
   // ── 5. Start cron jobs ──
   startCronJobs();
+
+  // ── 5b. Register BullMQ scheduled jobs (parity with node-cron) ──
+  try {
+    await registerScheduledJobs();
+  } catch (err) {
+    logger.warn('Failed to register scheduled queue jobs', {
+      error: (err as Error).message,
+    });
+    // Non-fatal — node-cron is primary during soak
+  }
 
   // ── 6. Listen ──
   server = app.listen(env.PORT, () => {
@@ -107,6 +120,17 @@ async function shutdown(signal: string): Promise<void> {
         logger.warn('Drain timeout reached — forcing close');
         resolve();
       }, 25_000);
+    });
+  }
+
+  // Close BullMQ queues (drains in-flight enqueues)
+  try {
+    await closeAllQueues();
+    await closeProducerConnection();
+    logger.info('Queue connections closed');
+  } catch (err) {
+    logger.error('Error closing queue connections', {
+      error: (err as Error).message,
     });
   }
 

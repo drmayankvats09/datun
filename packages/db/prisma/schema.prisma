@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════
 // DATUN — Complete Database Schema v1
-// 28 Tables | 300+ Fields | 5-Year Architecture
+// 31 Tables | 300+ Fields | 5-Year Architecture
 // Built for 1,00,000+ users Day 1
 // Author: Dr. Mayank Vats (CEO) + CTO Architecture
 // ═══════════════════════════════════════════════════════════════
@@ -280,6 +280,29 @@ enum ReviewStatusEnum {
     CORRECTED
 }
 
+enum EmailStatus {
+    QUEUED
+    SENT
+    DELIVERED
+    BOUNCED
+    FAILED
+}
+
+enum WhatsAppHealthStatus {
+    HEALTHY
+    DEGRADED
+    UNHEALTHY
+}
+
+enum JobStatus {
+    QUEUED
+    ACTIVE
+    COMPLETED
+    FAILED
+    DELAYED
+    STALLED
+}
+
 // ═══════════════════════════════════════════════════════════════
 // TABLE 1: User
 // Every person on the platform — patient, clinic owner, admin.
@@ -341,6 +364,7 @@ model User {
     mediaUploads         MediaAsset[]             @relation("UploadedByUser")
     trainingLabels       TrainingLabel[]
     patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
+    jobLogs              JobLog[]
 
     @@index([email])
     @@index([phone])
@@ -708,6 +732,7 @@ model Consultation {
     prescription     Prescription?
     whatsappMessages WhatsAppMessage[]
     emailLogs        EmailLog[]
+    jobLogs          JobLog[]
 
     @@index([userId, status, updatedAt(sort: Desc)])
     @@index([patientId])
@@ -1317,14 +1342,6 @@ model MediaAsset {
 // Pattern: mirrors WhatsAppMessage table.
 // ═══════════════════════════════════════════════════════════════
 
-enum EmailStatus {
-    QUEUED
-    SENT
-    DELIVERED
-    BOUNCED
-    FAILED
-}
-
 model EmailLog {
     id                String        @id @default(uuid()) @db.Uuid
     to                String
@@ -1357,12 +1374,6 @@ model EmailLog {
 // Pattern: similar to admin observability tables in Stripe/Twilio.
 // ═══════════════════════════════════════════════════════════════
 
-enum WhatsAppHealthStatus {
-    HEALTHY
-    DEGRADED
-    UNHEALTHY
-}
-
 model WhatsAppProviderHealth {
     id                     String               @id @default(uuid()) @db.Uuid
     provider               WhatsAppProvider
@@ -1380,4 +1391,40 @@ model WhatsAppProviderHealth {
 
     @@unique([provider])
     @@map("whatsapp_provider_health")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 31: JobLog
+// Background job execution audit trail (Task #41 — BullMQ)
+// Every BullMQ job execution → row in this table.
+// Pattern: Stripe webhook deliveries + Linear job audit.
+// Used for: failure analysis, retry decisions, future ML training data (Task #44).
+// ═══════════════════════════════════════════════════════════════
+
+model JobLog {
+    id             String        @id @default(uuid()) @db.Uuid
+    queueName      String // "whatsapp", "email", "pdf", "scheduled"
+    jobName        String // Specific job type within queue
+    jobId          String        @unique // BullMQ job ID (idempotency key)
+    status         JobStatus     @default(QUEUED)
+    attempt        Int           @default(1)
+    maxAttempts    Int           @default(5)
+    payload        Json // Sanitized data (no secrets, PII redacted)
+    result         Json? // Job return value on success
+    error          String?       @db.Text
+    errorStack     String?       @db.Text
+    durationMs     Int?
+    queuedAt       DateTime      @default(now())
+    startedAt      DateTime?
+    completedAt    DateTime?
+    userId         String?       @db.Uuid
+    user           User?         @relation(fields: [userId], references: [id])
+    consultationId String?       @db.Uuid
+    consultation   Consultation? @relation(fields: [consultationId], references: [id])
+
+    @@index([queueName, status])
+    @@index([userId])
+    @@index([consultationId])
+    @@index([queuedAt(sort: Desc)])
+    @@map("job_logs")
 }

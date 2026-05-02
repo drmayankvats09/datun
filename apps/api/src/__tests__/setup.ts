@@ -143,6 +143,37 @@ vi.mock('../services/whatsapp/index.js', () => ({
   sendWhatsAppTemplate: vi.fn().mockResolvedValue({ success: true }),
 }));
 
+// ── Mock BullMQ (Task #41) ──
+vi.mock('bullmq', () => {
+  const mockQueue = {
+    name: 'mock-queue',
+    add: vi.fn().mockResolvedValue({ id: 'mock-job-id' }),
+    close: vi.fn().mockResolvedValue(undefined),
+    on: vi.fn(),
+    getJobSchedulers: vi.fn().mockResolvedValue([]),
+    removeJobScheduler: vi.fn().mockResolvedValue(undefined),
+    upsertJobScheduler: vi.fn().mockResolvedValue({ key: 'mock-scheduler' }),
+  };
+
+  return {
+    Queue: vi.fn().mockImplementation(() => mockQueue),
+    Worker: vi.fn(),
+    QueueEvents: vi.fn(),
+  };
+});
+
+// ── Mock ioredis (Task #41) ──
+vi.mock('ioredis', () => {
+  const mockRedis = {
+    on: vi.fn(),
+    ping: vi.fn().mockResolvedValue('PONG'),
+    quit: vi.fn().mockResolvedValue('OK'),
+    disconnect: vi.fn(),
+  };
+  const Redis = vi.fn().mockImplementation(() => mockRedis);
+  return { Redis, default: Redis };
+});
+
 // ── Clean up between tests ──
 afterEach(() => {
   memoryStore.clear();

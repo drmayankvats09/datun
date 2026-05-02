@@ -258,3 +258,15 @@ export const emailClient = {
   sendRaw,
   getHealth,
 };
+
+// ═══════════════════════════════════════════════════════════════
+// QUEUED VARIANTS — Task #41
+// ═══════════════════════════════════════════════════════════════
+
+import {
+  enqueueEmailTemplated as _enqueueTemplated,
+  enqueueEmailRaw as _enqueueRaw,
+} from '../../lib/queue/index.js';
+
+export const queueEmailTemplated = _enqueueTemplated;
+export const queueEmailRaw = _enqueueRaw;

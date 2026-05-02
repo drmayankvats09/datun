@@ -29,6 +29,21 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
+  // ── Queue Redis (Railway TCP — for BullMQ) ──
+  // Separate from Upstash REST cache. BullMQ requires TCP + blocking commands.
+  // Optional in dev (queues disabled gracefully); REQUIRED in production.
+  QUEUE_REDIS_URL: z.string().url().optional(),
+
+  // ── Bull-board dashboard auth ──
+  BULL_BOARD_USER: z.string().min(1).default('admin'),
+  BULL_BOARD_PASSWORD: z.string().min(8).optional(),
+
+  // ── Feature flag: cron migration ──
+  // When 'bullmq': BullMQ Repeatable Jobs run, node-cron stays dormant
+  // When 'node-cron' (default): existing node-cron runs, BullMQ scheduled idle
+  // Used for soft cutover. Set 'bullmq' in production AFTER 7-day soak.
+  CRON_BACKEND: z.enum(['node-cron', 'bullmq']).default('node-cron'),
+
   // ── AI ──
   ANTHROPIC_API_KEY: z.string().min(1, 'ANTHROPIC_API_KEY is required'),
   AI_PRIMARY_MODEL: z.string().default('claude-sonnet-4-20250514'),
@@ -145,6 +160,22 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       code: z.ZodIssueCode.custom,
       message: 'META_APP_SECRET required when META_APP_ID is set',
       path: ['META_APP_SECRET'],
+    });
+  }
+  // Production REQUIRES queue Redis (BullMQ won't work without it)
+  if (data.NODE_ENV === 'production' && !data.QUEUE_REDIS_URL) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'QUEUE_REDIS_URL required in production (Railway Redis TCP URL)',
+      path: ['QUEUE_REDIS_URL'],
+    });
+  }
+  // Bull-board password required if dashboard accessible (production)
+  if (data.NODE_ENV === 'production' && !data.BULL_BOARD_PASSWORD) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'BULL_BOARD_PASSWORD required in production',
+      path: ['BULL_BOARD_PASSWORD'],
     });
   }
   // Production warning: JWT_REFRESH_SECRET should be set

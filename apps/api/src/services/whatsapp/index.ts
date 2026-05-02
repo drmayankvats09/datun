@@ -325,3 +325,25 @@ function mapProviderToEnum(provider: string): 'META' | 'GUPSHUP' | 'AISENSY' {
 }
 
 export type { TemplateComponent, WhatsAppSendResult } from './types.js';
+
+// ═══════════════════════════════════════════════════════════════
+// QUEUED VARIANTS — Task #41
+// Use these for non-blocking sends. Direct sends still available
+// for cases where caller needs immediate result (rare).
+// ═══════════════════════════════════════════════════════════════
+
+import {
+  enqueueWhatsAppTemplate as _enqueueTemplate,
+  enqueueWhatsAppText as _enqueueText,
+} from '../../lib/queue/index.js';
+
+/**
+ * Async fire-and-forget WhatsApp template send.
+ * Returns immediately with jobId; actual send happens in worker.
+ */
+export const queueWhatsAppTemplate = _enqueueTemplate;
+
+/**
+ * Async fire-and-forget WhatsApp text send.
+ */
+export const queueWhatsAppText = _enqueueText;

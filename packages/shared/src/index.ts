@@ -32,6 +32,8 @@ export { COMPONENTS } from './components';
 export { SEO } from './seo';
 export { PWA } from './pwa';
 
+export * from './queues';
+
 // ── Email Helpers ──
 export { emailWrapper, emailFooter } from './emails';
 

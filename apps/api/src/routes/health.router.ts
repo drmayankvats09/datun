@@ -10,6 +10,7 @@ import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
 import { JwtService } from '../services/auth/jwt.service.js';
 import { verifyRedis } from '../lib/redis.js';
+import { pingQueueRedis } from '../lib/queue/connection.js';
 import { getAIHealth } from '../services/ai/index.js';
 
 /**
@@ -104,6 +105,20 @@ healthRouter.get('/health', async (req, res) => {
     };
   } else {
     checks['redis'] = { status: 'warn', error: 'Not configured — using in-memory fallback' };
+  }
+
+  // Queue Redis check (Railway TCP — for BullMQ jobs)
+  if (env.QUEUE_REDIS_URL) {
+    const queueRedisResult = await pingQueueRedis();
+    checks['queueRedis'] = {
+      status: queueRedisResult.ok ? 'ok' : 'fail',
+      latencyMs: queueRedisResult.latencyMs,
+      ...(queueRedisResult.ok
+        ? {}
+        : { error: queueRedisResult.error ?? 'Queue Redis ping failed' }),
+    };
+  } else {
+    checks['queueRedis'] = { status: 'warn', error: 'QUEUE_REDIS_URL not set — BullMQ disabled' };
   }
 
   try {
