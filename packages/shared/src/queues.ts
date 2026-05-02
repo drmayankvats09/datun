@@ -35,6 +35,7 @@ export interface WhatsAppTemplateJob {
   components?: unknown[]; // TemplateComponent[] from api package — keep typed loose here
   userId?: string;
   consultationId?: string;
+  traceId?: string;
 }
 
 export interface WhatsAppTextJob {
@@ -42,6 +43,7 @@ export interface WhatsAppTextJob {
   body: string;
   userId?: string;
   consultationId?: string;
+  traceId?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -62,6 +64,7 @@ export interface EmailTemplatedJob {
   locale?: string;
   userId?: string;
   consultationId?: string;
+  traceId?: string;
 }
 
 export interface EmailRawJob {
@@ -72,6 +75,7 @@ export interface EmailRawJob {
   template?: string;
   userId?: string;
   consultationId?: string;
+  traceId?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -89,6 +93,7 @@ export interface ConsultationPdfJob {
   userId: string;
   /** Locale for PDF rendering — patient's preferred language */
   locale: string;
+  traceId?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -145,4 +150,25 @@ export const QUEUE_DEFAULTS = {
     removeOnComplete: { count: 100, age: 7 * 24 * 60 * 60 },
     removeOnFail: { count: 1000, age: 30 * 24 * 60 * 60 },
   },
+} as const;
+
+/**
+ * Worker rate limiters — applied at WORKER level, not queue level.
+ * BullMQ limiter is per-worker; if N workers, total = limiter × N.
+ *
+ * Calibrations (5-year safe headroom):
+ *   - whatsapp: Meta Cloud API = 80 msg/sec hard limit. Set 50/sec to leave
+ *     headroom for retries within window.
+ *   - email: Resend free = 2/sec; paid = 10/sec. Conservative 5/sec stays
+ *     safe across plan upgrades.
+ *   - pdf: CPU-bound; 2/sec prevents memory blowup on Cloudinary upload chain.
+ *   - scheduled: cron-equivalent; no real throughput need, 1/sec.
+ *
+ * Pattern: BullMQ docs official limiter pattern, Stripe internal queue config.
+ */
+export const WORKER_LIMITERS = {
+  whatsapp: { max: 50, duration: 1000 }, // 50 jobs / 1000ms = 50/sec
+  email: { max: 5, duration: 1000 }, // 5/sec
+  pdf: { max: 2, duration: 1000 }, // 2/sec
+  scheduled: { max: 1, duration: 1000 }, // 1/sec
 } as const;

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// QUEUE PRODUCERS TESTS — Enqueue contract
+// QUEUE PRODUCERS TESTS — Enqueue contract + trace propagation
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -18,6 +18,10 @@ vi.mock('../../../lib/queue/queues.js', () => ({
   closeAllQueues: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../../lib/request-context.js', () => ({
+  getRequestId: vi.fn().mockReturnValue('system'),
+}));
+
 describe('Queue producers', () => {
   let mockQueue: { add: ReturnType<typeof vi.fn> };
 
@@ -29,7 +33,7 @@ describe('Queue producers', () => {
   });
 
   describe('enqueueWhatsAppTemplate', () => {
-    it('returns ok=true with jobId on success', async () => {
+    it('returns ok=true with jobId and traceId on success', async () => {
       const result = await enqueueWhatsAppTemplate({
         phone: '+919999135340',
         templateName: 'consultation_complete',
@@ -38,6 +42,7 @@ describe('Queue producers', () => {
       });
       expect(result.ok).toBe(true);
       expect(result.jobId).toBeDefined();
+      expect(result.traceId).toMatch(/^trc_[a-f0-9]{16}$/);
       expect(mockQueue.add).toHaveBeenCalledOnce();
     });
 
@@ -51,6 +56,18 @@ describe('Queue producers', () => {
       const callArgs = mockQueue.add.mock.calls[0];
       const jobOpts = callArgs?.[2] as { jobId?: string };
       expect(jobOpts.jobId).toMatch(/wa-tpl:user-1:welcome:cons-1/);
+    });
+
+    it('preserves caller-provided traceId', async () => {
+      const customTrace = 'trc_caller000000000';
+      await enqueueWhatsAppTemplate({
+        phone: '+919999135340',
+        templateName: 'welcome',
+        userId: 'user-1',
+        traceId: customTrace,
+      });
+      const payload = mockQueue.add.mock.calls[0]?.[1] as { traceId?: string };
+      expect(payload.traceId).toBe(customTrace);
     });
 
     it('returns ok=false when queue not configured', async () => {
@@ -130,6 +147,16 @@ describe('Queue producers', () => {
       });
       expect(result1.jobId).toBe(result2.jobId);
     });
+
+    it('injects traceId into payload', async () => {
+      await enqueueEmailTemplated({
+        to: 'user@example.com',
+        template: 'welcome',
+        vars: { name: 'Test' },
+      });
+      const payload = mockQueue.add.mock.calls[0]?.[1] as { traceId?: string };
+      expect(payload.traceId).toMatch(/^trc_[a-f0-9]{16}$/);
+    });
   });
 
   describe('enqueueEmailRaw', () => {
@@ -153,6 +180,16 @@ describe('Queue producers', () => {
       const callArgs = mockQueue.add.mock.calls[0];
       const jobOpts = callArgs?.[2] as { jobId?: string };
       expect(jobOpts.jobId).toBe('pdf-cons:cons-abc');
+    });
+
+    it('every PDF job carries traceId for downstream correlation', async () => {
+      await enqueueConsultationPdf({
+        consultationId: 'cons-abc',
+        userId: 'user-1',
+        locale: 'en',
+      });
+      const payload = mockQueue.add.mock.calls[0]?.[1] as { traceId?: string };
+      expect(payload.traceId).toMatch(/^trc_[a-f0-9]{16}$/);
     });
   });
 });

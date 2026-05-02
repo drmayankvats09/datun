@@ -11,6 +11,7 @@ import { requestIdMiddleware } from './middleware/request-id.js';
 import { mountRoutes } from './routes/index.js';
 import { setupErrorHandlers } from './middleware/error-handler.js';
 import { mountBullBoard } from './lib/queue/dashboard.js';
+import { metricsRouter } from './routes/metrics.router.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -95,6 +96,9 @@ export function createApp(): express.Express {
 
   // Mount bull-board dashboard at /internal/queues (basic auth)
   mountBullBoard(app);
+
+  // Mount metrics endpoint at /internal/metrics (basic auth)
+  app.use('/internal', metricsRouter);
 
   // ── Error handlers (MUST be after all routes) ──
   setupErrorHandlers(app);

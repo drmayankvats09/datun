@@ -5,7 +5,9 @@
 //   1. Type safety — caller can't pass wrong shape
 //   2. Idempotency — jobId computed automatically from business key
 //   3. Logging — every enqueue logged with queue/job/userId context
-//   4. Graceful degradation — if QUEUE_REDIS_URL not set, returns synthetic
+//   4. Tracing (Task #41.5) — traceId auto-injected from request context
+//                              or generated fresh; flows to worker + audit
+//   5. Graceful degradation — if QUEUE_REDIS_URL not set, returns synthetic
 //      result so caller doesn't crash (dev experience)
 //
 // Pattern: Stripe internal "publishEvent" wrappers, Linear ".dispatch()" methods
@@ -17,6 +19,7 @@ import {
   WHATSAPP_JOB_NAMES,
   EMAIL_JOB_NAMES,
   PDF_JOB_NAMES,
+  generateTraceId,
   type WhatsAppTemplateJob,
   type WhatsAppTextJob,
   type EmailTemplatedJob,
@@ -25,6 +28,7 @@ import {
 } from '@repo/shared';
 import { getQueue } from './queues.js';
 import { logger } from '../logger.js';
+import { getRequestId } from '../request-context.js';
 import {
   buildWhatsAppTemplateJobId,
   buildWhatsAppTextJobId,
@@ -36,7 +40,21 @@ import {
 export interface EnqueueResult {
   ok: boolean;
   jobId?: string;
-  reason?: string; // Why not enqueued (e.g., "queue not configured")
+  traceId?: string;
+  reason?: string;
+}
+
+/**
+ * Resolve traceId for a job:
+ *   1. Use caller-provided value if set
+ *   2. Else inherit from request context (HTTP request → job)
+ *   3. Else generate fresh (cron/system enqueues)
+ */
+function resolveTraceId(provided?: string): string {
+  if (provided) return provided;
+  const requestId = getRequestId();
+  if (requestId && requestId !== 'system') return requestId;
+  return generateTraceId();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -59,24 +77,28 @@ export async function enqueueWhatsAppTemplate(
     consultationId: payload.consultationId,
     salt: options?.salt,
   });
+  const traceId = resolveTraceId(payload.traceId);
+  const enrichedPayload: WhatsAppTemplateJob = { ...payload, traceId };
 
   const jobOpts: JobsOptions = { jobId };
   if (options?.delay) jobOpts.delay = options.delay;
 
   try {
-    await queue.add(WHATSAPP_JOB_NAMES.SEND_TEMPLATE, payload, jobOpts);
+    await queue.add(WHATSAPP_JOB_NAMES.SEND_TEMPLATE, enrichedPayload, jobOpts);
     logger.info('[enqueue:whatsapp] template queued', {
       jobId,
+      traceId,
       template: payload.templateName,
       userId: payload.userId,
     });
-    return { ok: true, jobId };
+    return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:whatsapp] failed', {
       error: (err as Error).message,
       jobId,
+      traceId,
     });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, reason: (err as Error).message, traceId };
   }
 }
 
@@ -90,15 +112,18 @@ export async function enqueueWhatsAppText(payload: WhatsAppTextJob): Promise<Enq
     phone: payload.phone,
     body: payload.body,
   });
+  const traceId = resolveTraceId(payload.traceId);
+  const enrichedPayload: WhatsAppTextJob = { ...payload, traceId };
 
   try {
-    await queue.add(WHATSAPP_JOB_NAMES.SEND_TEXT, payload, { jobId });
-    return { ok: true, jobId };
+    await queue.add(WHATSAPP_JOB_NAMES.SEND_TEXT, enrichedPayload, { jobId });
+    return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:whatsapp:text] failed', {
       error: (err as Error).message,
+      traceId,
     });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, reason: (err as Error).message, traceId };
   }
 }
 
@@ -121,23 +146,27 @@ export async function enqueueEmailTemplated(
     consultationId: payload.consultationId,
     salt: options?.salt,
   });
+  const traceId = resolveTraceId(payload.traceId);
+  const enrichedPayload: EmailTemplatedJob = { ...payload, traceId };
 
   const jobOpts: JobsOptions = { jobId };
   if (options?.delay) jobOpts.delay = options.delay;
 
   try {
-    await queue.add(EMAIL_JOB_NAMES.SEND_TEMPLATED, payload, jobOpts);
+    await queue.add(EMAIL_JOB_NAMES.SEND_TEMPLATED, enrichedPayload, jobOpts);
     logger.info('[enqueue:email] templated queued', {
       jobId,
+      traceId,
       template: payload.template,
     });
-    return { ok: true, jobId };
+    return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:email] failed', {
       error: (err as Error).message,
       jobId,
+      traceId,
     });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, reason: (err as Error).message, traceId };
   }
 }
 
@@ -151,15 +180,18 @@ export async function enqueueEmailRaw(payload: EmailRawJob): Promise<EnqueueResu
     to: payload.to,
     subject: payload.subject,
   });
+  const traceId = resolveTraceId(payload.traceId);
+  const enrichedPayload: EmailRawJob = { ...payload, traceId };
 
   try {
-    await queue.add(EMAIL_JOB_NAMES.SEND_RAW, payload, { jobId });
-    return { ok: true, jobId };
+    await queue.add(EMAIL_JOB_NAMES.SEND_RAW, enrichedPayload, { jobId });
+    return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:email:raw] failed', {
       error: (err as Error).message,
+      traceId,
     });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, reason: (err as Error).message, traceId };
   }
 }
 
@@ -174,19 +206,23 @@ export async function enqueueConsultationPdf(payload: ConsultationPdfJob): Promi
   }
 
   const jobId = buildPdfConsultationJobId(payload.consultationId);
+  const traceId = resolveTraceId(payload.traceId);
+  const enrichedPayload: ConsultationPdfJob = { ...payload, traceId };
 
   try {
-    await queue.add(PDF_JOB_NAMES.CONSULTATION_REPORT, payload, { jobId });
+    await queue.add(PDF_JOB_NAMES.CONSULTATION_REPORT, enrichedPayload, { jobId });
     logger.info('[enqueue:pdf] consultation report queued', {
       jobId,
+      traceId,
       consultationId: payload.consultationId,
     });
-    return { ok: true, jobId };
+    return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:pdf] failed', {
       error: (err as Error).message,
       jobId,
+      traceId,
     });
-    return { ok: false, reason: (err as Error).message };
+    return { ok: false, reason: (err as Error).message, traceId };
   }
 }

@@ -12,9 +12,11 @@
 
 import 'dotenv/config';
 import { Sentry } from './lib/sentry.js';
+import { startHealthServer, stopHealthServer } from './lib/health-server.js';
+import { recordJobSuccess, recordJobFailureMetric } from './lib/metrics.js';
 
 import { Worker, type Job, type Processor } from 'bullmq';
-import { QUEUE_NAMES, type QueueName } from '@repo/shared';
+import { QUEUE_NAMES, WORKER_LIMITERS, type QueueName } from '@repo/shared';
 import { env } from './config/env.js';
 import { logger } from './lib/logger.js';
 import { createWorkerConnection } from './lib/connection.js';
@@ -40,37 +42,53 @@ function buildWorker(name: QueueName, concurrency: number, processor: Processor)
         const result = await processor(job, '');
         const durationMs = Date.now() - start;
         await recordJobComplete(job, result, durationMs);
+        recordJobSuccess(name, durationMs);
         return result;
       } catch (err) {
         const durationMs = Date.now() - start;
         await recordJobFailure(job, err as Error, durationMs);
+        recordJobFailureMetric(name, durationMs);
+        const traceId = (job.data as { traceId?: string })?.traceId;
         Sentry.captureException(err, {
-          extra: { jobId: job.id, jobName: job.name, queue: name },
+          extra: {
+            jobId: job.id,
+            jobName: job.name,
+            queue: name,
+            ...(traceId && { traceId }),
+          },
         });
-        throw err; // Re-throw so BullMQ marks job failed + schedules retry
+        throw err;
       }
     },
+
     {
       connection: createWorkerConnection(),
       concurrency,
       prefix: `datun:${env.NODE_ENV}:bullmq`,
+      // Rate limiting — prevents provider 429s (Meta, Resend, etc)
+      // Per-queue calibrated in @repo/shared WORKER_LIMITERS
+      limiter: WORKER_LIMITERS[name],
     },
   );
 
   worker.on('completed', (job) => {
+    const traceId = (job.data as { traceId?: string })?.traceId;
     logger.info(`[${name}] job completed`, {
       jobId: job.id,
       jobName: job.name,
+      ...(traceId && { traceId }),
     });
   });
 
   worker.on('failed', (job, err) => {
+    const traceId = (job?.data as { traceId?: string })?.traceId;
     logger.error(`[${name}] job failed`, {
       jobId: job?.id,
       jobName: job?.name,
       error: err.message,
       attempt: (job?.attemptsMade ?? 0) + 1,
       maxAttempts: job?.opts.attempts,
+      ...(traceId && { traceId }),
     });
   });
 
@@ -113,6 +131,9 @@ async function main(): Promise<void> {
     ),
   );
 
+  // Start health server (port 4001) for Railway healthcheck + metrics
+  startHealthServer();
+
   logger.info(`Datun worker ready — ${workers.length} workers active 🦷`);
 }
 
@@ -120,16 +141,44 @@ async function main(): Promise<void> {
 // GRACEFUL SHUTDOWN
 // ═══════════════════════════════════════════════════════════════
 
+const DRAIN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes max wait for in-flight jobs
+
 async function shutdown(signal: string): Promise<void> {
-  logger.info(`${signal} received — closing workers gracefully...`);
-  const closePromises = workers.map((w) =>
-    w.close().catch((err) => {
-      logger.warn('Worker close error', {
-        error: (err as Error).message,
-      });
-    }),
+  logger.info(`${signal} received — beginning graceful drain (max ${DRAIN_TIMEOUT_MS}ms)`);
+
+  // Stop health server first — Railway should mark unhealthy and stop routing
+  try {
+    await stopHealthServer();
+  } catch (err) {
+    logger.warn('Health server close error', { error: (err as Error).message });
+  }
+
+  // Each worker.close() returns when in-flight jobs complete OR timeout passes
+  // BullMQ Worker.close(force=false) does NOT force-kill in-flight jobs;
+  // it stops accepting new ones and waits for current to finish.
+  const drainStart = Date.now();
+  const drainPromise = Promise.all(
+    workers.map((w) =>
+      w.close().catch((err) => {
+        logger.warn('Worker close error', {
+          error: (err as Error).message,
+        });
+      }),
+    ),
   );
-  await Promise.all(closePromises);
+
+  // Hard timeout — if a job runs longer than DRAIN_TIMEOUT_MS, force shutdown
+  await Promise.race([
+    drainPromise,
+    new Promise((resolve) => setTimeout(resolve, DRAIN_TIMEOUT_MS)),
+  ]);
+
+  const drainMs = Date.now() - drainStart;
+  if (drainMs >= DRAIN_TIMEOUT_MS) {
+    logger.error(`Drain timeout exceeded — forcing shutdown after ${drainMs}ms`);
+  } else {
+    logger.info(`Drain complete in ${drainMs}ms`);
+  }
 
   try {
     await Sentry.close(5000);
@@ -137,7 +186,7 @@ async function shutdown(signal: string): Promise<void> {
     // Silent
   }
 
-  logger.info('Workers shutdown complete');
+  logger.info('Workers shutdown complete 🦷');
   process.exit(0);
 }
 

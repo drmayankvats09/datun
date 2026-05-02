@@ -47,6 +47,8 @@ export async function recordJobStart(job: Job): Promise<void> {
     const payload = sanitizePayload(job.data) as Record<string, unknown>;
     const userId = (payload?.userId as string | undefined) ?? null;
     const consultationId = (payload?.consultationId as string | undefined) ?? null;
+    const _traceId = (payload?.traceId as string | undefined) ?? null;
+    void _traceId; // Reserved for future Sentry context — payload already carries it
 
     await prisma.jobLog.upsert({
       where: { jobId: String(job.id) },
