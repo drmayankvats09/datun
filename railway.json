@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "pnpm install --frozen-lockfile --prod=false && pnpm --filter @repo/db db:generate && pnpm --filter @repo/db db:migrate:deploy && pnpm --filter api build"
+    "buildCommand": "pnpm --filter @repo/db db:generate && pnpm --filter @repo/db db:migrate:deploy && pnpm --filter api build"
   },
   "deploy": {
     "startCommand": "pnpm --filter api start",
