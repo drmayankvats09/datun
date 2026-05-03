@@ -2,10 +2,10 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @repo/db db:generate && pnpm --filter @repo/db prisma migrate deploy && pnpm --filter @datun/api build"
+    "buildCommand": "pnpm install --frozen-lockfile --prod=false && pnpm --filter @repo/db db:generate && pnpm --filter @repo/db db:migrate:deploy && pnpm --filter api build"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @datun/api start",
+    "startCommand": "pnpm --filter api start",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",

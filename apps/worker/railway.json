@@ -2,10 +2,10 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @repo/db db:generate && pnpm --filter @repo/db prisma migrate deploy && pnpm --filter @datun/worker build"
+    "buildCommand": "pnpm install --frozen-lockfile --prod=false && pnpm --filter @repo/db db:generate && pnpm --filter @repo/db db:migrate:deploy && pnpm --filter worker build"
   },
   "deploy": {
-    "startCommand": "pnpm --filter @datun/worker start",
+    "startCommand": "pnpm --filter worker start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3,
     "numReplicas": 1
