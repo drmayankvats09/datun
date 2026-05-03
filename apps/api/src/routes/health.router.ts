@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════
 // HEALTH ROUTES — FAANG-grade deep health check
-// DB, Redis, Auth, AI providers, WhatsApp, Email, Memory.
+// DB, Redis, Auth, AI providers, WhatsApp, Email, Migrations, Memory.
 // ═══════════════════════════════════════════════════════════════
 
 import { Router } from 'express';
-import { prisma } from '@repo/db';
+import { prisma, migrations } from '@repo/db';
 import { BRAND, API_VERSION } from '@repo/shared';
 import { env } from '../config/env.js';
 import { whatsappHealthCheck } from '../services/whatsapp/index.js';
@@ -95,6 +95,19 @@ healthRouter.get('/health', async (req, res) => {
 
   // Auth check (cached 60s — health probes hit every 5min from 4 sources)
   checks['auth'] = checkAuthHealth();
+
+  // Migrations check (Task #42 — Day 16)
+  // Surfaces drift detection + last-applied migration outcome at /health
+  // for Better Stack and operator visibility without separate endpoint hit.
+  try {
+    const migHealth = await migrations.getMigrationHealthLite(prisma);
+    checks['migrations'] = {
+      status: migHealth.status === 'ok' ? 'ok' : migHealth.status === 'degraded' ? 'warn' : 'fail',
+      details: { lastAppliedAt: migHealth.lastAppliedAt },
+    };
+  } catch (err) {
+    checks['migrations'] = { status: 'warn', error: (err as Error).message };
+  }
 
   if (env.UPSTASH_REDIS_REST_URL) {
     const redisResult = await verifyRedis();

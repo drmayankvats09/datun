@@ -1,0 +1,125 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Nightly Drift Check — detects schema edits made outside the migration system.
+# ──────────────────────────────────────────────────────────────────────────
+#
+# Runs daily at 21:00 UTC (02:30 IST). If schema.prisma differs from the live
+# production database, opens a GitHub issue tagged `drift-detected` and sends
+# a Sentry alert.
+#
+# Why: Even with discipline, someone (operator, support engineer) might run
+# raw SQL against prod. Nightly check catches it before it compounds.
+#
+# Author: Datun Task #42 (Day 16)
+#
+name: Nightly Drift Check
+
+on:
+  schedule:
+    # 21:00 UTC = 02:30 IST — well after low-traffic window
+    - cron: "0 21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift-check:
+    name: Check Production Schema Drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @repo/db db:generate
+
+      - name: Run drift check
+        id: drift
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          set +e
+          pnpm --filter @repo/db db:drift:check 2>&1 | tee drift-output.txt
+          code=${PIPESTATUS[0]}
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          {
+            echo 'drift_output<<EOF'
+            cat drift-output.txt
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Open issue on drift
+        if: steps.drift.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `${{ steps.drift.outputs.drift_output }}`;
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `[drift-detected] Production schema drift on ${today}`;
+            // Search for existing open drift issues
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'drift-detected',
+              state: 'open',
+            });
+            const body = `Nightly drift check detected schema differences between \`schema.prisma\` and production database.
+
+            **Detected at:** ${new Date().toISOString()}
+            **Workflow run:** ${context.payload.repository.html_url}/actions/runs/${context.runId}
+
+            ### Diff output
+
+            \`\`\`sql
+            ${output.slice(0, 50000)}
+            \`\`\`
+
+            ---
+
+            **Resolution:** see [\`docs/runbooks/migration-drift-detected.md\`](../blob/main/docs/runbooks/migration-drift-detected.md)`;
+            if (existing.length > 0) {
+              await github.rest.issues.createComment({
+                issue_number: existing[0].number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `Drift still present as of ${new Date().toISOString()}.`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['drift-detected', 'priority/high'],
+              });
+            }
+
+      - name: Send Sentry alert on drift
+        if: steps.drift.outputs.exit_code != '0' && env.SENTRY_DSN != ''
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_BACKEND }}
+        run: |
+          curl -X POST "${SENTRY_DSN%/*}/api/${SENTRY_DSN##*/}/store/" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "message": "Nightly drift check detected production schema drift",
+              "level": "warning",
+              "logger": "datun.migration.drift",
+              "platform": "node",
+              "tags": {"task": "42", "kind": "drift-detected"}
+            }' || echo "Sentry alert skipped"

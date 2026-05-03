@@ -20,3 +20,5 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 // So consumers can do: import { prisma, User, Clinic } from "@repo/db"
 export * from '@prisma/client';
 export default prisma;
+// Migration utilities (Task #42)
+export * as migrations from './lib/index.js';

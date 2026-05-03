@@ -86,3 +86,7 @@ Datun-Backup/
 
 # ── Sentry ──
 .sentryclirc
+pnpm
+
+# Less pager log file (Windows path artifacts)
+ersAdmin*

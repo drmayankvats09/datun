@@ -1,3 +1,21 @@
-# Default owner for all files
+# Datun CODEOWNERS — automatic reviewer assignment.
+#
+# Format: <pattern> <owner>
+# Order matters — last match wins.
 
-- @drmayankvats09
+# Default — Mayank reviews all
+* @drmayankvats09
+
+# Database changes — extra scrutiny
+/packages/db/                                @drmayankvats09
+/packages/db/prisma/schema.prisma            @drmayankvats09
+/packages/db/prisma/migrations/              @drmayankvats09
+
+# Workflows / CI
+/.github/workflows/                          @drmayankvats09
+
+# Architecture decisions
+/docs/adr/                                   @drmayankvats09
+
+# Production runbooks
+/docs/runbooks/                              @drmayankvats09

@@ -49,11 +49,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18
         env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: datun_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: datun_shadow_ci
         ports:
           - 5432:5432
         options: >-
@@ -88,6 +88,32 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm turbo run db:generate
+
+      # ─────────────────────────────────────────────────────────────────
+      # Task #42 — Migration validation (added Day 16)
+      # ─────────────────────────────────────────────────────────────────
+      # Verifies that:
+      #   1. Schema is valid
+      #   2. No drift between schema.prisma and migrations folder
+      #   3. Migrations apply cleanly to a fresh shadow DB
+      # Postgres service (declared at job level) provides shadow DB.
+      - name: Validate Prisma schema
+        run: pnpm --filter @repo/db prisma validate
+
+      - name: Check no migration drift
+        run: |
+          pnpm --filter @repo/db prisma migrate diff \
+            --from-schema-datamodel packages/db/prisma/schema.prisma \
+            --to-migrations packages/db/prisma/migrations \
+            --shadow-database-url "$SHADOW_DATABASE_URL" \
+            --exit-code
+        env:
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
+
+      - name: Apply migrations to shadow DB
+        run: pnpm --filter @repo/db prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
 
       - name: Lint
         run: pnpm turbo run lint

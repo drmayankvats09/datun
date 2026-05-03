@@ -5,14 +5,36 @@
 // Author: Dr. Mayank Vats (CEO) + CTO Architecture
 // ═══════════════════════════════════════════════════════════════
 
+// ─────────────────────────────────────────────────────────────────────────
+// PRISMA CLIENT GENERATOR
+// ─────────────────────────────────────────────────────────────────────────
 generator client {
-    provider      = "prisma-client-js"
-    binaryTargets = ["native", "debian-openssl-3.0.x"]
+    provider        = "prisma-client-js"
+    previewFeatures = ["postgresqlExtensions"]
+    binaryTargets   = ["native", "debian-openssl-3.0.x"] // native = local Windows, debian = Railway production
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// DATASOURCE — PostgreSQL with shadow database for migration validation
+// ─────────────────────────────────────────────────────────────────────────
+//
+// shadowDatabaseUrl is REQUIRED for `prisma migrate dev` workflow.
+// Prisma uses this database to:
+//   1. Apply existing migrations and check for drift
+//   2. Validate new migrations against current schema
+//   3. Detect schema reset issues
+//
+// Production deployments use `prisma migrate deploy` which does NOT need
+// shadowDatabaseUrl — only `migrate dev` (local development) requires it.
+//
+// Local: Native Postgres on Windows (postgresql://localhost:5432/datun_shadow)
+// CI: GitHub Actions Postgres service container (ephemeral)
+// Production: NOT applicable (uses migrate deploy only)
+//
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider          = "postgresql"
+    url               = env("DATABASE_URL")
+    shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1427,4 +1449,89 @@ model JobLog {
     @@index([consultationId])
     @@index([queuedAt(sort: Desc)])
     @@map("job_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MIGRATION OBSERVABILITY MODELS (Task #42)
+// ═══════════════════════════════════════════════════════════════════════════
+// 
+// These models track every migration applied to production for:
+//   1. DPDP Act compliance (audit trail of schema changes)
+//   2. Investor due diligence (evidence of engineering discipline)
+//   3. Forensics (debug schema-related production issues)
+//   4. Drift detection (compare applied state vs source of truth)
+//
+// Linked: docs/adr/0002-prisma-migrations-baseline.md
+//
+
+/// MigrationAudit — Application-level migration log
+/// 
+/// Complements Prisma's built-in `_prisma_migrations` table by capturing:
+///   - Operator identity (who triggered the migration)
+///   - Duration in milliseconds (performance tracking)
+///   - Error messages on failure (forensics)
+///   - Schema fingerprint (SHA-256 of schema state at time of apply)
+///
+/// Prisma's `_prisma_migrations` is internal — we don't query it directly.
+/// MigrationAudit is OUR system for observability and compliance.
+model MigrationAudit {
+    id String @id @default(cuid())
+
+    // Migration identity
+    migrationName String // e.g. "0_init", "20260503_add_clinic_table"
+
+    // Application context
+    appliedAt   DateTime @default(now())
+    appliedBy   String // "ci" | "railway-build" | "local-dev:mayank" | "manual"
+    appliedFrom String // Hostname or "github-actions" or "railway"
+
+    // Performance & outcome
+    durationMs   Int // Migration execution time in ms
+    success      Boolean @default(true)
+    errorMessage String? // Populated only on failure
+
+    // Forensics
+    schemaChecksum  String // SHA-256 of schema.prisma at apply time
+    prismaVersion   String // e.g. "6.16.2"
+    postgresVersion String // e.g. "16.4"
+
+    // Audit trail
+    gitCommitSha String? // commit SHA at deploy time
+    gitBranch    String? // branch at deploy time
+
+    createdAt DateTime @default(now())
+
+    @@index([migrationName])
+    @@index([appliedAt])
+    @@index([success])
+    @@map("migration_audit")
+}
+
+/// SchemaSnapshot — Periodic schema state captures
+///
+/// Nightly cron stores a SHA-256 hash of the current schema state.
+/// If two consecutive snapshots differ without a corresponding migration,
+/// drift is detected → alert.
+model SchemaSnapshot {
+    id String @id @default(cuid())
+
+    // Snapshot identity
+    takenAt DateTime @default(now())
+    takenBy String // "nightly-cron" | "manual" | "post-migration"
+
+    // State capture
+    schemaChecksum String // SHA-256 of full schema dump
+    tableCount     Int // Number of tables at snapshot time
+    totalRows      BigInt // Approximate row count across all tables
+    totalIndexes   Int // Number of indexes
+
+    // Drift detection
+    driftDetected Boolean @default(false)
+    driftDetails  Json? // If drift detected, JSON describing what differs
+
+    createdAt DateTime @default(now())
+
+    @@index([takenAt])
+    @@index([driftDetected])
+    @@map("schema_snapshot")
 }

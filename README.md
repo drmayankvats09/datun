@@ -85,6 +85,17 @@ pnpm format
 - Redundant infrastructure across critical dependencies
 - Automated security scanning (Semgrep, Gitleaks)
 
+## Database Migrations
+
+Datun uses Prisma Migrate with audit logging, drift detection, and CI validation. See:
+
+- [Developer guide: migrations](./docs/developer-guide/migrations.md)
+- [Local Postgres setup](./docs/developer-guide/local-postgres-setup.md)
+- [ADR-0002: Migration baseline architecture](./docs/adr/0002-prisma-migrations-baseline.md)
+- [Defense-in-depth architecture](./docs/architecture/migration-defense-layers.md)
+
+For production migration deploys, follow [migration-deploy runbook](./docs/runbooks/migration-deploy.md).
+
 ## Contact
 
 Dr. Mayank Vats — Founder and CEO
