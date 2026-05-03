@@ -33,7 +33,7 @@
     "test:migrations": "vitest run src/__tests__/migrations"
   },
   "dependencies": {
-    "@prisma/client": "^6.8.2",
+    "@prisma/client": "^7.8.0",
     "pg": "8.13.1",
     "prisma": "^6.8.2",
     "prom-client": "15.1.3"
