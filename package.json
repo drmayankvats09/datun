@@ -13,7 +13,7 @@
     "check-types": "turbo run check-types",
     "clean": "turbo run build --force && echo 'Cleaned all caches'",
     "fresh": "rm -rf node_modules apps/web/.next apps/api/dist .turbo && pnpm install",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "db:generate": "turbo run db:generate --filter=@repo/db",
     "db:push": "turbo run db:push --filter=@repo/db",
     "db:migrate:dev": "turbo run db:migrate:dev --filter=@repo/db",
