@@ -152,3 +152,9 @@ packages/db/seeds/checkpoints/
 .husky/*.backup-*
 .husky/*.bak
 .husky/*.old
+
+# CI debug dumps (Day 16+)
+ci-master-errors-*.txt
+ci-logs-v2-*/
+tc-output.log
+

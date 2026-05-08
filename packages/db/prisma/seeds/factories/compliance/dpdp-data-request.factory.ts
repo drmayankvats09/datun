@@ -110,7 +110,7 @@ export const dpdpDataRequestFactory = defineFactory<DpdpRequestOutput, DpdpReque
           ? faker.date.between({ from: submittedAt, to: new Date() })
           : null,
       slaTargetDate,
-      slaBreached: status === 'EXPIRED' || (status === 'COMPLETED' && Math.random() < 0.05),
+      slaBreached: status === 'EXPIRED' || (status === 'COMPLETED' && faker.number.float() < 0.05),
       dataCategoriesRequested: faker.helpers.arrayElements(
         [
           'BASIC_PII',

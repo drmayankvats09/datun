@@ -28,7 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - name: Verify not production
@@ -45,7 +44,9 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update && sudo apt-get install -y k6
       - name: Run k6
-        run: k6 run packages/db/prisma/seeds/load-bench/k6/${{ github.event.inputs.k6_type || 'smoke' }}.k6.js
+        env:
+          K6_TYPE: ${{ github.event.inputs.k6_type || 'smoke' }}
+        run: k6 run "packages/db/prisma/seeds/load-bench/k6/${K6_TYPE}.k6.js"
       - name: Run bench harness
         run: pnpm --filter @repo/db exec tsx prisma/seeds/load-bench/bench-harness.ts
       - name: Upload reports

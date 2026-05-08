@@ -40,22 +40,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with: { version: 9 }
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+        with: { node-version: 22, cache: pnpm }
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/db exec prisma generate
 
       - name: Anonymize each table
+        env:
+          INPUT_TABLES: ${{ inputs.tables }}
+          INPUT_COMPLIANCE: ${{ inputs.compliance }}
+          INPUT_DRY_RUN_FLAG: ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}
         run: |
-          IFS=',' read -ra TABLES <<< "${{ inputs.tables }}"
+          IFS=',' read -ra TABLES <<< "$INPUT_TABLES"
           for t in "${TABLES[@]}"; do
             echo "::group::Anonymizing $t"
             pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts anonymize \
               --table "$t" \
-              --compliance "${{ inputs.compliance }}" \
-              ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}
+              --compliance "$INPUT_COMPLIANCE" \
+              $INPUT_DRY_RUN_FLAG
             echo "::endgroup::"
           done

@@ -37,12 +37,15 @@ interface AiCostAggregateTransient {
   readonly provider?: string | null;
 }
 
+// Deterministic fixture for module-load-time defaultTransient (snapshot determinism)
+const FIXTURE_PERIOD_START = new Date('2026-01-15T00:00:00.000Z');
+
 export const aiCostAggregateFactory = defineFactory<
   AiCostAggregateOutput,
   AiCostAggregateTransient
 >({
   name: 'consultation' as 'consultation',
-  defaultTransient: { level: 'DAILY', periodStart: new Date() },
+  defaultTransient: { level: 'DAILY', periodStart: FIXTURE_PERIOD_START },
 
   build: ({ sequence, faker, transient }) => {
     const level = transient.level;

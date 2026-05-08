@@ -21,15 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
       - name: Generate synthetic training set
+        env:
+          INPUT_TARGET_COUNT: ${{ github.event.inputs.target_count || '500' }}
         run: |
           pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts synthesize \
             --strategy persona-vary \
-            --target-final ${{ github.event.inputs.target_count || '500' }} \
+            --target-final "$INPUT_TARGET_COUNT" \
             --output ./tmp/synthetic-training.jsonl
       - uses: actions/upload-artifact@v4
         with:

@@ -40,10 +40,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v3
-        with: { version: 9 }
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+        with: { node-version: 22, cache: pnpm }
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/db exec prisma generate
@@ -55,11 +54,14 @@ jobs:
           aws-region: ap-south-1
 
       - name: Export anonymized dump
+        env:
+          INPUT_COMPLIANCE: ${{ inputs.compliance || 'DPDP' }}
+          INPUT_COMPRESSION: ${{ inputs.compression || 'gzip' }}
         run: |
           pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts export dump \
             --output ./tmp/datun-staging-$(date -u +%Y%m%d).jsonl \
-            --compliance ${{ inputs.compliance || 'DPDP' }} \
-            --compression ${{ inputs.compression || 'gzip' }} \
+            --compliance "$INPUT_COMPLIANCE" \
+            --compression "$INPUT_COMPRESSION" \
             --s3-bucket "$AWS_S3_EXPORT_BUCKET" \
             --s3-prefix datun-exports/weekly
 

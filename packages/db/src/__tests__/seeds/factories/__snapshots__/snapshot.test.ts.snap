@@ -1075,7 +1075,7 @@ exports[`factory snapshots — schema drift detection > subscriptionEvent factor
 
 exports[`factory snapshots — schema drift detection > supportTicket factory output matches snapshot 1`] = `
 {
-  "aiTriageConfidence": 0.8374716381577484,
+  "aiTriageConfidence": 0.8932021830827097,
   "aiTriagedCategory": "PAYMENT_REFUND",
   "assignedToUserId": "admin-1",
   "attachmentUrls": [],
@@ -1090,7 +1090,7 @@ exports[`factory snapshots — schema drift detection > supportTicket factory ou
   "priority": "P2_HIGH",
   "raisedByRole": "PATIENT",
   "raisedByUserId": "unknown",
-  "relatedEntityId": "consultation-249oCkeiKj",
+  "relatedEntityId": "consultation-49oCkeiKjt",
   "relatedEntityType": "consultation",
   "reopenedCount": 0,
   "resolutionNote": "Resolved via guided workflow",

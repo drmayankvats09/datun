@@ -10,6 +10,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# ─────────────────────────────────────────────────────────────────────
+# DATABASE_URL is required by prisma generate / validate / tsc to parse
+# schema.prisma's env("DATABASE_URL") block. No actual connection is made
+# during type-checking — the variable just needs to exist.
+# Pattern: Stripe / Linear use this exact dummy URL for CI typecheck jobs.
+# ─────────────────────────────────────────────────────────────────────
+env:
+  DATABASE_URL: postgresql://typecheck:typecheck@localhost:5432/typecheck_only
+
 jobs:
   typecheck:
     name: tsc --noEmit (db)
@@ -18,10 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/db exec prisma generate
@@ -34,10 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v5
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @repo/db exec prisma validate

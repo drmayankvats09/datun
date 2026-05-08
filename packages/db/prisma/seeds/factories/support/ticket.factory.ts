@@ -137,7 +137,7 @@ export const supportTicketFactory = defineFactory<TicketOutput, TicketTransient>
       status,
       assignedToUserId: status !== 'OPEN' ? `admin-${faker.number.int({ min: 1, max: 5 })}` : null,
       slaTargetResolutionAt,
-      slaBreached: status === 'RESOLVED' && Math.random() < 0.1,
+      slaBreached: status === 'RESOLVED' && faker.number.float() < 0.1,
       tags: [category.toLowerCase()],
       attachmentUrls:
         faker.helpers.maybe(() => [`https://r2.datunai.com/tickets/tkt-${sequence}-1.png`], {

@@ -52,13 +52,16 @@ interface ClinicInvoiceTransient {
   readonly billingPeriodStart: Date;
 }
 
+// Deterministic fixture for module-load-time defaultTransient (snapshot determinism)
+const FIXTURE_BILLING_PERIOD_START = new Date('2026-01-15T00:00:00.000Z');
+
 export const clinicInvoiceFactory = defineFactory<ClinicInvoiceOutput, ClinicInvoiceTransient>({
   name: 'clinic' as 'clinic',
   defaultTransient: {
     clinicId: 'unknown',
     subscriptionId: 'unknown',
     amountInr: 999,
-    billingPeriodStart: new Date(),
+    billingPeriodStart: FIXTURE_BILLING_PERIOD_START,
   },
 
   build: ({ sequence, faker, transient }) => {

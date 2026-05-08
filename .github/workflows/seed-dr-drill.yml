@@ -30,7 +30,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ap-south-1
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
@@ -38,12 +37,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.STAGING_DR_DATABASE_URL }}
           AWS_S3_EXPORT_BUCKET: datun-dr-snapshots
+          INPUT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |
           pnpm --filter @repo/db exec tsx -e "
           import { runDrDrill } from './prisma/seeds/dr-replica';
           (async () => {
             const r = await runDrDrill({
-              dryRun: ${{ github.event.inputs.dry_run || false }},
+              dryRun: process.env.INPUT_DRY_RUN === 'true',
               bucket: process.env.AWS_S3_EXPORT_BUCKET,
               targetUrl: process.env.DATABASE_URL,
               rtoTarget: 1800,
