@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════
+# PER-PR COVERAGE — fail if thresholds breached
+# ═══════════════════════════════════════════════════════════════
+name: seed-coverage-enforce
+
+on:
+  pull_request:
+    paths: ['packages/db/prisma/seeds/**']
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_PASSWORD: test, POSTGRES_USER: test, POSTGRES_DB: datun_test }
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/datun_test
+      SKIP_TESTCONTAINERS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma db push
+      - run: pnpm --filter @repo/db exec vitest run --coverage
+      - name: Comment PR with coverage
+        uses: davelosert/vitest-coverage-report-action@v2
+        with:
+          working-directory: packages/db

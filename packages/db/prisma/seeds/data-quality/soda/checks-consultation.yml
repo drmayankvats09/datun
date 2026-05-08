@@ -1,0 +1,41 @@
+checks for Consultation:
+  - row_count > 0
+
+  - missing_count(id) = 0:
+      attributes:
+        severity: critical
+
+  - missing_count(clinicId) = 0:
+      attributes:
+        severity: critical
+
+  - missing_count(patientId) = 0:
+      attributes:
+        severity: critical
+
+  - invalid_count(urgency) = 0:
+      valid values: ['EMERGENCY', 'URGENT', 'MODERATE', 'ROUTINE']
+
+  - missing_percent(aiPromptVersion) < 1:
+      name: aiPromptVersion populated for AI rollback safety
+
+  - failed rows:
+      name: completedAt must be after createdAt when set
+      fail condition: completedAt IS NOT NULL AND completedAt < createdAt
+      samples limit: 5
+
+  - failed rows:
+      name: chiefComplaint length within bounds
+      fail condition: LENGTH(chiefComplaint) < 5 OR LENGTH(chiefComplaint) > 2000
+      samples limit: 5
+
+  - schema:
+      warn:
+        when required column missing: [id, clinicId, patientId, urgency, aiPromptVersion]
+      fail:
+        when forbidden column present: [aadhaar, fullName]
+
+  - freshness(createdAt) < 30m:
+      name: Consultations are flowing in real-time
+      attributes:
+        severity: critical

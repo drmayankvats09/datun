@@ -1,0 +1,61 @@
+name: Seed Anonymize Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      tables:
+        description: 'CSV of tables to anonymize'
+        required: true
+        default: 'patient,user,consultation'
+      compliance:
+        description: 'Compliance profile'
+        required: true
+        default: 'DPDP'
+        type: choice
+        options: [DPDP, HIPAA, GDPR, DPDP_HIPAA, DPDP_HIPAA_GDPR]
+      dry_run:
+        description: 'Dry-run only'
+        required: true
+        default: 'true'
+        type: choice
+        options: ['true', 'false']
+
+concurrency:
+  group: seed-anonymize-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  anonymize:
+    name: Anonymize on-demand
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      SEED_ANONYMIZATION_SALT: ${{ secrets.SEED_ANONYMIZATION_SALT }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+
+      - name: Anonymize each table
+        run: |
+          IFS=',' read -ra TABLES <<< "${{ inputs.tables }}"
+          for t in "${TABLES[@]}"; do
+            echo "::group::Anonymizing $t"
+            pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts anonymize \
+              --table "$t" \
+              --compliance "${{ inputs.compliance }}" \
+              ${{ inputs.dry_run == 'true' && '--dry-run' || '' }}
+            echo "::endgroup::"
+          done

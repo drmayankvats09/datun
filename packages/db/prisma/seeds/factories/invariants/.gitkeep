@@ -1,0 +1,1 @@
+# Reserved for invariant logic refactored out of inline factory files. Tests already exist at src/__tests__/seeds/factories/invariants/.

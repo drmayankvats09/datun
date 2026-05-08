@@ -1,0 +1,41 @@
+name: ct-drift-hourly
+
+on:
+  schedule:
+    - cron: '0 * * * *' # every hour
+  workflow_dispatch:
+
+concurrency: { group: ct-drift, cancel-in-progress: false }
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      PAGERDUTY_INTEGRATION_KEY: ${{ secrets.PAGERDUTY_INTEGRATION_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: |
+          pnpm --filter @repo/db exec tsx -e "
+            import { PrismaClient } from '@prisma/client';
+            import { detectAgeDrift } from './prisma/seeds/continuous-training/drift/input-drift';
+            import { detectUrgencyDistributionDrift } from './prisma/seeds/continuous-training/drift/concept-drift';
+            import { DriftStore } from './prisma/seeds/continuous-training/drift/drift-store';
+            (async () => {
+              const p = new PrismaClient();
+              const store = new DriftStore(p);
+              const a = await detectAgeDrift(p);
+              const u = await detectUrgencyDistributionDrift(p);
+              if (a) await store.record(a);
+              if (u) await store.record(u);
+              console.log({ ageDrift: a, urgencyDrift: u });
+              await p.\$disconnect();
+            })();
+          "

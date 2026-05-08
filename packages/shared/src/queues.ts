@@ -13,6 +13,14 @@ export const QUEUE_NAMES = {
   EMAIL: 'email',
   PDF: 'pdf',
   SCHEDULED: 'scheduled',
+  // Wave 10 — Outbox pattern (Task #43 wiring)
+  OUTBOX_RELAY: 'outbox-relay',
+  OUTBOX_DLQ_REPLAY: 'outbox-dlq-replay',
+  // Wave 8 — Data quality (Task #43 wiring)
+  DATA_QUALITY: 'data-quality',
+  // Wave 12 — Continuous training (Task #43 wiring)
+  DRIFT_CHECK: 'drift-check',
+  SHADOW_COMPARE: 'shadow-compare',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -105,6 +113,11 @@ export const SCHEDULED_JOB_NAMES = {
   FOLLOWUP_7DAY: 'followup-7day',
   DAILY_REPORT: 'daily-report',
   WHATSAPP_HEARTBEAT: 'whatsapp-heartbeat',
+  // Phase G additions (Task #43 production wiring)
+  OUTBOX_RELAY_TICK: 'outbox-relay-tick',
+  DATA_QUALITY_DAILY: 'data-quality-daily',
+  DRIFT_CHECK_HOURLY: 'drift-check-hourly',
+  SHADOW_COMPARE_DAILY: 'shadow-compare-daily',
 } as const;
 
 export type ScheduledJobName = (typeof SCHEDULED_JOB_NAMES)[keyof typeof SCHEDULED_JOB_NAMES];
@@ -150,6 +163,34 @@ export const QUEUE_DEFAULTS = {
     removeOnComplete: { count: 100, age: 7 * 24 * 60 * 60 },
     removeOnFail: { count: 1000, age: 30 * 24 * 60 * 60 },
   },
+  [QUEUE_NAMES.OUTBOX_RELAY]: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 5_000 },
+    removeOnComplete: { count: 1_000 },
+    removeOnFail: { count: 5_000 },
+  },
+  [QUEUE_NAMES.OUTBOX_DLQ_REPLAY]: {
+    attempts: 1,
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 500 },
+  },
+  [QUEUE_NAMES.DATA_QUALITY]: {
+    attempts: 2,
+    backoff: { type: 'exponential', delay: 30_000 },
+    removeOnComplete: { count: 30 }, // keep 30 days
+    removeOnFail: { count: 30 },
+  },
+  [QUEUE_NAMES.DRIFT_CHECK]: {
+    attempts: 2,
+    backoff: { type: 'exponential', delay: 30_000 },
+    removeOnComplete: { count: 168 }, // keep 7 days hourly
+    removeOnFail: { count: 168 },
+  },
+  [QUEUE_NAMES.SHADOW_COMPARE]: {
+    attempts: 1,
+    removeOnComplete: { count: 30 },
+    removeOnFail: { count: 60 },
+  },
 } as const;
 
 /**
@@ -167,8 +208,26 @@ export const QUEUE_DEFAULTS = {
  * Pattern: BullMQ docs official limiter pattern, Stripe internal queue config.
  */
 export const WORKER_LIMITERS = {
-  whatsapp: { max: 50, duration: 1000 }, // 50 jobs / 1000ms = 50/sec
-  email: { max: 5, duration: 1000 }, // 5/sec
-  pdf: { max: 2, duration: 1000 }, // 2/sec
-  scheduled: { max: 1, duration: 1000 }, // 1/sec
+  whatsapp: { max: 50, duration: 1000 },
+  email: { max: 5, duration: 1000 },
+  pdf: { max: 2, duration: 1000 },
+  scheduled: { max: 1, duration: 1000 },
+  // Phase G additions
+  'outbox-relay': { max: 20, duration: 1000 }, // 20/sec — paced by publishers anyway
+  'outbox-dlq-replay': { max: 1, duration: 1000 }, // serial DLQ replay
+  'data-quality': { max: 1, duration: 1000 }, // single concurrent run
+  'drift-check': { max: 1, duration: 1000 },
+  'shadow-compare': { max: 1, duration: 1000 },
 } as const;
+// Worker concurrency per queue (Phase G additions)
+export const WORKER_CONCURRENCY: Record<string, number> = {
+  [QUEUE_NAMES.WHATSAPP]: 10,
+  [QUEUE_NAMES.EMAIL]: 5,
+  [QUEUE_NAMES.PDF]: 2,
+  [QUEUE_NAMES.SCHEDULED]: 1,
+  [QUEUE_NAMES.OUTBOX_RELAY]: 5,
+  [QUEUE_NAMES.OUTBOX_DLQ_REPLAY]: 1,
+  [QUEUE_NAMES.DATA_QUALITY]: 1,
+  [QUEUE_NAMES.DRIFT_CHECK]: 1,
+  [QUEUE_NAMES.SHADOW_COMPARE]: 1,
+};

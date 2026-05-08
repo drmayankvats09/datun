@@ -1,0 +1,33 @@
+name: outbox-cleanup-daily
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # 02:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - name: Cleanup published events + archive old DLQ
+        run: |
+          pnpm --filter @repo/db exec tsx -e "
+            import { PrismaClient } from '@prisma/client';
+            import { cleanupPublishedOutbox, archiveDeadLetters } from './prisma/seeds/outbox';
+            (async () => {
+              const p = new PrismaClient();
+              const c = await cleanupPublishedOutbox(p, 7);
+              const a = await archiveDeadLetters(p, 90);
+              console.log({ cleaned: c, archivedDlq: a });
+              await p.\$disconnect();
+            })();
+          "

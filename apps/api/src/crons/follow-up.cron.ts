@@ -50,7 +50,7 @@ export async function run3DayFollowUp(): Promise<void> {
         const alreadySentWa = await prisma.whatsAppMessage.findFirst({
           where: {
             phoneNumber: phone,
-            templateName: 'datunai_3day_followup',
+            templateName: 'three_day_followup',
             consultationId: c.id,
           },
         });
@@ -58,7 +58,7 @@ export async function run3DayFollowUp(): Promise<void> {
         if (!alreadySentWa) {
           await sendWhatsAppTemplate(
             phone,
-            'datunai_3day_followup',
+            'three_day_followup',
             [
               {
                 type: 'body',
@@ -147,7 +147,7 @@ export async function run7DayFollowUp(): Promise<void> {
         const alreadySentWa = await prisma.whatsAppMessage.findFirst({
           where: {
             phoneNumber: phone,
-            templateName: 'datunai_7day_followup',
+            templateName: 'seven_day_followup',
             consultationId: c.id,
           },
         });
@@ -155,7 +155,7 @@ export async function run7DayFollowUp(): Promise<void> {
         if (!alreadySentWa) {
           await sendWhatsAppTemplate(
             phone,
-            'datunai_7day_followup',
+            'seven_day_followup',
             [
               {
                 type: 'body',

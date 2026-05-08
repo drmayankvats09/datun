@@ -1,0 +1,5 @@
+# False positives — these are example/placeholder values, not real secrets
+
+packages/db/prisma/seeds/data/locales/**
+packages/db/prisma/seeds/demo/static-uuids.ts
+**/test-credentials.ts \*_/_.test.ts:\* test-only mock keys

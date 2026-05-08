@@ -1,0 +1,71 @@
+name: Synthesis — Weekly Refresh
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Monday 06:00 UTC = 11:30 IST Monday
+  workflow_dispatch:
+    inputs:
+      strategy:
+        description: 'Synthesis strategy'
+        required: true
+        default: 'persona-vary'
+      target_count:
+        description: 'Target final count'
+        required: true
+        default: '500'
+
+concurrency:
+  group: synthesis-weekly
+  cancel-in-progress: false
+
+jobs:
+  synthesize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: datun_synth
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/datun_synth
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      STRATEGY: ${{ github.event.inputs.strategy || 'persona-vary' }}
+      TARGET: ${{ github.event.inputs.target_count || '500' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Pre-flight collapse risk
+        run: pnpm --filter @repo/db training:lineage:risk -- --strict
+
+      - name: Synthesize
+        run: |
+          pnpm --filter @repo/db synthesize -- \
+            --strategy "$STRATEGY" \
+            --target-final "$TARGET" \
+            --quality-min 0.7
+
+      - name: Post-synthesis collapse risk
+        run: pnpm --filter @repo/db training:lineage:risk -- --strict
+
+      - name: Privacy budget check
+        run: |
+          pnpm --filter @repo/db epsilon:validate -- \
+            --scope synthesis-pool --threshold 0.5

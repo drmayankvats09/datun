@@ -25,6 +25,12 @@ import { processWhatsAppJob } from './processors/whatsapp.processor.js';
 import { processEmailJob } from './processors/email.processor.js';
 import { processPdfJob } from './processors/pdf.processor.js';
 import { processScheduledJob } from './processors/scheduled.processor.js';
+// Phase G additions (Task #43 production wiring)
+import { processOutboxRelayJob } from './processors/outbox-relay.processor.js';
+import { processOutboxDlqReplayJob } from './processors/outbox-dlq-replay.processor.js';
+import { processDataQualityJob } from './processors/data-quality-daily.processor.js';
+import { processDriftCheckJob } from './processors/drift-check-hourly.processor.js';
+import { processShadowComparisonJob } from './processors/shadow-comparison-daily.processor.js';
 
 const workers: Worker[] = [];
 
@@ -129,6 +135,12 @@ async function main(): Promise<void> {
       env.WORKER_CONCURRENCY_SCHEDULED,
       processScheduledJob as Processor,
     ),
+    // Phase G additions — Task #43 production wiring (default OFF via flags)
+    buildWorker(QUEUE_NAMES.OUTBOX_RELAY, 5, processOutboxRelayJob as Processor),
+    buildWorker(QUEUE_NAMES.OUTBOX_DLQ_REPLAY, 1, processOutboxDlqReplayJob as Processor),
+    buildWorker(QUEUE_NAMES.DATA_QUALITY, 1, processDataQualityJob as Processor),
+    buildWorker(QUEUE_NAMES.DRIFT_CHECK, 1, processDriftCheckJob as Processor),
+    buildWorker(QUEUE_NAMES.SHADOW_COMPARE, 1, processShadowComparisonJob as Processor),
   );
 
   // Start health server (port 4001) for Railway healthcheck + metrics

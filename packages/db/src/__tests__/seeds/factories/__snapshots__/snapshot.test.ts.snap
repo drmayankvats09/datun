@@ -1,0 +1,1319 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`factory snapshots — schema drift detection > address factory output matches snapshot 1`] = `
+{
+  "addressLine1": "321, Nagar-26, Dutta-Adiga Marg",
+  "addressLine2": "Near Hospital",
+  "city": "Visakhapatnam",
+  "country": "IN",
+  "createdAt": "<DATE>",
+  "entityId": "unknown",
+  "entityType": "PATIENT",
+  "id": "addr-00000001",
+  "isVerified": false,
+  "latitude": 17.728533194374872,
+  "locality": "South Visakhapatnam",
+  "longitude": 83.21549149922744,
+  "pincode": "474436",
+  "stateCode": "AP",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > adverseEvent factory output matches snapshot 1`] = `
+{
+  "aiCausalityScore": 0.4977334603975045,
+  "cdscoReportId": null,
+  "clinicianAssessment": "Likely related to medication",
+  "createdAt": "<DATE>",
+  "hospitalName": null,
+  "hospitalRequired": false,
+  "id": "ae-0000000001",
+  "outcome": "RESOLVED",
+  "patientId": "unknown",
+  "prescriptionId": "unknown",
+  "preventiveAction": "Drug discontinued, alternative prescribed",
+  "reactionDescription": "Mouth ulcers worsened",
+  "reactionStartedAfterDays": 7,
+  "reportedAt": "<DATE>",
+  "reportedBy": "unknown",
+  "reportedToCdsco": false,
+  "resolvedAt": "<DATE>",
+  "severity": "MILD",
+  "suspectedSaltId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > aiCostAggregate factory output matches snapshot 1`] = `
+{
+  "aggregatedAt": "<DATE>",
+  "aggregationLevel": "DAILY",
+  "avgLatencyMs": 1977,
+  "cacheHitRate": 0.5479665645775509,
+  "clinicId": null,
+  "costPerConsultationInr": 11.178562500000002,
+  "createdAt": "<DATE>",
+  "errorRate": 0.016897027597910785,
+  "id": "aiagg-0000000001",
+  "modelDistribution": {
+    "claude-haiku-4-5": 0.2,
+    "claude-sonnet-4": 0.7,
+    "gpt-4-turbo": 0.1,
+  },
+  "operationDistribution": {
+    "CHAT_COMPLETION": 0.75,
+    "EMBEDDING": 0.03,
+    "TRANSCRIPTION": 0.08,
+    "TRANSLATION": 0.02,
+    "VISION_ANALYSIS": 0.12,
+  },
+  "p99LatencyMs": 6816,
+  "periodEnd": "<DATE>",
+  "periodStart": "<DATE>",
+  "provider": null,
+  "totalCacheReadTokens": 27098208,
+  "totalCacheWriteTokens": 3387276,
+  "totalCostInr": 68225.00265000001,
+  "totalCostUsd": 817.0659,
+  "totalInputTokens": 67745520,
+  "totalOutputTokens": 40921956,
+  "totalRequests": 30516,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > aiCostEvent factory output matches snapshot 1`] = `
+{
+  "billingPeriod": "2026-01",
+  "cacheReadTokens": 38,
+  "cacheWriteTokens": 9,
+  "clinicId": null,
+  "consultationId": null,
+  "costInr": 0.167835,
+  "costUsd": 0.00201,
+  "errorCode": null,
+  "id": "aicost-000000000001",
+  "inputTokens": 300,
+  "inrUsdRate": 83.5,
+  "latencyMs": 7691,
+  "modelId": "claude-haiku-4-5",
+  "operation": "TRANSCRIPTION",
+  "outputTokens": 74,
+  "provider": "ANTHROPIC",
+  "providerRequestId": "wSYk2Obe5zyyEyoL5ouN70YO2ijiAJtS",
+  "recordedAt": "<DATE>",
+  "success": true,
+  "totalTokens": 374,
+  "userId": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > appointmentReschedule factory output matches snapshot 1`] = `
+{
+  "appointmentId": "unknown",
+  "chargesAppliedInr": 0,
+  "createdAt": "<DATE>",
+  "id": "resched-0000000001",
+  "newScheduledAt": "<DATE>",
+  "noticeMinutes": 109440,
+  "previousScheduledAt": "<DATE>",
+  "reason": "FINANCIAL",
+  "rescheduledAt": "<DATE>",
+  "rescheduledBy": "PATIENT",
+  "rescheduledByUserId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > campaign factory output matches snapshot 1`] = `
+{
+  "actualEndedAt": "<DATE>",
+  "actualStartedAt": "<DATE>",
+  "budgetInr": 21962,
+  "channel": "EMAIL",
+  "clicks": 626,
+  "contentVariants": {
+    "variantA": "message-1",
+    "variantB": "message-2",
+  },
+  "conversionRate": 24.121405750798722,
+  "conversions": 151,
+  "cpcInr": 35.08306709265176,
+  "createdAt": "<DATE>",
+  "createdByUserId": "user-000001",
+  "ctrPercent": 3.7080914583580142,
+  "experimentVariants": 2,
+  "id": "camp-0000000001",
+  "impressions": 16882,
+  "name": "EMAIL Campaign 1",
+  "objective": "ACQUISITION",
+  "revenueGeneratedInr": 220913,
+  "roas": 10.058874419451781,
+  "scheduledEndAt": null,
+  "scheduledStartAt": "<DATE>",
+  "slug": "campaign-1",
+  "spentInr": 21962,
+  "status": "COMPLETED",
+  "tags": [
+    "tier-2",
+  ],
+  "targetAudienceQuery": {
+    "has_consultation": true,
+    "tier": "tier-2",
+  },
+  "targetAudienceSize": 26035,
+  "updatedAt": "<DATE>",
+  "winningVariant": "variantA",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > cancellationDetail factory output matches snapshot 1`] = `
+{
+  "aiSentimentAnalysis": {
+    "confidence": 0.9514417512387936,
+    "sentiment": "neutral",
+  },
+  "appointmentId": "unknown",
+  "cancellationFeeInr": 0,
+  "cancelledAt": "<DATE>",
+  "cancelledByRole": "PATIENT",
+  "createdAt": "<DATE>",
+  "id": "cancel-0000000001",
+  "noticeMinutes": 6020,
+  "patientFeedback": null,
+  "patientId": "unknown",
+  "primaryReason": "DOCTOR_UNAVAILABLE",
+  "rebookOffered": false,
+  "rebooked": true,
+  "rebookedAppointmentId": "appt-00009118",
+  "refundAmountInr": 500,
+  "refundIssued": true,
+  "retentionAttempted": true,
+  "retentionSuccessful": false,
+  "secondaryReasons": [],
+}
+`;
+
+exports[`factory snapshots — schema drift detection > chaosScenario factory output matches snapshot 1`] = `
+{
+  "actualOutcome": "HANDLED_GRACEFULLY",
+  "chaosType": "EXTREMELY_LONG_INPUT",
+  "consultationId": null,
+  "createdAt": "<DATE>",
+  "expectedBehavior": "AI must handle gracefully or escalate to human",
+  "fallbackProvider": null,
+  "handlingMechanism": "circuit-breaker + fallback chain",
+  "humanReviewRequired": false,
+  "id": "chaos-0000000001",
+  "inputSample": "[5000-word patient history]",
+  "lastTestedAt": "<DATE>",
+  "logsLink": "https://logs.datunai.com/chaos/1",
+  "safetyTriggered": false,
+  "successRate": 0.9194306380817142,
+  "tags": [
+    "extremely-long-input",
+  ],
+  "testFrequency": "DAILY",
+  "userImpactLevel": "NONE",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > clinic factory output matches snapshot 1`] = `
+{
+  "acceptsEmergencies": true,
+  "acceptsInsurance": false,
+  "acceptsTelemedicine": true,
+  "address": "88, Amrita Key",
+  "averageRating": 4.66,
+  "city": "Chennai",
+  "complianceProfile": "DPDP_INDIA",
+  "coverImageUrl": null,
+  "createdAt": "<DATE>",
+  "dataRetentionDays": 2555,
+  "deletedAt": null,
+  "description": "Aesthetic Dental Care - Multi-speciality dental clinic in Chennai",
+  "email": "contact@aesthetic-dental-care-1.datunai.com",
+  "id": "48d99198-def0-4e78-beea-dea6a84bca44",
+  "isActive": true,
+  "isVerified": true,
+  "landmark": null,
+  "languages": "["english","telugu","punjabi"]",
+  "latitude": 13.109010473822032,
+  "logoUrl": null,
+  "longitude": 80.30295611744283,
+  "metadata": null,
+  "name": "Aesthetic Dental Care",
+  "onboardingStep": 1,
+  "openingHours": "{"mon":{"open":"09:00","close":"20:00"},"tue":{"open":"09:00","close":"20:00"},"wed":{"open":"09:00","close":"20:00"},"thu":{"open":"09:00","close":"20:00"},"fri":{"open":"09:00","close":"20:00"},"sat":{"open":"09:00","close":"14:00"},"sun":{"open":"closed","close":"closed"}}",
+  "ownerId": "e6ee96e9-6472-4e96-9b00-5203de35a4c7",
+  "phone": "+91 20364 15923",
+  "photos": null,
+  "pincode": "992422",
+  "primaryLocale": "en",
+  "registrationCertUrl": null,
+  "registrationNumber": null,
+  "services": null,
+  "slug": "aesthetic-dental-care-1",
+  "specialties": "["prosthodontic","periodontic"]",
+  "state": "TN",
+  "subscriptionExpiresAt": "<DATE>",
+  "subscriptionTier": "PRO",
+  "tier": "GROW",
+  "timezone": "Asia/Kolkata",
+  "totalAppointments": 439,
+  "totalLeads": 26,
+  "totalReviews": 293,
+  "trialEndsAt": null,
+  "updatedAt": "<DATE>",
+  "website": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > clinicInvoice factory output matches snapshot 1`] = `
+{
+  "billingAddress": {
+    "city": "Tarbha",
+    "country": "IN",
+    "line1": "1780 Amrita Key",
+    "pincode": "258560",
+    "state": "Delhi",
+  },
+  "billingPeriodEnd": "<DATE>",
+  "billingPeriodStart": "<DATE>",
+  "cgstInr": 90,
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "currency": "INR",
+  "discountInr": 0,
+  "dueDate": "<DATE>",
+  "gstinClinic": "58AAAAA9909A1Z5",
+  "gstinDatun": "07AAGCD1234L1Z9",
+  "hsnCode": "998314",
+  "id": "inv-0000000001",
+  "igstInr": 0,
+  "invoiceNumber": "DTN/INV/2026/000001",
+  "issuedDate": "<DATE>",
+  "lastReminderAt": null,
+  "lineItems": [
+    {
+      "amountInr": 999,
+      "description": "Datun Subscription - Monthly",
+      "quantity": 1,
+      "rateInr": 999,
+    },
+  ],
+  "notes": null,
+  "paidDate": "<DATE>",
+  "paymentLinkUrl": null,
+  "pdfUrl": "https://r2.datunai.com/invoices/inv-1.pdf",
+  "placeOfSupply": "Delhi",
+  "remindersSent": 0,
+  "sgstInr": 90,
+  "status": "PAID",
+  "subscriptionId": "unknown",
+  "subtotalInr": 999,
+  "totalInr": 1179,
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > cohortTable factory output matches snapshot 1`] = `
+{
+  "avgConsultationsPerUser": 7.629965433223123,
+  "avgLifetimeValueInr": 19602,
+  "cohortMonth": "2026-01",
+  "cohortType": "PATIENT_REGISTRATION",
+  "computedAt": "<DATE>",
+  "createdAt": "<DATE>",
+  "cumulativeRevenueInr": 14428544,
+  "id": "cohort-00000001",
+  "initialUsers": 1856,
+  "metadata": {},
+  "week12Retained": 535,
+  "week12RetentionRate": 0.28825431034482757,
+  "week1Retained": 1364,
+  "week1RetentionRate": 0.7349137931034483,
+  "week24Retained": 492,
+  "week2Retained": 1189,
+  "week4Retained": 875,
+  "week4RetentionRate": 0.4714439655172414,
+  "week52Retained": 348,
+  "week52RetentionRate": 0.1875,
+  "week8Retained": 677,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > consentRecord factory output matches snapshot 1`] = `
+{
+  "canBeWithdrawn": false,
+  "consentMethod": "EXPLICIT_CHECKBOX",
+  "consentVersion": "DPDP-2024-v1.2",
+  "createdAt": "<DATE>",
+  "dataCategory": "MEDICAL_HISTORY",
+  "granted": true,
+  "grantedAt": "<DATE>",
+  "id": "consent-0000000001",
+  "ipAddress": "225.146.236.239",
+  "legalBasis": "CONTRACT",
+  "patientId": "unknown",
+  "purpose": "BILLING",
+  "retentionPeriodDays": 2555,
+  "revokedAt": null,
+  "updatedAt": "<DATE>",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:120.0) Gecko/20100101 Firefox/126.0",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > consultationPhoto factory output matches snapshot 1`] = `
+{
+  "aiConfidenceScore": 0.9798363157124398,
+  "aiCostUsd": 0.018252,
+  "aiFindings": {
+    "boundingBoxes": [
+      {
+        "h": 0.08,
+        "label": "caries-suspect",
+        "tooth": "#16",
+        "w": 0.08,
+        "x": 0.45,
+        "y": 0.32,
+      },
+    ],
+    "primaryFinding": "No abnormality detected",
+  },
+  "aiInputTokens": 2694,
+  "aiLatencyMs": 5021,
+  "aiModelUsed": "claude-sonnet-4-vision",
+  "aiOutputTokens": 678,
+  "analysisStatus": "COMPLETED",
+  "capturedAt": "<DATE>",
+  "consultationId": "unknown",
+  "fileSizeBytes": 1616922,
+  "format": "heic",
+  "hasPhi": true,
+  "height": 3024,
+  "humanReviewedAt": null,
+  "humanReviewedBy": null,
+  "id": "cphoto-0000000001",
+  "patientId": "unknown",
+  "photoUrl": "https://r2.datunai.com/photos/cphoto-1.jpg",
+  "redactedRegions": null,
+  "thumbnailUrl": "https://r2.datunai.com/photos/thumbs/cphoto-1.webp",
+  "uploadedAt": "<DATE>",
+  "view": "INTRAORAL_LEFT",
+  "width": 1440,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > dailyAggregate factory output matches snapshot 1`] = `
+{
+  "abandonedConsultations": 33,
+  "aiErrorCount": 4,
+  "avgAiLatencyMs": 1375,
+  "avgConsultationDurationMin": 14.918662583102035,
+  "avgPatientSatisfaction": 4.273658381513202,
+  "cancelledAppointments": 5,
+  "churnedSubscriptions": 0,
+  "clinicId": null,
+  "completedAppointments": 70,
+  "completedConsultations": 250,
+  "createdAt": "<DATE>",
+  "date": "2026-01-15",
+  "escalatedConsultations": 12,
+  "id": "agg-00000001",
+  "netPromoterScore": 50,
+  "newPatients": 19,
+  "newSubscriptions": 2,
+  "noShowAppointments": 11,
+  "returningPatients": 65,
+  "revenueInr": 486970,
+  "supportTicketsOpened": 11,
+  "supportTicketsResolved": 12,
+  "totalAiCostUsd": 162.15919280589958,
+  "totalAppointments": 65,
+  "totalConsultations": 307,
+  "updatedAt": "<DATE>",
+  "whatsappDelivered": 539,
+  "whatsappRead": 450,
+  "whatsappSent": 92,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > doctor factory output matches snapshot 1`] = `
+{
+  "acceptsEmergencies": false,
+  "acceptsTelemedicine": false,
+  "avatarUrl": null,
+  "bio": "MDS qualified dentist with 27 years of clinical experience. Specialized in general dentistry.",
+  "clinicId": null,
+  "createdAt": "<DATE>",
+  "degree": "MDS",
+  "deletedAt": null,
+  "firstName": "Shrishti",
+  "id": "36dbe64c-eaeb-4aed-a4b9-e121046db445",
+  "isAcceptingPatients": true,
+  "languagesSpoken": [
+    "en",
+    "or",
+  ],
+  "lastName": "Gandhi",
+  "qualifications": "BDS",
+  "rating": 4.81,
+  "registrationCouncil": "DSDC",
+  "registrationNumber": "DSDC/DL/1999/00001",
+  "registrationState": "DL",
+  "registrationVerifiedAt": "<DATE>",
+  "specialization": "General Dentistry",
+  "title": "Dr.",
+  "totalConsultations": 6058,
+  "updatedAt": "<DATE>",
+  "userId": "d302a373-d48e-4075-8ae8-bd1d776035c4",
+  "yearsExperience": 27,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > dpdpDataRequest factory output matches snapshot 1`] = `
+{
+  "assignedDpoUserId": "admin-3",
+  "auditTrailLink": "audit/dpdp/1",
+  "completedAt": null,
+  "createdAt": "<DATE>",
+  "dataCategoriesRequested": [
+    "PAYMENT_HISTORY",
+    "INSURANCE",
+    "PHOTOS",
+    "CURRENT_MEDICATIONS",
+  ],
+  "downloadExpiresAt": null,
+  "downloadFormat": null,
+  "downloadUrl": null,
+  "id": "dpdp-0000000001",
+  "identityVerificationMethod": "OTP",
+  "identityVerifiedAt": "<DATE>",
+  "patientId": "unknown",
+  "processingStartedAt": "<DATE>",
+  "recordsAffected": 0,
+  "rejectionReason": null,
+  "requestType": "DATA_EXPORT",
+  "slaBreached": false,
+  "slaTargetDate": "<DATE>",
+  "status": "PROCESSING",
+  "submittedAt": "<DATE>",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > experimentAssignment factory output matches snapshot 1`] = `
+{
+  "anonymousId": null,
+  "assignedAt": "<DATE>",
+  "assignmentReason": "NEW_RANDOM",
+  "bucketHash": 25,
+  "conversionEvents": [],
+  "conversionValue": 4816,
+  "createdAt": "<DATE>",
+  "experimentKey": "unknown",
+  "exposureCount": 16,
+  "firstExposureAt": "<DATE>",
+  "id": "expass-000000000001",
+  "lastExposureAt": "<DATE>",
+  "metricExposed": true,
+  "userId": "unknown",
+  "variantKey": "treatment_a",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > familyMember factory output matches snapshot 1`] = `
+{
+  "canBookOnBehalf": true,
+  "consentVersion": "DPDP-2024-v1",
+  "createdAt": "<DATE>",
+  "id": "fam-00000001",
+  "isMinor": false,
+  "primaryPatientId": "unknown",
+  "relatedPatientId": "unknown",
+  "relationship": "SELF",
+  "threadId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > featureFlag factory output matches snapshot 1`] = `
+{
+  "archivedAt": null,
+  "category": "EXPERIMENT",
+  "createdAt": "<DATE>",
+  "createdByUserId": "user-000001",
+  "defaultValue": false,
+  "description": "Feature flag for Photo Analysis V2",
+  "disabledClinicIds": [],
+  "enabledClinicIds": [],
+  "evaluationCount": 513362,
+  "flagKey": "photo-analysis-v2-1",
+  "id": "flag-00000001",
+  "lastEvaluatedAt": "<DATE>",
+  "name": "Photo Analysis V2",
+  "rolloutPercent": 0,
+  "status": "OFF",
+  "targetingRules": {},
+  "updatedAt": "<DATE>",
+  "variants": {
+    "control": false,
+    "treatment": true,
+  },
+}
+`;
+
+exports[`factory snapshots — schema drift detection > followupConversation factory output matches snapshot 1`] = `
+{
+  "aiOutcomeClassificationConfidence": null,
+  "createdAt": "<DATE>",
+  "escalatedToDoctor": false,
+  "id": "followup-0000000001",
+  "originalConsultationId": "unknown",
+  "outboundChannel": "SMS",
+  "outboundDelivered": true,
+  "outboundMessage": "Treatment kaisa progress hai?",
+  "outboundRead": true,
+  "outboundSentAt": "<DATE>",
+  "outcome": "NO_RESPONSE",
+  "patientId": "unknown",
+  "responseLocale": null,
+  "responseReceivedAt": null,
+  "responseText": null,
+  "secondaryConsultationCreated": false,
+  "secondaryConsultationId": null,
+  "type": "AUTO_7DAY",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > handoffEvent factory output matches snapshot 1`] = `
+{
+  "claimedAt": "<DATE>",
+  "consultationId": "unknown",
+  "createdAt": "<DATE>",
+  "fromActorId": "ai-system",
+  "handoffNotes": "AI flagged safety flag during consultation",
+  "handoffReason": "SAFETY_FLAG",
+  "id": "handoff-0000000001",
+  "initiatedAt": "<DATE>",
+  "patientId": "unknown",
+  "priorityLevel": "HIGH",
+  "resolutionNotes": "Resolved per protocol",
+  "resolutionTimeSec": 16186,
+  "resolutionType": "IN_PERSON_REFERRAL",
+  "resolvedAt": "<DATE>",
+  "responseTimeSec": 1343,
+  "slaBreached": false,
+  "slaTargetSec": 1800,
+  "status": "RESOLVED",
+  "toActorId": "doctor-000065",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > healthRecordUpload factory output matches snapshot 1`] = `
+{
+  "aiExtractedFindings": null,
+  "aiTagged": true,
+  "fileMimeType": "image/jpeg",
+  "fileSizeBytes": 17258627,
+  "fileUrl": "https://r2.datunai.com/health-records/hru-1.jpeg",
+  "id": "hru-0000000001",
+  "isReviewed": false,
+  "patientId": "unknown",
+  "performingDoctor": "Dr. Sinha",
+  "recordDate": "<DATE>",
+  "sourceClinic": "Guneta - Sinha Dental Clinic",
+  "thumbnailUrl": "https://r2.datunai.com/health-records/thumbs/hru-1.webp",
+  "title": "OPG - 2024",
+  "type": "OPG",
+  "uploadedAt": "<DATE>",
+  "visibilityScope": "SHARED_WITH_DOCTOR",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > integrationEvent factory output matches snapshot 1`] = `
+{
+  "clinicId": null,
+  "createdAt": "<DATE>",
+  "errorMessage": null,
+  "eventType": "subscription.charged",
+  "eventVersion": "v1",
+  "id": "intevt-000000000001",
+  "internalEntityId": "entity-SSFPTCpGwi",
+  "internalEntityType": "subscription",
+  "payload": {
+    "event": "subscription.charged",
+    "timestamp": "<DATE>",
+  },
+  "processedAt": "<DATE>",
+  "processingDurationMs": 22917,
+  "provider": "RAZORPAY",
+  "providerEventId": "razorpay_O5h6qRfwRzC4BvPVX1Vu",
+  "receivedAt": "<DATE>",
+  "retryCount": 0,
+  "signatureValid": true,
+  "status": "PROCESSED",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > integrationToken factory output matches snapshot 1`] = `
+{
+  "accessTokenCiphertextFingerprint": "sha256:TCpGwiGKEgiTSoVT",
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "expiresAt": "<DATE>",
+  "id": "intok-0000000001",
+  "issuedAt": "<DATE>",
+  "lastErrorMessage": null,
+  "lastRefreshedAt": null,
+  "lastUsedAt": "<DATE>",
+  "provider": "GOOGLE_CALENDAR",
+  "providerAccountEmail": "Ekaparnika66@yahoo.co.in",
+  "providerAccountId": "v4LO5h6qRfwRzC4BvPVX",
+  "refreshCount": 62,
+  "refreshTokenCiphertextFingerprint": null,
+  "scopes": [
+    "calendar.events.readonly",
+    "calendar.events.create",
+    "calendar.calendarlist.readonly",
+  ],
+  "status": "ACTIVE",
+  "tokenType": "API_KEY",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > jobLog factory output matches snapshot 1`] = `
+{
+  "attempt": 1,
+  "completedAt": "<DATE>",
+  "consultationId": null,
+  "durationMs": 2625,
+  "error": null,
+  "errorStack": null,
+  "id": "job-0000000001",
+  "jobId": "bull:followup:aqdpjE4skrTjHRA1",
+  "jobName": "3day-followup",
+  "maxAttempts": 5,
+  "payload": {
+    "exampleKey": "exampleValue",
+  },
+  "queueName": "followup",
+  "queuedAt": "<DATE>",
+  "result": {
+    "durationMs": 2625,
+    "ok": true,
+  },
+  "startedAt": "<DATE>",
+  "status": "COMPLETED",
+  "userId": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > kbArticle factory output matches snapshot 1`] = `
+{
+  "authoredByUserId": "user-000001",
+  "category": "whatsapp",
+  "contentMarkdown": "# Delicate cognatus sto vero delinquo totam.
+
+Adhaero bellum admitto desparatus ea cura. Ventito crustulum callide adficio. Argentum cuius quibusdam.
+
+Calamitas coaegresco tantillus cohibeo demitto. Iure cubitum copia cuppedia decens thymbra commodi subiungo. Pel taedium accendo error adflicto deputo clibanus desolo libero coniuratio.
+
+Temporibus totam tener depono valeo debitis bos somniculosus paens commodo. Vulnus vulariter laudantium convoco. Cultellus inventore caelestis eius amplitudo.",
+  "createdAt": "<DATE>",
+  "helpfulVotes": 442,
+  "id": "kb-00000001",
+  "languages": [
+    "english",
+    "hindi",
+  ],
+  "lastUpdatedAt": "<DATE>",
+  "publishedAt": "<DATE>",
+  "relatedTicketCategory": null,
+  "slug": "whatsapp-commemoro-caveo-comprehendo",
+  "status": "PUBLISHED",
+  "subcategory": "textus",
+  "tags": [
+    "tutorial",
+    "faq",
+    "troubleshooting",
+  ],
+  "title": "Vix chirographum adeo celo tener uxor?",
+  "unhelpfulVotes": 47,
+  "viewCount": 34407,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > lead factory output matches snapshot 1`] = `
+{
+  "assignedToUserId": "user-000001",
+  "city": "Hyderabad",
+  "cityTier": "tier-3",
+  "clinicName": "Ahuja Pvt Ltd Dental Clinic",
+  "clinicSize": "LARGE_16_PLUS",
+  "contactCount": 0,
+  "contactName": "Dr. Samir Dwivedi",
+  "contactRole": "Owner",
+  "convertedAt": null,
+  "createdAt": "<DATE>",
+  "currentSoftware": "None",
+  "demoCompletedAt": null,
+  "demoFeedback": null,
+  "demoScheduledAt": null,
+  "email": "Bhudev_Shukla61@yahoo.co.in",
+  "estimatedMrrInr": 9999,
+  "expectedCloseDate": "<DATE>",
+  "firstContactAt": "<DATE>",
+  "id": "lead-0000000001",
+  "lastContactAt": null,
+  "lostReason": null,
+  "lostToCompetitor": null,
+  "nextFollowupAt": "<DATE>",
+  "notes": "Outreach via WhatsApp template",
+  "painPoints": [
+    "staff training",
+    "pricing transparency",
+  ],
+  "phone": "+91999900001",
+  "probabilityToClose": 5,
+  "proposalSentAt": null,
+  "source": "REFERRAL",
+  "sourceCampaign": null,
+  "stage": "NEW",
+  "state": "TG",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > leadActivity factory output matches snapshot 1`] = `
+{
+  "activityType": "WHATSAPP_SENT",
+  "attachmentUrls": [],
+  "callDurationSec": null,
+  "content": "Hi, exploring Datun for your clinic?",
+  "createdAt": "<DATE>",
+  "emailSubject": null,
+  "id": "lact-000000000001",
+  "leadId": "unknown",
+  "nextActionDescription": "Follow up next week",
+  "nextActionScheduledAt": null,
+  "outcome": null,
+  "performedAt": "<DATE>",
+  "performedByUserId": "user-000001",
+  "summary": "whatsapp sent",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > patient factory output matches snapshot 1`] = `
+{
+  "abhaId": null,
+  "ageYears": 12,
+  "alcoholUse": false,
+  "allergies": "[]",
+  "archetypeKey": "arch-012",
+  "bloodGroup": "A+",
+  "clinicId": null,
+  "comorbidConditionsIcd10": [
+    "S02.5",
+  ],
+  "consentVersion": "v1.0",
+  "createdAt": "<DATE>",
+  "currentMedications": "[]",
+  "dateOfBirth": "<DATE>",
+  "deletedAt": null,
+  "dentalHistory": "{"lastVisit":"2025-11-23T02:33:04.655Z","previousProcedures":["extraction","scaling","crown"],"chiefComplaintHistory":"Bachha gir gaya, sammne ka dant hath mein hai, kya karein?"}",
+  "educationLevel": "school",
+  "email": null,
+  "emergencyContactName": "Nawal Kaur",
+  "emergencyContactPhone": "+919999904163",
+  "firstName": "Devasree",
+  "fullName": "Devasree Guneta",
+  "gender": "FEMALE",
+  "governmentIdHash": null,
+  "id": "77bb1bbf-8e25-4b18-b4db-255896fdcc9a",
+  "insuranceId": null,
+  "insurancePolicyNumber": null,
+  "insuranceProvider": null,
+  "knownAllergies": "[]",
+  "kycLevel": "NONE",
+  "lastConsentRenewedAt": "<DATE>",
+  "lastDentalVisit": "<DATE>",
+  "lastName": "Guneta",
+  "medicalConditions": "[]",
+  "phone": "+919999900001",
+  "preferredLocale": "hi",
+  "pregnancyStatus": "NOT_APPLICABLE",
+  "primaryConditionIcd10": "S03.2",
+  "referralChannel": "emergency-walk-in",
+  "residence": "urban-tier-2",
+  "retentionUntil": "<DATE>",
+  "safetyConstraints": [],
+  "sesTier": "middle",
+  "smokingStatus": "NEVER",
+  "tobaccoUse": false,
+  "updatedAt": "<DATE>",
+  "userId": "e925050c-32b8-4f61-b7a6-bfa5b8ea6c79",
+  "verifiedNameAt": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > patientJourney factory output matches snapshot 1`] = `
+{
+  "avgConsultationGapDays": 150,
+  "churnRiskScore": 49,
+  "createdAt": "<DATE>",
+  "currentStage": "EXPLORATORY",
+  "firstConsultationAt": "<DATE>",
+  "id": "journey-0000000001",
+  "lastConsultationAt": "<DATE>",
+  "lifetimeValueInr": 28428,
+  "nextRecommendedActionDate": "<DATE>",
+  "patientId": "unknown",
+  "preferredClinic": "clinic-000045",
+  "preferredDoctor": "doctor-000074",
+  "retentionScore": 58,
+  "totalAppointments": 1,
+  "totalConsultations": 4,
+  "totalSpendInr": 7380,
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > patientReferral factory output matches snapshot 1`] = `
+{
+  "campaignId": null,
+  "clickedAt": "<DATE>",
+  "consultationDoneAt": null,
+  "createdAt": "<DATE>",
+  "expiresAt": "<DATE>",
+  "id": "ref-0000000001",
+  "referralChannel": "SMS",
+  "referralCode": "GLIMSMMS",
+  "referredDiscountInr": 100,
+  "referredDiscountUsed": false,
+  "referredPatientId": null,
+  "referrerPatientId": "unknown",
+  "referrerRewardClaimed": false,
+  "referrerRewardInr": 100,
+  "signedUpAt": null,
+  "status": "CLICKED",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > payment factory output matches snapshot 1`] = `
+{
+  "amountInr": 1000,
+  "bankName": null,
+  "capturedAt": null,
+  "cardBrand": null,
+  "cardLast4": null,
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "currency": "INR",
+  "entityId": "unknown",
+  "entityType": "APPOINTMENT",
+  "gateway": "PHONEPE",
+  "gatewayFeeInr": 0,
+  "gatewayOrderId": "order_Q5kUgYaUGke2xj53IqGZ",
+  "gatewayTransactionId": "pay_zYo4U5RuZxvvKYjuXu8y",
+  "gstInr": 4,
+  "id": "pay-000000000001",
+  "initiatedAt": "<DATE>",
+  "invoiceNumber": "INV-2026-00000001",
+  "mode": "UPI",
+  "netSettlementInr": 976,
+  "patientId": null,
+  "platformFeeInr": 20,
+  "receiptUrl": null,
+  "refundAmountInr": 0,
+  "refundedAt": null,
+  "status": "FAILED",
+  "updatedAt": "<DATE>",
+  "upiVpa": "maheswar12@oksbi",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > payout factory output matches snapshot 1`] = `
+{
+  "bankAccountLast4": "1591",
+  "bankIfsc": "AXIS0802148",
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "failedAt": null,
+  "failureReason": null,
+  "grossRevenueInr": 37138,
+  "id": "payout-0000000001",
+  "initiatedAt": "<DATE>",
+  "invoiceUrl": "https://r2.datunai.com/payouts/payout-1.pdf",
+  "netPayableInr": 28410,
+  "paidAt": null,
+  "payoutPeriodEnd": "<DATE>",
+  "payoutPeriodStart": "<DATE>",
+  "platformFeeInr": 5571,
+  "settlementCount": 54,
+  "status": "PROCESSING",
+  "tdsInr": 3157,
+  "transferMethod": "IMPS",
+  "updatedAt": "<DATE>",
+  "utrNumber": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > prescriptionRefill factory output matches snapshot 1`] = `
+{
+  "aiAutoApproved": false,
+  "aiConfidenceScore": null,
+  "approvalNotes": null,
+  "createdAt": "<DATE>",
+  "denialReason": null,
+  "id": "refill-0000000001",
+  "newPrescriptionId": null,
+  "originalPrescriptionId": "unknown",
+  "patientId": "unknown",
+  "requestedAt": "<DATE>",
+  "requestedBy": "unknown",
+  "reviewedAt": "<DATE>",
+  "reviewedBy": "doctor-000086",
+  "safetyChecksPassed": true,
+  "safetyFlags": [],
+  "status": "NEEDS_CONSULTATION",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > referralEvent factory output matches snapshot 1`] = `
+{
+  "createdAt": "<DATE>",
+  "eventType": "CODE_SHARED",
+  "id": "refevt-000000000001",
+  "metadata": {},
+  "occurredAt": "<DATE>",
+  "referralId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > review factory output matches snapshot 1`] = `
+{
+  "cleanlinessRating": 5,
+  "clinicResponse": null,
+  "clinicResponseAt": null,
+  "createdAt": "<DATE>",
+  "doctorExpertiseRating": 5,
+  "entityId": "unknown",
+  "entityType": "CLINIC",
+  "helpfulCount": 25,
+  "id": "review-0000000001",
+  "isPublished": true,
+  "moderatedAt": null,
+  "moderatedBy": null,
+  "overallRating": 4,
+  "patientId": "unknown",
+  "photoUrls": [],
+  "reportedCount": 2,
+  "reviewLanguage": "hindi",
+  "reviewText": null,
+  "sentiment": "POSITIVE",
+  "sentimentScore": 0.6334055626207138,
+  "staffBehaviorRating": null,
+  "updatedAt": "<DATE>",
+  "valueForMoneyRating": 2,
+  "verifiedReviewer": false,
+  "waitTimeRating": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > securityEvent factory output matches snapshot 1`] = `
+{
+  "autoMitigated": false,
+  "createdAt": "<DATE>",
+  "description": "failed login from Ongole",
+  "deviceFingerprint": "G5PkSBz6ckn6dwdgWJThMfYMKUrhQ8ea",
+  "eventType": "FAILED_LOGIN",
+  "geoCity": "Fatehpur Sikri",
+  "geoCountry": "AE",
+  "id": "secevt-000000000001",
+  "investigatedAt": null,
+  "investigatedBy": null,
+  "ipAddress": "119.208.100.239",
+  "metadata": {
+    "attemptCount": 1,
+    "targetEndpoint": "/api/auth/login",
+  },
+  "mitigationAction": null,
+  "notifiedSecurityTeam": false,
+  "notifiedUser": false,
+  "occurredAt": "<DATE>",
+  "resolution": null,
+  "riskScore": 28,
+  "sessionId": "4c44c2a4-eb1a-4d07-9933-989a955e9ee2",
+  "severity": "LOW",
+  "userAgent": "Googlebot/2.1 (+http://www.google.com/bot.html)",
+  "userId": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > subscriptionEvent factory output matches snapshot 1`] = `
+{
+  "amountInr": 9999,
+  "billingCycle": "MONTHLY",
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "eventType": "INVOICE_PAID",
+  "id": "subevt-000000000001",
+  "initiatedBy": "SYSTEM_AUTO",
+  "invoiceId": "inv-v4LO5h6qRf",
+  "metadata": {},
+  "mrrChangeInr": 9999,
+  "newMrrInr": 9999,
+  "newTier": "ENTERPRISE",
+  "nextBillingDate": "<DATE>",
+  "occurredAt": "<DATE>",
+  "previousMrrInr": 0,
+  "previousTier": null,
+  "stripeEventId": null,
+  "subscriptionId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > supportTicket factory output matches snapshot 1`] = `
+{
+  "aiTriageConfidence": 0.8374716381577484,
+  "aiTriagedCategory": "PAYMENT_REFUND",
+  "assignedToUserId": "admin-1",
+  "attachmentUrls": [],
+  "category": "PAYMENT_REFUND",
+  "clinicId": null,
+  "closedAt": null,
+  "createdAt": "<DATE>",
+  "customerSatisfactionRating": null,
+  "description": "Adeo celo tener uxor demo. Delectus delicate cognatus sto vero delinquo totam decumbo adhaero. Admitto desparatus ea cura.",
+  "firstResponseAt": "<DATE>",
+  "id": "tkt-0000000001",
+  "priority": "P2_HIGH",
+  "raisedByRole": "PATIENT",
+  "raisedByUserId": "unknown",
+  "relatedEntityId": "consultation-249oCkeiKj",
+  "relatedEntityType": "consultation",
+  "reopenedCount": 0,
+  "resolutionNote": "Resolved via guided workflow",
+  "resolvedAt": "<DATE>",
+  "slaBreached": false,
+  "slaTargetResolutionAt": "<DATE>",
+  "status": "RESOLVED",
+  "subcategory": null,
+  "subject": "payment refund issue",
+  "tags": [
+    "payment_refund",
+  ],
+  "ticketNumber": "DT-00000001",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > teamMember factory output matches snapshot 1`] = `
+{
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "email": null,
+  "firstName": "Agniprava",
+  "id": "5453f404-ce7c-4774-8be7-d70308862e63",
+  "isActive": true,
+  "joinDate": "<DATE>",
+  "languagesSpoken": [
+    "marathi",
+  ],
+  "lastName": "Iyer",
+  "permissions": [
+    "view-patients",
+    "add-clinical-notes",
+    "perform-prophylaxis",
+  ],
+  "phone": "+91999900001",
+  "role": "DENTAL_HYGIENIST",
+  "salaryBandInr": {
+    "max": 35000,
+    "min": 18000,
+  },
+  "title": "Dental Hygienist",
+  "updatedAt": "<DATE>",
+  "userId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > ticketMessage factory output matches snapshot 1`] = `
+{
+  "aiSentimentLabel": "NEGATIVE",
+  "aiSentimentScore": 0.5862387456019669,
+  "attachmentUrls": [],
+  "content": "Commemoro caveo comprehendo aut vix chirographum adeo.",
+  "contentLocale": "hindi",
+  "createdAt": "<DATE>",
+  "id": "tmsg-000000000001",
+  "isInternalNote": false,
+  "readByAgent": true,
+  "readByCustomer": false,
+  "senderRole": "CUSTOMER",
+  "senderUserId": "unknown",
+  "sentAt": "<DATE>",
+  "ticketId": "unknown",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > trainingExample factory output matches snapshot 1`] = `
+{
+  "approvedAt": null,
+  "approvedBy": null,
+  "consultationId": "",
+  "createdAt": "<DATE>",
+  "exportBatchId": null,
+  "exportedAt": null,
+  "id": "example-0000000001",
+  "messageCount": 0,
+  "messages": "[{"role":"system","content":"[active dental triage system prompt]"},{"role":"user","content":"Mere dant mein dard hai"},{"role":"assistant","content":"Ji, mein samajh gaya. Pehle yeh batao kab se hai?"}]",
+  "modelTargeted": "claude-sonnet-4",
+  "promptVersion": "v1.2.0",
+  "rejectionReason": null,
+  "status": "DRAFT",
+  "tokenCount": 2872,
+  "trainingLabelId": "",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > user factory output matches snapshot 1`] = `
+{
+  "appleId": null,
+  "avatarUrl": null,
+  "city": null,
+  "createdAt": "<DATE>",
+  "dateOfBirth": null,
+  "deletedAt": null,
+  "email": "patient-1@example.com",
+  "firstName": "Jitender",
+  "fullName": "Jitender Dhawan",
+  "gender": null,
+  "googleId": null,
+  "id": "53f404ce-7c77-44be-87d7-0308862e6301",
+  "isActive": true,
+  "isEmailVerified": true,
+  "isPhoneVerified": true,
+  "languagePreference": "en",
+  "lastLoginAt": "<DATE>",
+  "lastLoginDevice": null,
+  "lastLoginIp": null,
+  "lastName": "Dhawan",
+  "latitude": null,
+  "longitude": null,
+  "metadata": null,
+  "name": "Jitender Dhawan",
+  "passwordHash": "<BCRYPT_HASH>",
+  "phone": "+919999993001",
+  "pincode": null,
+  "primaryRole": "PATIENT",
+  "referralCode": null,
+  "referredById": null,
+  "role": "PATIENT",
+  "state": null,
+  "subscriptionTier": "FREE",
+  "updatedAt": "<DATE>",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > utmAttribution factory output matches snapshot 1`] = `
+{
+  "anonymousId": "5453f404-ce7c-4774-8be7-d70308862e63",
+  "attributionModel": "LAST_CLICK",
+  "browserName": "Edge",
+  "campaignId": null,
+  "capturedAt": "<DATE>",
+  "conversionEvent": null,
+  "conversionValueInr": 4019,
+  "createdAt": "<DATE>",
+  "deviceType": "MOBILE",
+  "geoCity": "Nagarkurnool",
+  "id": "utm-000000000001",
+  "ipAddress": "142.64.211.178",
+  "landingPage": "/clinics",
+  "osName": "Android",
+  "referrer": "https://enchanted-essence.net",
+  "touchpointSequence": 4,
+  "userId": null,
+  "utmCampaign": "q1-2026-facebook-acquisition",
+  "utmContent": "banner-v2",
+  "utmMedium": "cpc",
+  "utmSource": "facebook",
+  "utmTerm": null,
+}
+`;
+
+exports[`factory snapshots — schema drift detection > voiceTranscript factory output matches snapshot 1`] = `
+{
+  "audioDurationSec": 46,
+  "audioFileSizeBytes": 368000,
+  "audioFormat": "opus",
+  "audioUrl": "https://r2.datunai.com/voice/voice-1.opus",
+  "consultationMessageId": "unknown",
+  "createdAt": "<DATE>",
+  "id": "voice-0000000001",
+  "isRedacted": false,
+  "languageDetected": "hindi",
+  "noiseLevel": "LOW",
+  "transcribedLocale": "hindi",
+  "transcribedText": "Doctor sahab, mere dant mein bahut dard hai, kal raat se neend nahi aa rahi",
+  "transcriptionConfidence": 0.6802644871525262,
+  "transcriptionDurationMs": 1101,
+  "transcriptionProvider": "WHISPER_API",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > webhookDelivery factory output matches snapshot 1`] = `
+{
+  "attemptNumber": 1,
+  "attemptedAt": "<DATE>",
+  "clinicId": "unknown",
+  "createdAt": "<DATE>",
+  "entityId": "consultation-h6qRfwRzC4",
+  "entityType": "consultation",
+  "errorMessage": null,
+  "event": "consultation.completed",
+  "failedAt": null,
+  "httpStatus": 201,
+  "id": "webhook-000000000001",
+  "idempotencyKey": "5fef3643-a726-4df4-8c5d-94742a21be41",
+  "maxAttempts": 5,
+  "nextRetryAt": null,
+  "payload": {
+    "event": "consultation.completed",
+    "timestamp": "<DATE>",
+  },
+  "responseBody": "{"received":true}",
+  "responseTimeMs": 3009,
+  "signatureHeader": "sha256=vPVX1VuySSFPTCpGwiGKEgiTSoVTBoTCogrbTCqH01l80cPVejFiLrri4kFrcvVg",
+  "status": "SUCCESS",
+  "succeededAt": "<DATE>",
+  "webhookUrl": "https://snarling-slipper.biz/datun/webhook",
+}
+`;
+
+exports[`factory snapshots — schema drift detection > whatsappMessage factory output matches snapshot 1`] = `
+{
+  "appointmentId": null,
+  "consultationId": null,
+  "createdAt": "<DATE>",
+  "deliveredAt": "<DATE>",
+  "errorCode": null,
+  "errorReason": null,
+  "failedAt": null,
+  "id": "wam-0000000001",
+  "metaMessageId": "wamid.mfwnWPE1UsadXdj2To02BWtiZ8b1PwmWKo9CCW6n",
+  "patientId": null,
+  "readAt": "<DATE>",
+  "recipientPhone": "+919999900000",
+  "senderPhoneNumberId": "70184_64796",
+  "sentAt": "<DATE>",
+  "status": "READ",
+  "templateLanguage": "hi",
+  "templateName": "consultation_complete",
+  "templateVariables": "[]",
+  "updatedAt": "<DATE>",
+  "webhookEventsReceived": "["sent","delivered"]",
+}
+`;

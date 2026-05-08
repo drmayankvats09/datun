@@ -1,0 +1,60 @@
+# ═══════════════════════════════════════════════════════════════
+# QUARTERLY DR DRILL — restore latest snapshot, verify RTO <30min
+# ═══════════════════════════════════════════════════════════════
+name: seed-dr-drill
+
+on:
+  schedule:
+    - cron: '0 4 1 1,4,7,10 *' # 1st Jan/Apr/Jul/Oct, 04:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no actual restore)'
+        type: boolean
+        default: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency: { group: dr-drill, cancel-in-progress: false }
+
+jobs:
+  drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ap-south-1
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - name: Run DR drill
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_DR_DATABASE_URL }}
+          AWS_S3_EXPORT_BUCKET: datun-dr-snapshots
+        run: |
+          pnpm --filter @repo/db exec tsx -e "
+          import { runDrDrill } from './prisma/seeds/dr-replica';
+          (async () => {
+            const r = await runDrDrill({
+              dryRun: ${{ github.event.inputs.dry_run || false }},
+              bucket: process.env.AWS_S3_EXPORT_BUCKET,
+              targetUrl: process.env.DATABASE_URL,
+              rtoTarget: 1800,
+            });
+            console.log(JSON.stringify(r, null, 2));
+            if (!r.passed) process.exit(1);
+          })();
+          "
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{"text":"🚨 DR drill FAILED — investigate immediately"}'

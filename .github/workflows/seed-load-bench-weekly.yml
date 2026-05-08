@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════
+# WEEKLY LOAD BENCH — staging only, never prod
+# ═══════════════════════════════════════════════════════════════
+name: seed-load-bench
+
+on:
+  schedule:
+    - cron: '0 1 * * 0' # Sunday 01:00 UTC
+  workflow_dispatch:
+    inputs:
+      k6_type:
+        description: 'k6 test type'
+        type: choice
+        options: [smoke, load, stress, spike, soak, breakpoint]
+        default: smoke
+
+concurrency:
+  group: seed-load-bench
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      BASE_URL: ${{ secrets.STAGING_API_URL }}
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - name: Verify not production
+        run: |
+          if [[ "$BASE_URL" == *"api.datunai.com"* ]] && [[ "$BASE_URL" != *"staging"* ]]; then
+            echo "::error::Refusing to run load test against production"
+            exit 1
+          fi
+      - run: pnpm install --frozen-lockfile
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+      - name: Run k6
+        run: k6 run packages/db/prisma/seeds/load-bench/k6/${{ github.event.inputs.k6_type || 'smoke' }}.k6.js
+      - name: Run bench harness
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/load-bench/bench-harness.ts
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-reports-${{ github.run_id }}
+          path: packages/db/tmp/*.json

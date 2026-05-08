@@ -1,0 +1,45 @@
+name: dq-soda-daily
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC daily
+  workflow_dispatch:
+
+concurrency: { group: dq-soda, cancel-in-progress: false }
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      POSTGRES_HOST: ${{ secrets.PROD_DB_HOST }}
+      POSTGRES_USER: ${{ secrets.PROD_DB_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.PROD_DB_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.PROD_DB_NAME }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install soda-core-postgres==3.5.* soda-core==3.5.*
+      - name: Run Soda scans
+        run: |
+          mkdir -p tmp
+          soda scan -d datun_production \
+            -c packages/db/prisma/seeds/data-quality/soda/soda-config.yml \
+            -srf tmp/patient-result.json \
+            packages/db/prisma/seeds/data-quality/soda/checks-patient.yml || true
+          soda scan -d datun_production \
+            -c packages/db/prisma/seeds/data-quality/soda/soda-config.yml \
+            -srf tmp/consultation-result.json \
+            packages/db/prisma/seeds/data-quality/soda/checks-consultation.yml || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soda-results-${{ github.run_id }}
+          path: tmp/*.json
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" -H 'Content-Type: application/json' \
+            -d '{"text":"🚨 [Datun] Soda daily scan FAIL — investigate."}'

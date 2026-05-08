@@ -1,91 +1,93 @@
 #!/usr/bin/env sh
 # ═══════════════════════════════════════════════════════════════
-# PRE-COMMIT HOOK — Defense Layer 1 (Local)
-#
-# Order of execution (fail-fast):
-#   1. lint-staged   → Prettier formats + ESLint validates staged files
-#   2. gitleaks      → Scans staged content for secret patterns
-#
-# Implementation (gitleaks v8.30+ — file-path-aware):
-#   We use `gitleaks git --pre-commit --staged` which reads the staging
-#   index and PRESERVES file paths in scan results. This is critical
-#   because it allows [allowlist].paths in .gitleaks.toml to skip
-#   test fixtures (e.g., __tests__/) that contain realistic-looking
-#   passwords used as test data.
-#
-#   STDIN mode (git diff | gitleaks stdin) is INTENTIONALLY NOT USED:
-#   it strips file path metadata, making allowlist.paths a no-op. This
-#   was a Day 12-13 architectural bug — fixed via this design.
-#
-# Config:
-#   - .gitleaks.toml     (ruleset + path allowlist for test fixtures)
-#   - .gitleaksignore    (specific fingerprint exclusions if needed)
-#
-# Reference:
-#   - github.com/gitleaks/gitleaks (v8.19+ command syntax)
-#   - github.com/gitleaks/gitleaks/issues/1300 (stdin path stripping)
-#
-# Emergency bypass (false positives only):
-#   git commit --no-verify
-#
-# Standard: Stripe, Vercel, Linear pre-commit conventions
+# PRE-COMMIT HOOK — FAANG-grade Defense Layer 1 (Full Monorepo)
+# Standard: Stripe / Vercel / Linear / Google / Meta pattern
+# Time: ~2-4 min
 # ═══════════════════════════════════════════════════════════════
 
 set -e
 
-# ─── Step 1: lint-staged (Prettier + ESLint on staged files) ───
+echo ""
+echo "🔍 Datun pre-commit checks (full monorepo)..."
+echo ""
+
+# ─── Step 1: lint-staged (Prettier on staged files) ─────────
+echo "→ lint-staged (Prettier across all packages)..."
 npx lint-staged
-LINT_EXIT=$?
-if [ "$LINT_EXIT" -ne 0 ]; then
+echo "  ✓ lint-staged passed"
+
+# ─── Step 2: .env guard ─────────────────────────────────────
+if git diff --cached --name-only | grep -qE "\.env$|\.env\.local$|\.env\.production$"; then
   echo ""
-  echo "❌ lint-staged failed. Fix formatting/lint errors before committing."
-  exit "$LINT_EXIT"
+  echo "❌ Attempting to commit .env file. NEVER commit secrets."
+  exit 1
+fi
+echo "  ✓ No .env files staged"
+
+# ─── Step 3: Prisma validate (only if schema changed) ───────
+if git diff --cached --name-only | grep -qE "^packages/db/prisma/schema\.prisma$"; then
+  echo "→ Prisma schema validation..."
+  pnpm --filter @repo/db exec prisma validate > /dev/null 2>&1 || {
+    echo "❌ Prisma schema invalid."
+    exit 1
+  }
+  echo "  ✓ Prisma schema valid"
 fi
 
-# ─── Step 2: gitleaks secret scan ──────────────────────────────
+# ─── Step 4: TypeScript check (FULL monorepo) ───────────────
+ts_files=$(git diff --cached --name-only | grep -E "\.(ts|tsx)$" || true)
+
+if [ -n "$ts_files" ]; then
+  echo "→ TypeScript check (turbo: ALL packages — db + api + web + worker + shared + ui)..."
+  pnpm turbo run check-types --concurrency=2 2>&1 | tail -15
+  if [ ${PIPESTATUS[0]:-$?} -ne 0 ]; then
+    echo ""
+    echo "❌ TypeScript errors. Fix before committing."
+    echo "   Re-run: pnpm turbo run check-types"
+    exit 1
+  fi
+  echo "  ✓ TypeScript clean (full monorepo)"
+fi
+
+# ─── Step 5: ESLint (FULL monorepo) ─────────────────────────
+if [ -n "$ts_files" ]; then
+  echo "→ ESLint (turbo: ALL packages)..."
+  pnpm turbo run lint --concurrency=2 2>&1 | tail -15
+  if [ ${PIPESTATUS[0]:-$?} -ne 0 ]; then
+    echo ""
+    echo "❌ ESLint errors. Fix before committing."
+    echo "   Re-run: pnpm turbo run lint"
+    exit 1
+  fi
+  echo "  ✓ ESLint clean (full monorepo)"
+fi
+
+# ─── Step 6: gitleaks secret scan ───────────────────────────
 if ! command -v gitleaks > /dev/null 2>&1; then
   echo ""
-  echo "⚠️  gitleaks not installed — skipping secret scan."
-  echo "   Install (Windows): winget install Gitleaks.Gitleaks"
-  echo "   Install (macOS):   brew install gitleaks"
-  echo "   Install (Linux):   apt install gitleaks  OR  dnf install gitleaks"
-  echo ""
-  echo "   ⚠️  SECURITY RISK: Commit may contain secrets without scan."
-  echo "   Server-side scanning (GitHub + Semgrep CI) will still catch on push."
+  echo "⚠️  gitleaks not installed — skipping (CI will catch on push)."
+  echo "✅ Pre-commit checks passed (gitleaks skipped)."
   exit 0
 fi
 
-# Skip if nothing staged (faster, cleaner)
 if git diff --cached --quiet; then
-  echo "ℹ️  No staged changes to scan."
+  echo "✅ Pre-commit checks passed."
   exit 0
 fi
 
-# File-path-aware staged scan
-# `git --pre-commit --staged` reads the staging index, preserving file paths
-# so .gitleaks.toml [allowlist].paths can skip test fixtures correctly.
+echo "→ gitleaks secret scan..."
 set +e
-gitleaks git --pre-commit --staged \
-  --redact \
-  --no-banner \
-  --config=.gitleaks.toml \
-  --exit-code 1
+gitleaks git --pre-commit --staged --redact --no-banner --config=.gitleaks.toml --exit-code 1
 GITLEAKS_EXIT=$?
 set -e
 
 if [ "$GITLEAKS_EXIT" -ne 0 ]; then
   echo ""
-  echo "❌ gitleaks detected secrets in staged changes."
-  echo "   Review the findings above carefully."
-  echo "   Remove secrets from staged files, then re-commit."
-  echo ""
-  echo "   If this is a false positive (e.g., test fixture), add to:"
-  echo "     - .gitleaks.toml      (allowlist.paths — preferred for whole files/dirs)"
-  echo "     - .gitleaksignore     (specific fingerprint — preferred for one-off matches)"
-  echo ""
-  echo "   Emergency bypass (use ONLY after verifying false positive):"
-  echo "     git commit --no-verify"
+  echo "❌ gitleaks detected secrets. Remove and re-commit."
   exit "$GITLEAKS_EXIT"
 fi
 
-echo "✅ Pre-commit checks passed (lint-staged + gitleaks)"
+echo "  ✓ gitleaks clean"
+echo ""
+echo "✅ FAANG-grade pre-commit passed — types + lint + secrets verified across full monorepo."
+echo ""

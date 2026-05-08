@@ -90,3 +90,65 @@ pnpm
 
 # Less pager log file (Windows path artifacts)
 ersAdmin*
+
+# B-6 additions
+.stryker-tmp/
+stryker-tmp/
+**/*.prisma.archived
+tsc-*.log
+tsc-fresh.log
+tsc-zero.log
+tsc-final*.log
+tsc-current-state.log
+tsc-b6-final.log
+tmp/
+# Build / test artifacts (don't commit logs)
+/*.log
+/build.log
+/g[0-9]-*.log
+/gate-*.log
+/t-*.log
+/test-*.log
+/test-*.xml
+/tmp/
+# ───────── Debug artifacts (Task #43 cleanup) ─────────
+*.log
+diagnostics*.txt
+errors-*.txt
+errors-final*.txt
+lint-final*.txt
+prisma-validate.txt
+test-localdb.txt
+empty-folders.txt
+build.log
+gate-*.log
+g[0-9]-*.log
+
+# ── Temporary diagnostic files (Day 16 Task #43 debug session) ──
+*.diag.txt
+diag-*.txt
+verify-*.txt
+saga-*.txt
+quarantine-*.txt
+snapshot-*.txt
+tenant-*.txt
+tsc-*.txt
+prisma-*.txt
+fails-*.txt
+test-final.txt
+full-test-output.txt
+check-types-*.txt
+module-errors.txt
+migrate-final.txt
+DATUN_FORENSIC_DUMP.txt
+FAILURE_ANALYSIS.txt
+FULL_AUDIT.txt
+
+# ── Runtime saga checkpoint artifacts (per-run, 425KB each) ──
+packages/db/seeds/checkpoints/
+**/seeds/checkpoints/
+
+# Husky backup files (Day 16+)
+.husky/*.backup-*
+.husky/*.bak
+.husky/*.old

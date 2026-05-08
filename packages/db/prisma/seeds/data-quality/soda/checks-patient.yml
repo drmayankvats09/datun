@@ -1,0 +1,46 @@
+# SodaCL — Patient table quality checks
+# Aligned with PATIENT_CONTRACT v1.0.0
+checks for Patient:
+  - row_count > 0:
+      name: Patient table has rows
+
+  - missing_count(id) = 0:
+      name: Patient.id never null
+      attributes:
+        severity: critical
+
+  - missing_count(clinicId) = 0:
+      name: Patient.clinicId never null (tenant blocker)
+      attributes:
+        severity: critical
+
+  - invalid_count(preferredLocale) = 0:
+      name: preferredLocale must be supported language
+      valid values:
+        ['hindi', 'english', 'punjabi', 'bengali', 'tamil', 'telugu', 'marathi', 'gujarati']
+
+  - invalid_count(gender) = 0:
+      name: gender must be M/F/O
+      valid values: ['M', 'F', 'O']
+
+  - invalid_count(ageYears) = 0:
+      valid min: 0
+      valid max: 120
+
+  - missing_percent(fullName) < 5:
+      name: fullName populated > 95%
+      attributes:
+        severity: warning
+
+  - duplicate_count(id) = 0:
+      name: id is unique
+
+  - freshness(createdAt) < 1d:
+      name: At least one row in last 24h
+      attributes:
+        severity: warning
+
+  - failed rows:
+      name: aadhaar must be 12 digits if present
+      fail condition: aadhaar IS NOT NULL AND aadhaar !~ '^[0-9]{12}$'
+      samples limit: 5

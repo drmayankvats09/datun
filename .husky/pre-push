@@ -1,9 +1,17 @@
 #!/usr/bin/env sh
 
-# ─────────────────────────────────────────────────────────────────
-# Task #42 — Migration validation (added Day 16, only if migration
-# files changed since last push)
-# ─────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# PRE-PUSH HOOK — Heavy verification (Mayank approved Day 16)
+#
+# Order:
+#   1. Migration drift check (only if schema/migration files changed)
+#   2. Full FAANG verify: types + lint + test + build (sequential)
+#
+# Total time: ~12-15 min on full project (saga test = 8 min biggest)
+# Standard: Stripe/Vercel/Linear pre-push pattern (heavy mode)
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Step 1: Migration drift check (conditional) ──────────────
 changed=$(git diff --name-only @{u}..HEAD 2>/dev/null \
   | grep -E "^(packages/db/prisma/(schema\.prisma|migrations/)|packages/db/src/lib/)" || true)
 
@@ -29,16 +37,18 @@ if [ -n "$changed" ]; then
   echo ""
 fi
 
-echo "🔒 Pre-push verification — checking types, lint, tests..."
+# ─── Step 2: Full FAANG verification ──────────────────────────
+echo "🔒 Pre-push: Running full FAANG verification..."
+echo "   (check-types + lint + test:coverage + build, sequential, no cache)"
+echo "   Estimated time: 12-15 minutes."
 echo ""
 
-# Run full pipeline (turbo cached — only changed packages re-run)
-pnpm turbo run check-types lint test:coverage
+pnpm verify
 
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ Pre-push check FAILED — fix errors before pushing."
-  echo "   Run 'pnpm verify' for full forced check."
+  echo "❌ Pre-push FAILED — fix errors before pushing."
+  echo "   Re-run manually: pnpm verify"
   exit 1
 fi
 
