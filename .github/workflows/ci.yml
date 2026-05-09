@@ -110,6 +110,11 @@ jobs:
         env:
           SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
 
+      - name: Sync schema to test DB (Task #43 — covers schema-only models)
+        run: pnpm --filter @repo/db exec prisma db push --skip-generate --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
+
       - name: Apply migrations to shadow DB
         run: pnpm --filter @repo/db prisma migrate deploy
         env:

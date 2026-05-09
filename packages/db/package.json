@@ -84,7 +84,8 @@
     "prompt:rollout-plan": "tsx prisma/seeds/continuous-training/prompts/prompt-cli.ts rollout-plan",
     "prompt:rollout-advance": "tsx prisma/seeds/continuous-training/prompts/prompt-cli.ts rollout-advance",
     "prompt:rollback": "tsx prisma/seeds/continuous-training/prompts/prompt-cli.ts rollback",
-    "prompt:diff": "tsx prisma/seeds/continuous-training/prompts/prompt-cli.ts diff"
+    "prompt:diff": "tsx prisma/seeds/continuous-training/prompts/prompt-cli.ts diff",
+    "db:seed:matrix": "tsx prisma/seeds/cli/index.ts seed"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",

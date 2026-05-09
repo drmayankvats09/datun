@@ -48,7 +48,7 @@ export const jobLogFactory = defineFactory<JobLog, JobLogTransient>({
         : null;
 
     return {
-      id: `job-${String(sequence).padStart(10, '0')}`,
+      id: faker.string.uuid(),
       queueName: transient.queueName,
       jobName: transient.jobName,
       jobId: `bull:${transient.queueName}:${faker.string.alphanumeric(16)}`,

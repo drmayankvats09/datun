@@ -3,6 +3,37 @@ import { PrismaClient } from '@prisma/client';
 import { resolveStrategy, type StrategyName } from '../../strategies';
 import { runMainOrchestrator } from '../../modules/orchestrator/main-orchestrator';
 
+/**
+ * Strategy name -> orchestrator scenario key.
+ * SCENARIO_FILTERS in main-orchestrator only defines 4 keys: minimal/demo/load-test/full.
+ * All 8 strategies must map to one of these. TypeScript exhaustiveness enforces correctness:
+ * adding a new StrategyName without updating this mapper = compile error.
+ */
+function mapStrategyToScenario(name: StrategyName): 'minimal' | 'demo' | 'load-test' | 'full' {
+  switch (name) {
+    case 'minimal':
+      return 'minimal';
+    case 'demo':
+      return 'demo';
+    case 'staging':
+      return 'demo';
+    case 'load-test':
+      return 'load-test';
+    case 'e2e-test':
+      return 'minimal';
+    case 'perf-bench':
+      return 'full';
+    case 'regression':
+      return 'demo';
+    case 'recovery':
+      return 'minimal';
+    default: {
+      const _exhaustive: never = name;
+      throw new Error(`Unmapped strategy: ${String(_exhaustive)}`);
+    }
+  }
+}
+
 export function registerSeedCommand(program: Command): void {
   program
     .command('seed')
@@ -31,11 +62,7 @@ export function registerSeedCommand(program: Command): void {
         const result = await runMainOrchestrator({
           prisma,
           env: strategy.env,
-          scenario: (strategy.name === 'staging' ? 'demo' : strategy.name) as
-            | 'minimal'
-            | 'demo'
-            | 'load-test'
-            | 'full',
+          scenario: mapStrategyToScenario(strategy.name),
           masterSeed: opts.seed ? parseInt(opts.seed, 10) : (strategy.masterSeedOverride ?? 42),
           dryRun: opts.dryRun,
           parallelExec: opts.parallel || strategy.parallelExec,

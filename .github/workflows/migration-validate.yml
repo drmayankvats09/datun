@@ -59,7 +59,6 @@ jobs:
           fetch-depth: 2
 
       - uses: pnpm/action-setup@v4
-        with:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -94,15 +93,7 @@ jobs:
 
       - name: Lint migration SQL
         if: steps.detect.outputs.changed != ''
-        run: |
-          node -e "
-          const { lintMigration, formatLintReport } = require('./packages/db/dist/lib/migration-linter.js');
-          const fs = require('fs');
-          const sql = fs.readFileSync('${{ steps.detect.outputs.changed }}/migration.sql', 'utf8');
-          const result = lintMigration(sql);
-          console.log(formatLintReport(result));
-          if (!result.passed) process.exit(1);
-          "
+        run: pnpm --filter @repo/db exec tsx src/scripts/lint-migration-cli.ts "${{ steps.detect.outputs.changed }}"
 
       - name: Apply forward migration to shadow DB
         run: pnpm --filter @repo/db prisma migrate deploy

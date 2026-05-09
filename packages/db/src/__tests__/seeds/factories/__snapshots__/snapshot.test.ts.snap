@@ -689,8 +689,8 @@ exports[`factory snapshots — schema drift detection > jobLog factory output ma
   "durationMs": 2625,
   "error": null,
   "errorStack": null,
-  "id": "job-0000000001",
-  "jobId": "bull:followup:aqdpjE4skrTjHRA1",
+  "id": "26364a17-57e4-4bd9-a0ee-2e6e0503dddb",
+  "jobId": "bull:followup:MyRpFyjU1NEwfLJK",
   "jobName": "3day-followup",
   "maxAttempts": 5,
   "payload": {

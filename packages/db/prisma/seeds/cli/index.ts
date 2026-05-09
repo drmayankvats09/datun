@@ -1,6 +1,11 @@
 #!/usr/bin/env node
+// ═══════════════════════════════════════════════════════════════
+// Datun Seed CLI — Entry Point
+// All commands registered in program.ts (single source of truth)
+// FAANG-canonical pattern: thin shim, no business logic
+// ═══════════════════════════════════════════════════════════════
+
 import { runCli } from './program';
-import { program } from 'commander';
 
 runCli(process.argv.slice(2))
   .then((code) => process.exit(code))
@@ -10,7 +15,3 @@ runCli(process.argv.slice(2))
   });
 
 export * from './program';
-
-import { registerWave6Commands } from './wave6-commands';
-// after other registrations:
-registerWave6Commands(program);

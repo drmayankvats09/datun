@@ -24,8 +24,36 @@ export const ALL_LOCALES: readonly LocaleBundle[] = [
   GUJARATI_BUNDLE,
 ] as const;
 
-export function resolveLocale(locale: SeedLocale): LocaleBundle {
-  switch (locale) {
+/**
+ * ISO 639-1 (and Prisma LocaleCode enum) -> SeedLocale full names.
+ * Bridges the schema's ISO codes with the linguistic layer's descriptive keys.
+ * FAANG pattern: be liberal in what you accept (Postel's law).
+ */
+const LOCALE_ALIASES: Readonly<Record<string, SeedLocale>> = {
+  hi: 'hindi',
+  en: 'english',
+  pa: 'punjabi',
+  bn: 'bengali',
+  ta: 'tamil',
+  te: 'telugu',
+  mr: 'marathi',
+  gu: 'gujarati',
+  hindi: 'hindi',
+  english: 'english',
+  punjabi: 'punjabi',
+  bengali: 'bengali',
+  tamil: 'tamil',
+  telugu: 'telugu',
+  marathi: 'marathi',
+  gujarati: 'gujarati',
+};
+
+export function resolveLocale(locale: SeedLocale | string): LocaleBundle {
+  const normalized = LOCALE_ALIASES[String(locale).toLowerCase()];
+  if (!normalized) {
+    throw new Error(`Unsupported locale: ${String(locale)}`);
+  }
+  switch (normalized) {
     case 'hindi':
       return HINDI_BUNDLE;
     case 'english':
@@ -43,8 +71,8 @@ export function resolveLocale(locale: SeedLocale): LocaleBundle {
     case 'gujarati':
       return GUJARATI_BUNDLE;
     default: {
-      const _exhaustive: never = locale;
-      throw new Error(`Unsupported locale: ${String(_exhaustive)}`);
+      const _exhaustive: never = normalized;
+      throw new Error(`Unsupported normalized locale: ${String(_exhaustive)}`);
     }
   }
 }
