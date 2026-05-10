@@ -92,7 +92,11 @@ jobs:
             echo "Changed migrations: $changed"
             # Take latest
             latest=$(echo "$changed" | tail -1)
-            echo "changed=packages/db/prisma/migrations/$latest" >> "$GITHUB_OUTPUT"
+            # NOTE: Path is relative to packages/db/ because all subsequent steps
+            # use `pnpm --filter @repo/db exec` which sets cwd = packages/db/.
+            # If we pass `packages/db/prisma/...` the script resolves to
+            # `packages/db/packages/db/prisma/...` (double-prefix → ENOENT).
+            echo "changed=prisma/migrations/$latest" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Lint migration SQL
