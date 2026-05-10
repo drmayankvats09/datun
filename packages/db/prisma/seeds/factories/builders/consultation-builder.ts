@@ -2,32 +2,26 @@
 // CONSULTATION BUILDER DSL
 // ═══════════════════════════════════════════════════════════════
 
-import type { Consultation, ConsultationStatus, UrgencyLevel } from '@prisma/client';
+import type { Consultation, ConsultationStatus, LocaleCode, UrgencyLevel } from '@prisma/client';
 import { consultationFactory } from '../clinical/consultation.factory';
 
 export class ConsultationBuilder {
   private overrides: Partial<Consultation> = {};
   private transient: {
     patientId: string;
+    userId: string;
+    initiatedByUserId?: string;
     doctorId?: string | null;
     clinicId?: string | null;
     forceIcd10?: string;
     forceUrgency?: UrgencyLevel;
     forceStatus?: ConsultationStatus;
-    locale?:
-      | 'hindi'
-      | 'english'
-      | 'punjabi'
-      | 'bengali'
-      | 'tamil'
-      | 'telugu'
-      | 'marathi'
-      | 'gujarati';
+    locale?: LocaleCode;
     chiefComplaint?: string;
   };
 
-  constructor(patientId: string) {
-    this.transient = { patientId };
+  constructor(patientId: string, userId: string = 'test-user-' + patientId) {
+    this.transient = { patientId, userId, initiatedByUserId: userId };
   }
 
   forCondition(icd10: string): this {
@@ -45,17 +39,7 @@ export class ConsultationBuilder {
     return this;
   }
 
-  inLocale(
-    locale:
-      | 'hindi'
-      | 'english'
-      | 'punjabi'
-      | 'bengali'
-      | 'tamil'
-      | 'telugu'
-      | 'marathi'
-      | 'gujarati',
-  ): this {
+  inLocale(locale: LocaleCode): this {
     this.transient.locale = locale;
     return this;
   }
@@ -75,6 +59,12 @@ export class ConsultationBuilder {
     return this;
   }
 
+  withUser(userId: string): this {
+    this.transient.userId = userId;
+    this.transient.initiatedByUserId = userId;
+    return this;
+  }
+
   emergency(): this {
     this.transient.forceUrgency = 'EMERGENCY';
     return this;
@@ -85,5 +75,5 @@ export class ConsultationBuilder {
   }
 }
 
-export const consultationFor = (patientId: string): ConsultationBuilder =>
-  new ConsultationBuilder(patientId);
+export const consultationFor = (patientId: string, userId?: string): ConsultationBuilder =>
+  new ConsultationBuilder(patientId, userId);

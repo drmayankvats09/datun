@@ -262,6 +262,18 @@ export class SagaOrchestrator {
       this.config.onModuleStatusChange?.(module, 'CHECKING_IDEMPOTENCY');
       const isIdempotent = await applyIdempotencyStrategy(module, ctx);
       if (isIdempotent) {
+        // Hydrate registry from DB so downstream modules can still consume our keys
+        // even when our run() is skipped. Without this, a re-run with idempotent
+        // upstream modules causes downstream modules to crash on missing registry keys.
+        if (module.hydrateRegistry) {
+          try {
+            await module.hydrateRegistry(ctx);
+          } catch (hydrateErr) {
+            childLogger.error('Registry hydration failed during skip — downstream may break', {
+              error: hydrateErr instanceof Error ? hydrateErr.message : String(hydrateErr),
+            });
+          }
+        }
         childLogger.info('⏭️  Skipped via idempotency');
         this.config.onModuleStatusChange?.(module, 'SKIPPED');
         return {

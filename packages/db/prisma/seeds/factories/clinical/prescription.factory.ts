@@ -1,25 +1,37 @@
 // ═══════════════════════════════════════════════════════════════
 // PRESCRIPTION FACTORY — Safety-filtered medication selection
 //
+// SCHEMA-ALIGNED v2.0 — only fields that exist in `model Prescription`.
+// Earlier version generated phantom fields (lineItems, pdfSignedBy,
+// patientInstructionsEnglish/Hindi, disclaimerShown, etc.) that crashed
+// bulkInsert. Schema's REQUIRED fields (userId, diagnosis, medications,
+// prescriberRegistrationNumber) are now populated correctly.
+//
+// REQUIRED inputs (transient):
+//   • consultationId (UUID)
+//   • patientId      (UUID)
+//   • userId         (UUID — patient's User FK)
+//
 // CRITICAL: This factory enforces SDCEP + ADA drug safety rules:
 //   • Pregnancy → only Category A/B salts
 //   • Allergies → exclude flagged salts
-//   • Blood thinners (warfarin) → NO NSAIDs, NO metronidazole, NO macrolides
+//   • Blood thinners → NO NSAIDs, NO metronidazole, NO macrolides
 //   • Pediatric → exclude salts with minAge > patient age
-//   • Hepatic/renal → exclude flagged salts
-//
-// Source: SDCEP Drug Interaction Tables (Scotland NHS) + ADA pain guidelines
 // ═══════════════════════════════════════════════════════════════
 
-import type { Prescription, PrismaClient, PregnancyStatus } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import type { Prescription, PregnancyStatus } from '@prisma/client';
 import { defineFactory } from '../core';
 import { getSafeSaltsForIcd10, type DentalSalt } from '../../data/medical/salts';
 
 interface PrescriptionTransient {
   readonly consultationId: string;
   readonly patientId: string;
+  /** REQUIRED — User FK (the patient's user account) */
+  readonly userId: string;
   readonly doctorId?: string | null;
-  readonly icd10Code: string;
+  readonly icd10Code?: string;
+  readonly diagnosisLabel?: string;
   readonly patientProfile: {
     readonly ageYears: number;
     readonly pregnancyStatus: PregnancyStatus;
@@ -29,9 +41,7 @@ interface PrescriptionTransient {
     readonly allergies: readonly string[];
     readonly currentMedications: readonly string[];
   };
-  /** Force specific salt count (default: AI picks 1-3 based on condition severity) */
   readonly saltCount?: number;
-  /** Force specific salt IDs (override auto-pick) */
   readonly forceSaltIds?: readonly string[];
 }
 
@@ -40,6 +50,7 @@ export const prescriptionFactory = defineFactory<Prescription, PrescriptionTrans
   defaultTransient: {
     consultationId: '',
     patientId: '',
+    userId: '',
     icd10Code: 'Z01.20',
     patientProfile: {
       ageYears: 30,
@@ -52,30 +63,35 @@ export const prescriptionFactory = defineFactory<Prescription, PrescriptionTrans
     },
   },
 
-  build: ({ sequence, faker, transient }) => {
+  build: ({ faker, transient }) => {
     if (!transient.consultationId) {
       throw new Error('[prescription.factory] consultationId required');
     }
-
-    // ── Step 1: Get safety-filtered salts for this patient + condition ──
-    let candidateSalts: readonly DentalSalt[];
-    if (transient.forceSaltIds && transient.forceSaltIds.length > 0) {
-      // Forced override (test scenarios)
-      const allSalts = getSafeSaltsForIcd10(transient.patientProfile, transient.icd10Code);
-      candidateSalts = allSalts.filter((s) => transient.forceSaltIds!.includes(s.id));
-    } else {
-      candidateSalts = getSafeSaltsForIcd10(transient.patientProfile, transient.icd10Code);
+    if (!transient.patientId) {
+      throw new Error('[prescription.factory] patientId required');
+    }
+    if (!transient.userId) {
+      throw new Error('[prescription.factory] userId required');
     }
 
-    // ── Step 2: Pick 1-3 salts (analgesic + antibiotic + adjunct typically) ──
-    const targetCount = transient.saltCount ?? faker.number.int({ min: 1, max: 3 });
-    const selectedSalts = faker.helpers.arrayElements(
-      candidateSalts,
-      Math.min(targetCount, candidateSalts.length),
-    );
+    // ── Step 1: Get safety-filtered salts ──
+    // FIX: Real signature is (profile, icd10Code) — profile FIRST.
+    // Returns readonly DentalSalt[] — must keep readonly OR spread to mutable.
+    const icd10 = transient.icd10Code ?? 'Z01.20';
+    const safeSalts: readonly DentalSalt[] = getSafeSaltsForIcd10(transient.patientProfile, icd10);
 
-    // ── Step 3: Build line-items for each selected salt ──
-    const lineItems = selectedSalts.map((salt) => ({
+    // ── Step 2: Pick salts (1-3 based on severity) ──
+    const saltCount = transient.saltCount ?? faker.number.int({ min: 1, max: 3 });
+    const selectedSalts: DentalSalt[] =
+      transient.forceSaltIds && transient.forceSaltIds.length > 0
+        ? safeSalts.filter((s) => transient.forceSaltIds!.includes(s.id)).slice(0, saltCount)
+        : faker.helpers.arrayElements(
+            [...safeSalts], // spread to mutable copy — faker requires non-readonly
+            Math.min(saltCount, safeSalts.length),
+          );
+
+    // ── Step 3: Build medications JSON ──
+    const medications = selectedSalts.map((salt) => ({
       saltId: salt.id,
       saltName: salt.saltName,
       route: salt.route,
@@ -88,50 +104,69 @@ export const prescriptionFactory = defineFactory<Prescription, PrescriptionTrans
       contraindicatedAllergiesShown: salt.contraindicatedAllergies.length > 0,
     }));
 
-    // ── Step 4: Build header info ──
+    // Construct an object matching Prisma's PrescriptionUncheckedCreateInput shape exactly.
     return {
-      id: `rx-${String(sequence).padStart(8, '0')}`,
+      id: randomUUID(),
       consultationId: transient.consultationId,
       patientId: transient.patientId,
-      doctorId: transient.doctorId ?? null,
+      userId: transient.userId,
+      prescribedByName: 'Dr. Mayank Vats',
+      signedByDoctorId: transient.doctorId ?? null,
 
-      // Header
-      icd10Code: transient.icd10Code,
-      prescribedAt: faker.date.recent({ days: 30 }),
+      // REQUIRED fields
+      diagnosis: transient.diagnosisLabel ?? `Diagnosis for ICD-10 ${icd10}`,
+      medications,
+      prescriberRegistrationNumber: 'DCI-DL-12345', // NMC compliance — Mayank's registration
 
-      // Line items (denormalized JSON)
-      lineItems: JSON.stringify(lineItems),
-      lineItemCount: lineItems.length,
+      // Optional Json fields
+      investigations: null,
+      procedures: null,
+      homeRemedies: null,
+      followUpDate: null,
+      specialInstructions:
+        'Take medications as prescribed. Avoid alcohol with antibiotics. Return if pain persists beyond 48 hours.',
 
-      // Safety attestations (audit trail)
+      // PDF
+      pdfUrl: `https://r2.datunai.com/prescriptions/${randomUUID()}.pdf`,
+      pdfVersion: 1,
+      shareableSlug: null,
+      expiresAt: null,
+      viewCount: 0,
+      isActive: true,
+
+      // Review (defaults but explicit)
+      reviewStatus: null,
+      reviewedByDoctorId: null,
+      reviewedAt: null,
+      signatureUrl: null,
+
+      // NMC compliance
+      prescriberRegistrationCouncil: 'Dental Council of India',
+      prescriberSpecialization: 'BDS, General Dental Practice',
+
+      // Safety check audit trail
       pregnancyChecked: transient.patientProfile.pregnancyStatus !== 'NOT_APPLICABLE',
       allergiesChecked: transient.patientProfile.allergies.length > 0,
       bloodThinnerChecked: transient.patientProfile.onBloodThinners,
       pediatricDosingApplied: transient.patientProfile.ageYears < 18,
+      interactionsChecked: true,
 
-      // PDF
-      pdfUrl: `https://r2.datunai.com/prescriptions/rx-${sequence}.pdf`,
-      pdfSignedBy: 'Dr. Mayank Vats',
-      pdfSignedAt: new Date(),
+      // Denormalized
+      lineItemCount: medications.length,
 
-      // Patient instructions block
-      patientInstructionsEnglish:
-        'Take medications as prescribed. Avoid alcohol with antibiotics. Return if pain persists beyond 48 hours.',
-      patientInstructionsHindi:
-        'सभी दवाएं डॉक्टर के बताए अनुसार लें। एंटीबायोटिक के साथ शराब न लें। 48 घंटे में आराम न आए तो वापस आएं।',
+      // Telemedicine eligibility
+      isTelemedicinePrescription: !transient.doctorId,
+      physicalConsultationRecommended: false,
 
-      // Legal disclaimer
-      disclaimerShown: true,
-
-      createdAt: new Date(),
+      // Timestamps (Prisma defaults but explicit for type)
+      createdAt: faker.date.recent({ days: 30 }),
       updatedAt: new Date(),
-      deletedAt: null,
     } as unknown as Prescription;
   },
 
   persist: async (rx, prisma) => {
     return prisma.prescription.upsert({
-      where: { id: rx.id },
+      where: { id: (rx as { id: string }).id },
       create: rx as never,
       update: { updatedAt: new Date() },
     });

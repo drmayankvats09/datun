@@ -83,7 +83,18 @@ export function registerSeedCommand(program: Command): void {
             `✓ Seed complete: ${result.status} (${result.totalRecordsCreated} records, ${(result.totalDurationMs / 1000).toFixed(1)}s)`,
           );
         }
-        process.exit(result.status === 'COMPLETED' ? 0 : 1);
+
+        // Set exitCode (NOT process.exit) — let event loop drain so logs flush.
+        // index.ts has flushAndExit() that does the actual termination.
+        process.exitCode = result.status === 'COMPLETED' ? 0 : 1;
+      } catch (err) {
+        // Surface ANY error before process exits — CI was hiding these
+        console.error(
+          'Seed command FAILED:',
+          err instanceof Error ? (err.stack ?? err.message) : String(err),
+        );
+        process.exitCode = 1;
+        throw err;
       } finally {
         await prisma.$disconnect();
       }

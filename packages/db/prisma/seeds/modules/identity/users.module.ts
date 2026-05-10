@@ -78,6 +78,17 @@ function buildUsersModule(config: UserModuleConfig) {
         };
       }),
 
+    hydrateRegistry: async (ctx) => {
+      const users = await ctx.prisma.user.findMany({
+        where: { role: config.role },
+        select: { id: true },
+      });
+      ctx.registry.set(
+        config.registryKey,
+        users.map((u) => u.id),
+      );
+    },
+
     compensate: async (ctx) => {
       const ids = ctx.registry.get<string[]>(config.registryKey);
       if (ids) await ctx.prisma.user.deleteMany({ where: { id: { in: ids } } });

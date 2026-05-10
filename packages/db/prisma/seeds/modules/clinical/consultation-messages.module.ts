@@ -46,15 +46,7 @@ export const consultationMessagesModule = defineModule({
               consultationId: c.id,
               turnIndex: i,
               role,
-              locale: c.chiefComplaintLocale as
-                | 'hindi'
-                | 'english'
-                | 'punjabi'
-                | 'bengali'
-                | 'tamil'
-                | 'telugu'
-                | 'marathi'
-                | 'gujarati',
+              locale: c.chiefComplaintLocale ?? undefined,
             }),
           );
         }

@@ -47,7 +47,7 @@ describe('Builders DSL', () => {
       .forCondition('K04.0')
       .withUrgency('URGENT')
       .withStatus('COMPLETED')
-      .inLocale('hindi')
+      .inLocale('hi')
       .build();
 
     expect(c.patientId).toBe('patient-test-001');

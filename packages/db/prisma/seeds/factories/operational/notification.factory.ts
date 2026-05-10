@@ -10,6 +10,11 @@
 //              scheduledFor, expiresAt, relatedEntityType, relatedEntityId,
 //              metadata (Json?)
 //
+// NotificationType enum (schema):
+//   CONSULTATION_COMPLETE | APPOINTMENT_REMINDER | FOLLOW_UP |
+//   REVIEW_REQUEST | LEAD_NEW | PAYMENT_SUCCESS | PAYMENT_FAILED |
+//   SYSTEM | PROMOTIONAL
+//
 // Status modelling — schema does NOT have a "status" enum.
 // State derived from boolean + timestamp combinations:
 //
@@ -23,6 +28,7 @@
 //          rather than enum status (better for indexing + partial indexes).
 // ═══════════════════════════════════════════════════════════════
 
+import { randomUUID } from 'node:crypto';
 import {
   Prisma,
   type LocaleCode,
@@ -50,116 +56,66 @@ interface NotificationTemplate {
 
 const NOTIFICATION_TEMPLATES: readonly NotificationTemplate[] = [
   {
-    type: 'CONSULTATION_COMPLETE',
+    type: 'FOLLOW_UP',
     titleByLocale: {
-      en: 'Consultation Complete',
-      hi: 'सलाह पूरी हुई',
+      en: 'How are you feeling now?',
+      hi: 'अब आप कैसा महसूस कर रहे हैं?',
     },
     bodyByLocale: {
-      en: 'Your dental consultation report is ready to view.',
-      hi: 'आपकी डेंटल सलाह की रिपोर्ट तैयार है।',
+      en: 'Your consultation was 3 days ago. Please share an update so we can help you better.',
+      hi: 'आपकी consultation 3 दिन पहले हुई थी। कृपया अपनी update साझा करें।',
     },
     hasActionUrl: true,
   },
   {
     type: 'APPOINTMENT_REMINDER',
     titleByLocale: {
-      en: 'Appointment Tomorrow',
-      hi: 'कल आपका अपॉइंटमेंट',
+      en: 'Appointment reminder',
+      hi: 'अपॉइंटमेंट याद दिलाना',
     },
     bodyByLocale: {
-      en: 'Your appointment is scheduled for tomorrow at 10:00 AM.',
-      hi: 'आपका अपॉइंटमेंट कल सुबह 10:00 बजे है।',
+      en: 'You have an appointment tomorrow at the clinic.',
+      hi: 'कल आपका clinic में appointment है।',
     },
     hasActionUrl: true,
   },
   {
-    type: 'FOLLOW_UP',
+    type: 'CONSULTATION_COMPLETE',
     titleByLocale: {
-      en: 'How are you feeling?',
-      hi: 'आप कैसे हैं?',
+      en: 'Prescription ready',
+      hi: 'प्रिस्क्रिप्शन तैयार है',
     },
     bodyByLocale: {
-      en: 'Just checking in after your consultation. Any concerns?',
-      hi: 'सलाह के बाद आपका हाल जानने के लिए संदेश।',
-    },
-    hasActionUrl: true,
-  },
-  {
-    type: 'REVIEW_REQUEST',
-    titleByLocale: {
-      en: 'Rate Your Experience',
-      hi: 'अपने अनुभव को रेट करें',
-    },
-    bodyByLocale: {
-      en: 'How was your consultation? Your feedback helps us improve.',
-      hi: 'आपकी सलाह कैसी रही? आपकी राय हमें बेहतर बनाती है।',
-    },
-    hasActionUrl: true,
-  },
-  {
-    type: 'LEAD_NEW',
-    titleByLocale: {
-      en: 'New Patient Lead',
-      hi: 'नया मरीज़ लीड',
-    },
-    bodyByLocale: {
-      en: 'A new patient has expressed interest in your clinic.',
-      hi: 'एक नया मरीज़ आपके क्लिनिक में रुचि रखता है।',
-    },
-    hasActionUrl: true,
-  },
-  {
-    type: 'PAYMENT_SUCCESS',
-    titleByLocale: {
-      en: 'Payment Successful',
-      hi: 'भुगतान सफल',
-    },
-    bodyByLocale: {
-      en: 'Your subscription payment has been processed successfully.',
-      hi: 'आपकी सदस्यता का भुगतान सफलतापूर्वक हो गया है।',
-    },
-    hasActionUrl: true,
-  },
-  {
-    type: 'PAYMENT_FAILED',
-    titleByLocale: {
-      en: 'Payment Failed',
-      hi: 'भुगतान विफल',
-    },
-    bodyByLocale: {
-      en: 'Your payment could not be processed. Please update your payment method.',
-      hi: 'भुगतान नहीं हो सका। कृपया अपनी भुगतान विधि अपडेट करें।',
+      en: 'Your consultation is complete and prescription PDF is ready to download.',
+      hi: 'आपकी consultation पूरी हो गई है और prescription तैयार है। अभी download करें।',
     },
     hasActionUrl: true,
   },
   {
     type: 'SYSTEM',
     titleByLocale: {
-      en: 'System Update',
+      en: 'System update',
       hi: 'सिस्टम अपडेट',
     },
     bodyByLocale: {
-      en: 'Datun has been updated with new features.',
-      hi: 'Datun में नए फ़ीचर जोड़े गए हैं।',
+      en: 'Datun has new features. Tap to explore.',
+      hi: 'Datun में नई features हैं। Tap करें।',
     },
     hasActionUrl: false,
   },
   {
     type: 'PROMOTIONAL',
     titleByLocale: {
-      en: 'Weekly Dental Tip',
-      hi: 'इस हफ्ते का सुझाव',
+      en: 'New tip for you',
+      hi: 'आपके लिए नई tip',
     },
     bodyByLocale: {
-      en: 'Brush twice daily for 2 minutes. Floss before bed for healthier gums.',
-      hi: 'दिन में दो बार दो मिनट ब्रश करें। रात को फ्लॉस करना न भूलें।',
+      en: 'Read this week’s dental health tip.',
+      hi: 'इस हफ्ते की dental health tip पढ़ें।',
     },
-    hasActionUrl: false,
+    hasActionUrl: true,
   },
 ] as const;
-
-const SUPPORTED_LOCALES: readonly LocaleCode[] = ['en', 'hi'] as const;
 
 // ─────────────────────────────────────────────────────────────────
 // TRANSIENT
@@ -180,6 +136,16 @@ interface NotificationTransient {
   readonly relatedEntityId?: string;
 }
 
+/**
+ * Add `days` (can be fractional) to a base date — replaces buggy
+ * `faker.date.future({ years: 0, refDate })` which throws in faker 9+.
+ * Faker validates `years > 0` strictly; we needed seconds-to-days offsets,
+ * so we compute deterministically off the seeded RNG instead.
+ */
+function addDays(base: Date, days: number): Date {
+  return new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
 // ─────────────────────────────────────────────────────────────────
 // FACTORY DEFINITION
 // ─────────────────────────────────────────────────────────────────
@@ -187,7 +153,7 @@ export const notificationFactory = defineFactory<Notification, NotificationTrans
   name: 'notification',
   defaultTransient: { userId: '' },
 
-  build: ({ sequence, faker, transient }) => {
+  build: ({ faker, transient }) => {
     if (!transient.userId) {
       throw new Error('[notification.factory] userId required');
     }
@@ -238,8 +204,14 @@ export const notificationFactory = defineFactory<Notification, NotificationTrans
     const readAt =
       state === 'READ' && sentAt ? faker.date.between({ from: sentAt, to: new Date() }) : null;
     const failedAt = state === 'FAILED' ? faker.date.recent({ days: 7 }) : null;
+
+    // ── Scheduled for: future date (1-30 days ahead) ──
+    // FIX: faker.date.future({ years: 0 }) throws in faker 9+ ("Years must be greater than 0").
+    // We compute future offset deterministically using faker's seeded RNG.
     const scheduledFor =
-      state === 'SCHEDULED' ? faker.date.future({ years: 0, refDate: createdAt }) : null;
+      state === 'SCHEDULED'
+        ? addDays(createdAt, faker.number.float({ min: 1, max: 30, fractionDigits: 2 }))
+        : null;
 
     const failureReason: string | null =
       state === 'FAILED'
@@ -262,13 +234,15 @@ export const notificationFactory = defineFactory<Notification, NotificationTrans
       : null;
 
     // ── Expires (promotional/system notifications expire faster) ──
+    // Same fix as scheduledFor — faker.date.future does not accept years: 0.
     const expiresAt: Date | null =
       template!.type === 'PROMOTIONAL' || template!.type === 'SYSTEM'
-        ? faker.date.future({ years: 0, refDate: createdAt })
+        ? addDays(createdAt, faker.number.float({ min: 7, max: 90, fractionDigits: 2 }))
         : null;
 
+    // FIX: id was `notif-XXX` non-UUID; schema requires @db.Uuid. Now real UUID.
     return {
-      id: `notif-${String(sequence).padStart(10, '0')}`,
+      id: randomUUID(),
       userId: transient.userId,
       type: template!.type,
       channel,
@@ -304,7 +278,6 @@ export const notificationFactory = defineFactory<Notification, NotificationTrans
         title: n.title as string,
         body: n.body as string,
         actionUrl: (n.actionUrl as string | null | undefined) ?? null,
-
         isRead: (n.isRead as boolean | undefined) ?? false,
         readAt: (n.readAt as Date | null | undefined) ?? null,
         isSent: (n.isSent as boolean | undefined) ?? false,
@@ -312,60 +285,16 @@ export const notificationFactory = defineFactory<Notification, NotificationTrans
         failedAt: (n.failedAt as Date | null | undefined) ?? null,
         failureReason: (n.failureReason as string | null | undefined) ?? null,
         retryCount: (n.retryCount as number | undefined) ?? 0,
-
         scheduledFor: (n.scheduledFor as Date | null | undefined) ?? null,
         expiresAt: (n.expiresAt as Date | null | undefined) ?? null,
-
         relatedEntityType: (n.relatedEntityType as string | null | undefined) ?? null,
         relatedEntityId: (n.relatedEntityId as string | null | undefined) ?? null,
-
-        locale: (n.locale as LocaleCode | undefined) ?? 'en',
+        locale: n.locale as LocaleCode,
         metadata: toNullableJsonInput(n.metadata),
+        createdAt: (n.createdAt as Date | undefined) ?? new Date(),
+        updatedAt: (n.updatedAt as Date | undefined) ?? new Date(),
       }),
     });
     return created as unknown as Notification;
   },
 });
-
-// ─────────────────────────────────────────────────────────────────
-// Convenience builders — one-line factory shortcuts
-// ─────────────────────────────────────────────────────────────────
-
-/** Consultation-complete notification (in-app, with action URL). */
-export const buildConsultationCompleteNotification = (userId: string, locale: LocaleCode = 'en') =>
-  notificationFactory.build(undefined, {
-    userId,
-    type: 'CONSULTATION_COMPLETE',
-    channel: 'IN_APP',
-    locale,
-    forceState: 'SENT',
-  });
-
-/** Appointment reminder notification (24h before). */
-export const buildAppointmentReminder = (userId: string, locale: LocaleCode = 'en') =>
-  notificationFactory.build(undefined, {
-    userId,
-    type: 'APPOINTMENT_REMINDER',
-    channel: 'WHATSAPP',
-    locale,
-    forceState: 'SCHEDULED',
-  });
-
-/** Payment failure notification (with retry count). */
-export const buildPaymentFailedNotification = (userId: string) =>
-  notificationFactory.build(undefined, {
-    userId,
-    type: 'PAYMENT_FAILED',
-    channel: 'EMAIL',
-    forceState: 'FAILED',
-  });
-
-/** System notification — broadcast feature update. */
-export const buildSystemNotification = (userId: string, locale: LocaleCode = 'en') =>
-  notificationFactory.build(undefined, {
-    userId,
-    type: 'SYSTEM',
-    channel: 'IN_APP',
-    locale,
-    forceState: 'READ',
-  });

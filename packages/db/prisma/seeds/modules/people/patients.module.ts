@@ -119,6 +119,34 @@ export const patientsModule = defineModule({
       };
     }),
 
+  hydrateRegistry: async (ctx) => {
+    // Re-populate registry from DB when this module is skipped via idempotency.
+    // Downstream modules (clinical.consultations, compliance.dpdp-requests) need these keys.
+    const patients = await ctx.prisma.patient.findMany({
+      select: {
+        id: true,
+        userId: true,
+        clinicId: true,
+        ageYears: true,
+        pregnancyStatus: true,
+        knownAllergies: true,
+        currentMedications: true,
+        primaryConditionIcd10: true,
+        preferredLocale: true,
+      },
+    });
+    const patientToClinic: Record<string, string> = {};
+    for (const p of patients) {
+      if (p.clinicId) patientToClinic[p.id] = p.clinicId;
+    }
+    ctx.registry.set(
+      REGISTRY_KEYS.PATIENT_IDS,
+      patients.map((p) => p.id),
+    );
+    ctx.registry.set(REGISTRY_KEYS.PATIENT_RECORDS, patients);
+    ctx.registry.set(REGISTRY_KEYS.PATIENT_TO_CLINIC, patientToClinic);
+  },
+
   compensate: async (ctx) => {
     const ids = ctx.registry.get<string[]>(REGISTRY_KEYS.PATIENT_IDS);
     if (ids) await ctx.prisma.patient.deleteMany({ where: { id: { in: ids } } });

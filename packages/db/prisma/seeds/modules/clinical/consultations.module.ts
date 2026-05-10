@@ -1,4 +1,4 @@
-import type { Consultation, Patient } from '@prisma/client';
+import type { Consultation, LocaleCode, Patient } from '@prisma/client';
 import { defineModule, environmentGuard, measureExecution, runInScope } from '../core';
 import { REGISTRY_KEYS } from '../core/module-registry';
 import { resetSequences } from '../../factories/core/sequence';
@@ -51,6 +51,14 @@ export const consultationsModule = defineModule({
         REGISTRY_KEYS.PATIENT_TO_CLINIC,
       );
 
+      // Defensive: ensure patient records have userId (schema requires it)
+      const validPatients = patientRecords.filter((p) => Boolean(p.userId));
+      if (validPatients.length === 0) {
+        throw new Error(
+          '[consultations.module] No patients with userId found. Did identity.patient-users + people.patients run first?',
+        );
+      }
+
       const consultationToPatient: Record<string, string> = {};
       const consultationRecords: Consultation[] = [];
       let created = 0;
@@ -63,23 +71,17 @@ export const consultationsModule = defineModule({
           const batch: Consultation[] = [];
 
           for (let i = batchStart; i < batchEnd; i++) {
-            const patient = patientRecords[i % patientRecords.length]!;
+            const patient = validPatients[i % validPatients.length]!;
             const clinicId = patientToClinic[patient.id] ?? undefined;
             const doctorId = i % 4 === 0 ? doctorIds[i % doctorIds.length]! : undefined;
             const consultation = consultationFactory.build(undefined, {
               patientId: patient.id,
+              userId: patient.userId, // REQUIRED — schema FK to User
+              initiatedByUserId: patient.userId, // self-initiated by patient
               doctorId,
               clinicId,
               patientArchetypeIcd10: patient.primaryConditionIcd10 ?? undefined,
-              locale: patient.preferredLocale as
-                | 'hindi'
-                | 'english'
-                | 'punjabi'
-                | 'bengali'
-                | 'tamil'
-                | 'telugu'
-                | 'marathi'
-                | 'gujarati',
+              locale: patient.preferredLocale as LocaleCode,
             });
             batch.push(consultation);
             consultationToPatient[consultation.id] = patient.id;
@@ -122,6 +124,22 @@ export const consultationsModule = defineModule({
         metadata: { batchSize: BATCH_SIZE },
       };
     }),
+
+  hydrateRegistry: async (ctx) => {
+    // Re-populate registry from DB when skipped via idempotency.
+    // Downstream: prescriptions, consultation-messages, appointments, audit-logs need these.
+    const consultations = await ctx.prisma.consultation.findMany();
+    const consultationToPatient: Record<string, string> = {};
+    for (const c of consultations) {
+      consultationToPatient[c.id] = c.patientId;
+    }
+    ctx.registry.set(
+      REGISTRY_KEYS.CONSULTATION_IDS,
+      consultations.map((c) => c.id),
+    );
+    ctx.registry.set(REGISTRY_KEYS.CONSULTATION_RECORDS, consultations);
+    ctx.registry.set(REGISTRY_KEYS.CONSULTATION_TO_PATIENT, consultationToPatient);
+  },
 
   compensate: async (ctx) => {
     const ids = ctx.registry.get<string[]>(REGISTRY_KEYS.CONSULTATION_IDS);

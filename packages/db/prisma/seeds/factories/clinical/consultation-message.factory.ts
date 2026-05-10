@@ -1,27 +1,49 @@
 // ═══════════════════════════════════════════════════════════════
 // CONSULTATION MESSAGE FACTORY — Individual chat messages within consultation
-// Reproduces realistic AI ↔ Patient back-and-forth turns.
+//
+// SCHEMA-ALIGNED v2.0 — only fields that exist in `model ConsultationMessage`:
+//   id, consultationId, role, content, contentType, imageUrl, chips,
+//   selectedChip, aiLatencyMs, aiTokensUsed, sequenceNumber, createdAt
+//
 // Each consultation typically has 8-25 messages.
 // ═══════════════════════════════════════════════════════════════
 
-import type { ConsultationMessage, MessageRole, Prisma, PrismaClient } from '@prisma/client';
-import { defineFactory, prismaInput } from '../core';
+import { randomUUID } from 'node:crypto';
+import type { ConsultationMessage, LocaleCode, MessageRole } from '@prisma/client';
+import { defineFactory } from '../core';
 import { resolveLocale } from '../../data/linguistic/locales';
 
 interface ConsultationMessageTransient {
   readonly consultationId: string;
+  /** Sequence number within the conversation (0-indexed) */
   readonly turnIndex: number;
-  readonly role: MessageRole; // PATIENT | AI | DOCTOR | SYSTEM
-  readonly locale?:
-    | 'hindi'
-    | 'english'
-    | 'punjabi'
-    | 'bengali'
-    | 'tamil'
-    | 'telugu'
-    | 'marathi'
-    | 'gujarati';
+  /** PATIENT | AI | DOCTOR | SYSTEM | USER | ASSISTANT */
+  readonly role: MessageRole;
+  /** 2-letter locale code (en, hi, pa, etc.) */
+  readonly locale?: LocaleCode;
   readonly textOverride?: string;
+}
+
+const VALID_LOCALE_CODES: ReadonlyArray<LocaleCode> = [
+  'en',
+  'hi',
+  'pa',
+  'bn',
+  'ta',
+  'te',
+  'mr',
+  'gu',
+  'kn',
+  'ml',
+  'or',
+  'as',
+];
+
+function safeLocale(input: string | undefined): LocaleCode {
+  if (input && VALID_LOCALE_CODES.includes(input as LocaleCode)) {
+    return input as LocaleCode;
+  }
+  return 'hi';
 }
 
 export const consultationMessageFactory = defineFactory<
@@ -31,54 +53,49 @@ export const consultationMessageFactory = defineFactory<
   name: 'consultation-message',
   defaultTransient: { consultationId: '', turnIndex: 0, role: 'PATIENT' },
 
-  build: ({ sequence, faker, transient }) => {
+  build: ({ faker, transient }) => {
     if (!transient.consultationId) {
       throw new Error('[consultation-message.factory] consultationId required');
     }
 
-    const locale = transient.locale ?? 'hindi';
-    const localeBundle = resolveLocale(locale);
+    const localeCode = safeLocale(transient.locale);
+    const localeBundle = resolveLocale(localeCode);
 
     // Pick text based on role + turn
     let text: string;
     if (transient.textOverride) {
       text = transient.textOverride;
-    } else if (transient.role === 'PATIENT') {
+    } else if (transient.role === 'PATIENT' || transient.role === 'USER') {
       text =
         transient.turnIndex === 0
           ? faker.helpers.arrayElement(localeBundle.patientOpeners)
           : faker.helpers.arrayElement(localeBundle.followUpQuestions);
-    } else if (transient.role === 'AI') {
+    } else if (transient.role === 'AI' || transient.role === 'ASSISTANT') {
       text = faker.helpers.arrayElement(localeBundle.aiAcknowledgements);
     } else {
       text = '[system event]';
     }
 
+    const isAi = transient.role === 'AI' || transient.role === 'ASSISTANT';
+
     return {
-      id: `msg-${String(sequence).padStart(10, '0')}`,
+      id: randomUUID(),
       consultationId: transient.consultationId,
-      turnIndex: transient.turnIndex,
       role: transient.role,
       content: text,
-      contentLocale: locale,
-      attachmentUrls: JSON.stringify([]),
+      contentType: 'TEXT',
+      imageUrl: null,
+      chips: null,
+      selectedChip: null,
 
-      // AI-specific
-      aiModelUsed: transient.role === 'AI' ? 'claude-sonnet-4' : null,
-      aiInputTokens: transient.role === 'AI' ? faker.number.int({ min: 100, max: 1500 }) : null,
-      aiOutputTokens: transient.role === 'AI' ? faker.number.int({ min: 50, max: 600 }) : null,
-      aiLatencyMs: transient.role === 'AI' ? faker.number.int({ min: 600, max: 6000 }) : null,
+      // AI telemetry (null for non-AI messages)
+      aiLatencyMs: isAi ? faker.number.int({ min: 600, max: 6000 }) : null,
+      aiTokensUsed: isAi ? faker.number.int({ min: 150, max: 2100 }) : null,
 
-      // Lifecycle
-      sentAt: faker.date.recent({ days: 90 }),
-      readAt:
-        faker.helpers.maybe(() => faker.date.recent({ days: 1 }), { probability: 0.7 }) ?? null,
-      isEdited: false,
-      editedAt: null,
+      // Schema requires sequenceNumber
+      sequenceNumber: transient.turnIndex,
 
       createdAt: faker.date.recent({ days: 90 }),
-      updatedAt: new Date(),
-      deletedAt: null,
     } as unknown as ConsultationMessage;
   },
 
@@ -86,8 +103,8 @@ export const consultationMessageFactory = defineFactory<
     const m = msg as Record<string, unknown>;
     return prisma.consultationMessage.upsert({
       where: { id: m.id as string },
-      create: prismaInput<Prisma.ConsultationMessageUncheckedCreateInput>(m),
-      update: {}, // ConsultationMessage is append-only — never overwritten
+      create: m as never,
+      update: {}, // append-only — never overwritten
     }) as unknown as ConsultationMessage;
   },
 });

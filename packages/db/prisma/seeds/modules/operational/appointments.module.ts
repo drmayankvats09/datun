@@ -49,6 +49,8 @@ export const appointmentsModule = defineModule({
 
       for (let i = 0; i < consultations.length; i++) {
         const c = consultations[i]!;
+        // Defensive: schema requires userId; consultation has userId from Fix #6
+        if (!c.userId) continue;
         // Book appointment if completed + (urgent OR severe OR random 30%)
         const shouldBook =
           c.status === 'COMPLETED' &&
@@ -61,9 +63,11 @@ export const appointmentsModule = defineModule({
         appointments.push(
           appointmentFactory.build(undefined, {
             patientId: c.patientId,
+            userId: c.userId, // REQUIRED — User FK
             clinicId,
             doctorId: c.doctorId ?? doctorIds[i % doctorIds.length]!,
             consultationId: c.id,
+            chiefComplaint: c.chiefComplaint ?? undefined,
             daysFromNow: c.urgency === 'EMERGENCY' ? 0 : c.urgency === 'URGENT' ? 1 : i % 14,
           }),
         );
@@ -99,6 +103,11 @@ export const appointmentsModule = defineModule({
         metadata: { totalAppointments: appointments.length },
       };
     }),
+
+  hydrateRegistry: async (ctx) => {
+    const ids = (await ctx.prisma.appointment.findMany({ select: { id: true } })).map((r) => r.id);
+    ctx.registry.set(REGISTRY_KEYS.APPOINTMENT_IDS, ids);
+  },
 
   compensate: async (ctx) => {
     const ids = ctx.registry.get<string[]>(REGISTRY_KEYS.APPOINTMENT_IDS);

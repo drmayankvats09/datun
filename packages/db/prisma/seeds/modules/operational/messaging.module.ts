@@ -42,36 +42,47 @@ export const whatsAppMessagesModule = defineModule({
       // Per consultation: at least consultation_complete template
       for (const c of consultations) {
         if (c.status !== 'COMPLETED') continue;
+        if (!c.userId) continue; // schema-defensive
         messages.push(
           whatsAppMessageFactory.build(undefined, {
+            phoneNumber: '+919999000000',
             recipientPhone: '+919999000000',
+            userId: c.userId,
+            patientId: c.patientId,
+            consultationId: c.id,
             templateName: 'consultation_complete',
             relatedEntityType: 'CONSULTATION',
             relatedEntityId: c.id,
-          } as never),
+          }),
         );
-        // 50% get 3day followup
+        // 50% get 3-day followup
         if (c.id.charCodeAt(0) % 2 === 0) {
           messages.push(
             whatsAppMessageFactory.build(undefined, {
+              phoneNumber: '+919999000000',
               recipientPhone: '+919999000000',
+              userId: c.userId,
+              patientId: c.patientId,
+              consultationId: c.id,
               templateName: 'three_day_followup',
               relatedEntityType: 'CONSULTATION',
               relatedEntityId: c.id,
-            } as never),
+            }),
           );
         }
       }
 
-      // Per appointment: reminder
+      // Per appointment: reminder. userId optional in schema → null OK for these.
       for (const apptId of appointmentIds) {
         messages.push(
           whatsAppMessageFactory.build(undefined, {
+            phoneNumber: '+919999000000',
             recipientPhone: '+919999000000',
+            appointmentId: apptId,
             templateName: 'appointment_reminder',
             relatedEntityType: 'APPOINTMENT',
             relatedEntityId: apptId,
-          } as never),
+          }),
         );
       }
 

@@ -1,26 +1,19 @@
 // ═══════════════════════════════════════════════════════════════
 // AUDIT LOG FACTORY — DPDP Act 2023 compliance trail (B-3 v2)
 //
-// Schema alignment (packages/db/prisma/schema.prisma → model AuditLog):
-//   Required:  id, action (String), entityType (String), entityId (String),
-//              createdAt
-//   Optional:  userId (uuid), changes (Json?), ipAddress, userAgent,
-//              metadata (Json?)
+// SCHEMA-ALIGNED v2.0 — uses real UUID for `id` and tolerates null userId
+// (schema marks userId as optional). Earlier version: id="audit-XXX" string,
+// threw on missing actorUserId even though schema allows null.
 //
-// IMPORTANT: AuditAction + AuditResource are NOT Prisma enums — schema uses
-// free-form String fields. We model these as local TS unions for factory
-// type-safety while staying schema-compatible at persist time.
-//
-// Pattern: Stripe webhook event names (free-string with curated enum-like union).
+// Schema (model AuditLog):
+//   Required: id, action, entityType, entityId, createdAt
+//   Optional: userId, changes, ipAddress, userAgent, metadata
 // ═══════════════════════════════════════════════════════════════
 
-import { Prisma, type AuditLog, type PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import { Prisma, type AuditLog } from '@prisma/client';
 import { defineFactory, prismaInput, toNullableJsonInput } from '../core';
 
-// ─────────────────────────────────────────────────────────────────
-// LOCAL TYPE UNIONS — Mirror common DPDP audit semantics.
-// Stored as String in schema; this gives factory compile-time safety.
-// ─────────────────────────────────────────────────────────────────
 export type AuditAction =
   | 'CREATE'
   | 'READ'
@@ -33,7 +26,10 @@ export type AuditAction =
   | 'LOGOUT'
   | 'PRESCRIPTION_ISSUE'
   | 'PHOTO_UPLOAD'
-  | 'PHOTO_DELETE';
+  | 'PHOTO_DELETE'
+  | 'CREATED'
+  | 'UPDATED'
+  | 'DELETED';
 
 export type AuditResource =
   | 'PATIENT'
@@ -50,33 +46,27 @@ export type AuditResource =
   | 'PHOTO';
 
 interface AuditLogTransient {
-  readonly actorUserId: string;
-  readonly resource: AuditResource;
-  readonly resourceId: string;
-  readonly action: AuditAction;
+  /** Optional — schema's userId is nullable */
+  readonly actorUserId?: string | null;
+  readonly entityType: AuditResource | string;
+  readonly entityId: string;
+  readonly action: AuditAction | string;
   readonly forceTimestamp?: Date;
   readonly ipAddress?: string;
   readonly userAgent?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────
-// FACTORY DEFINITION
-// ─────────────────────────────────────────────────────────────────
 export const auditLogFactory = defineFactory<AuditLog, AuditLogTransient>({
   name: 'audit-log',
   defaultTransient: {
-    actorUserId: '',
-    resource: 'PATIENT',
-    resourceId: '',
+    entityType: 'PATIENT',
+    entityId: '',
     action: 'READ',
   },
 
-  build: ({ sequence, faker, transient }) => {
-    if (!transient.actorUserId) {
-      throw new Error('[audit-log.factory] actorUserId required');
-    }
-    if (!transient.resourceId) {
-      throw new Error('[audit-log.factory] resourceId required');
+  build: ({ faker, transient }) => {
+    if (!transient.entityId) {
+      throw new Error('[audit-log.factory] entityId required');
     }
 
     const createdAt = transient.forceTimestamp ?? faker.date.recent({ days: 30 });
@@ -85,16 +75,16 @@ export const auditLogFactory = defineFactory<AuditLog, AuditLogTransient>({
     const ipAddress =
       transient.ipAddress ??
       faker.helpers.arrayElement([
-        `103.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}`, // Indian RIPE allocation
+        `103.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}`,
         `49.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}.${faker.number.int({ min: 0, max: 255 })}`,
       ]);
 
     return {
-      id: `audit-${String(sequence).padStart(12, '0')}`,
-      userId: transient.actorUserId,
-      action: transient.action,
-      entityType: transient.resource,
-      entityId: transient.resourceId,
+      id: randomUUID(),
+      userId: transient.actorUserId ?? null,
+      action: String(transient.action),
+      entityType: String(transient.entityType),
+      entityId: transient.entityId,
       changes: null,
       ipAddress,
       userAgent: transient.userAgent ?? faker.internet.userAgent(),

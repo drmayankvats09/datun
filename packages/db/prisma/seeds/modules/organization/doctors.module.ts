@@ -76,6 +76,15 @@ export const doctorsModule = defineModule({
       };
     }),
 
+  hydrateRegistry: async (ctx) => {
+    const doctors = await ctx.prisma.doctor.findMany();
+    ctx.registry.set(
+      REGISTRY_KEYS.DOCTOR_IDS,
+      doctors.map((d) => d.id),
+    );
+    ctx.registry.set(REGISTRY_KEYS.DOCTOR_RECORDS, doctors);
+  },
+
   compensate: async (ctx) => {
     const ids = ctx.registry.get<string[]>(REGISTRY_KEYS.DOCTOR_IDS);
     if (ids) await ctx.prisma.doctor.deleteMany({ where: { id: { in: ids } } });

@@ -9,6 +9,15 @@ import * as fc from 'fast-check';
 import { prescriptionFactory } from '../../../../../prisma/seeds/factories/clinical/prescription.factory';
 import { resetSequences } from '../../../../../prisma/seeds/factories/core/sequence';
 
+/** Helper — handles factory medications stored either as array or JSON string */
+function getMedications(rx: unknown): unknown[] {
+  const obj = rx as Record<string, unknown>;
+  const meds = obj.medications;
+  if (Array.isArray(meds)) return meds;
+  if (typeof meds === 'string') return JSON.parse(meds);
+  return [];
+}
+
 describe('Prescription Rules Invariants', () => {
   beforeEach(() => resetSequences(42));
 
@@ -17,7 +26,10 @@ describe('Prescription Rules Invariants', () => {
       fc.property(
         fc.record({
           ageYears: fc.integer({ min: 5, max: 90 }),
-          pregnancyStatus: fc.constantFrom('PREGNANT', 'NOT_APPLICABLE'),
+          pregnancyStatus: fc.constantFrom<'PREGNANT' | 'NOT_APPLICABLE'>(
+            'PREGNANT',
+            'NOT_APPLICABLE',
+          ),
           onBloodThinners: fc.boolean(),
           hasRenalImpairment: fc.boolean(),
           hasHepaticImpairment: fc.boolean(),
@@ -35,6 +47,7 @@ describe('Prescription Rules Invariants', () => {
           const rx = prescriptionFactory.build(undefined, {
             consultationId: 'c-test',
             patientId: 'p-test',
+            userId: 'u-test',
             icd10Code: icd10,
             patientProfile: profile,
           });
@@ -49,12 +62,13 @@ describe('Prescription Rules Invariants', () => {
     );
   });
 
-  it('lineItemCount equals lineItems array length', () => {
+  it('lineItemCount equals medications array length', () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 3 }), (saltCount) => {
         const rx = prescriptionFactory.build(undefined, {
           consultationId: 'c-test',
           patientId: 'p-test',
+          userId: 'u-test',
           icd10Code: 'K04.0',
           saltCount,
           patientProfile: {
@@ -67,7 +81,7 @@ describe('Prescription Rules Invariants', () => {
             currentMedications: [],
           },
         });
-        const items = JSON.parse((rx as Record<string, unknown>).lineItems as string) as unknown[];
+        const items = getMedications(rx);
         expect(rx.lineItemCount).toBe(items.length);
       }),
       { numRuns: 200 },

@@ -1,17 +1,28 @@
 // ═══════════════════════════════════════════════════════════════
 // CONSULTATION FACTORY — AI dental consultation entity
 //
-// This is the most complex factory. Pulls from ALL data layers:
-//   • Patient archetype → drives diagnosis + symptoms
-//   • ICD-10 condition → drives clinical detail
-//   • Treatment protocol → drives plan + investigations
-//   • Locale bundle → drives chief complaint language
-//   • Salts → drives prescription medications
+// SCHEMA-ALIGNED v2.0 — every field below corresponds to an actual
+// column in `Consultation` model. Earlier version had 30+ phantom
+// fields that crashed bulkInsert with PrismaClientValidationError.
 //
-// Each consultation also TRIGGERS message generation in afterCreate.
+// REQUIRED inputs (transient):
+//   • patientId  (UUID — FK to Patient)
+//   • userId     (UUID — FK to User; the patient's user account)
+//
+// OPTIONAL inputs:
+//   • initiatedByUserId — defaults to userId (self-initiated by patient)
+//   • doctorId, clinicId, forceIcd10, forceUrgency, forceStatus, locale
 // ═══════════════════════════════════════════════════════════════
 
-import type { Consultation, ConsultationStatus, PrismaClient, UrgencyLevel } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import type {
+  Consultation,
+  ConsultationStatus,
+  LocaleCode,
+  PrismaClient,
+  UrgencyLevel,
+} from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { defineFactory } from '../core';
 import { getConditionByIcd10, pickRealisticCondition } from '../../data/medical/conditions';
 import {
@@ -22,8 +33,12 @@ import { getRemediesForCondition } from '../../data/medical/home-remedies';
 import { resolveLocale } from '../../data/linguistic/locales';
 
 interface ConsultationTransient {
-  /** Patient ID required */
+  /** Patient ID — REQUIRED */
   readonly patientId: string;
+  /** User ID for the patient — REQUIRED for User FK */
+  readonly userId: string;
+  /** User who initiated — defaults to userId */
+  readonly initiatedByUserId?: string;
   /** Doctor ID — null means AI-only consultation */
   readonly doctorId?: string | null;
   /** Clinic ID — context for routing */
@@ -34,29 +49,52 @@ interface ConsultationTransient {
   readonly forceUrgency?: UrgencyLevel;
   /** Force status */
   readonly forceStatus?: ConsultationStatus;
-  /** Locale for chief complaint */
-  readonly locale?:
-    | 'hindi'
-    | 'english'
-    | 'punjabi'
-    | 'bengali'
-    | 'tamil'
-    | 'telugu'
-    | 'marathi'
-    | 'gujarati';
-  /** Patient archetype primary condition (read by factory if patient ID lookup unavailable in build) */
+  /** Patient's preferred locale (2-letter code: 'en', 'hi', etc.) */
+  readonly locale?: LocaleCode;
+  /** Patient archetype primary condition */
   readonly patientArchetypeIcd10?: string;
   /** Archetype-derived chief complaint */
   readonly chiefComplaint?: string;
 }
 
+/** Map full-language strings to LocaleCode enum (2-letter ISO codes used in schema) */
+const LANG_TO_LOCALE_CODE: Record<string, LocaleCode> = {
+  english: 'en',
+  hindi: 'hi',
+  punjabi: 'pa',
+  bengali: 'bn',
+  tamil: 'ta',
+  telugu: 'te',
+  marathi: 'mr',
+  gujarati: 'gu',
+  kannada: 'kn',
+  malayalam: 'ml',
+  odia: 'or',
+  assamese: 'as',
+};
+
+function toLocaleCode(input: string | undefined): LocaleCode {
+  if (!input) return 'hi';
+  const normalized = input.toLowerCase();
+  // Already a valid 2-letter code?
+  if (
+    ['en', 'hi', 'pa', 'bn', 'ta', 'te', 'mr', 'gu', 'kn', 'ml', 'or', 'as'].includes(normalized)
+  ) {
+    return normalized as LocaleCode;
+  }
+  return LANG_TO_LOCALE_CODE[normalized] ?? 'hi';
+}
+
 export const consultationFactory = defineFactory<Consultation, ConsultationTransient>({
   name: 'consultation',
-  defaultTransient: { patientId: '' },
+  defaultTransient: { patientId: '', userId: '' },
 
-  build: ({ sequence, faker, seed, transient }) => {
+  build: ({ faker, seed, transient }) => {
     if (!transient.patientId) {
       throw new Error('[consultation.factory] patientId is required in transient params');
+    }
+    if (!transient.userId) {
+      throw new Error('[consultation.factory] userId is required in transient params');
     }
 
     // ── Step 1: Resolve ICD-10 condition ──
@@ -86,8 +124,8 @@ export const consultationFactory = defineFactory<Consultation, ConsultationTrans
       ]);
 
     // ── Step 5: Locale + chief complaint ──
-    const locale = transient.locale ?? 'hindi';
-    const localeBundle = resolveLocale(locale);
+    const localeCode: LocaleCode = toLocaleCode(transient.locale);
+    const localeBundle = resolveLocale(localeCode);
     const chiefComplaint =
       transient.chiefComplaint ?? faker.helpers.arrayElement(localeBundle.patientOpeners);
 
@@ -101,7 +139,7 @@ export const consultationFactory = defineFactory<Consultation, ConsultationTrans
           : 'routine';
     const homeRemedies = getRemediesForCondition(remedyKeyword);
 
-    // ── Step 7: Investigations needed ──
+    // ── Step 7: Investigations needed (Json field) ──
     const investigations: string[] = [];
     if (condition.requiresXray) investigations.push('IOPA-X-ray');
     if (condition.requiresOpg) investigations.push('OPG');
@@ -109,10 +147,10 @@ export const consultationFactory = defineFactory<Consultation, ConsultationTrans
     if (protocol) investigations.push(...protocol.investigationsNeeded);
 
     // ── Step 8: AI metadata ──
-    const aiModelUsed: string = faker.helpers.weightedArrayElement([
+    const aiModel: string = faker.helpers.weightedArrayElement([
       { weight: 70, value: 'claude-sonnet-4' },
       { weight: 20, value: 'claude-haiku-4-5' },
-      { weight: 10, value: 'gpt-4-turbo' }, // failover
+      { weight: 10, value: 'gpt-4-turbo' },
     ]);
 
     const startedAt = faker.date.recent({ days: 90 });
@@ -123,87 +161,65 @@ export const consultationFactory = defineFactory<Consultation, ConsultationTrans
           )
         : null;
 
+    // Construct an object that matches Prisma's ConsultationUncheckedCreateInput exactly.
+    // Every field below maps to a real column in `model Consultation`.
     return {
-      id: `consultation-${String(sequence).padStart(8, '0')}`,
+      id: randomUUID(),
       patientId: transient.patientId,
+      userId: transient.userId,
+      initiatedByUserId: transient.initiatedByUserId ?? transient.userId,
       doctorId: transient.doctorId ?? null,
       clinicId: transient.clinicId ?? null,
 
-      // Clinical
-      chiefComplaint,
-      chiefComplaintLocale: locale,
-      symptomDurationDays: faker.number.int({ min: 1, max: 365 }),
-      painSeverityScore: faker.number.int({ min: 0, max: 10 }),
-
-      // Diagnosis
-      primaryDiagnosisIcd10: condition.icd10Code,
-      primaryDiagnosisName: condition.nameEnglish,
-      primaryDiagnosisNameLocal: condition.nameHindi,
-      differentialDiagnoses: JSON.stringify([]),
-      severity: condition.severity,
-      urgency,
-
-      // Treatment plan
-      treatmentPlanEnglish: protocol?.treatmentPlanEnglish ?? 'Routine examination and counselling',
-      treatmentPlanHindi: protocol?.treatmentPlanHindi ?? 'सामान्य जांच और सलाह',
-      typicalCostInrMin: protocol?.typicalCostInr.min ?? 500,
-      typicalCostInrMax: protocol?.typicalCostInr.max ?? 1500,
-      sessionsRequired: protocol?.typicalSessions ?? 1,
-
-      // Investigations
-      investigationsRecommended: JSON.stringify([...new Set(investigations)]),
-      requiresXray: condition.requiresXray,
-      requiresOpg: condition.requiresOpg,
-      requiresCbct: condition.requiresCbct,
-
-      // Home remedies (denormalized for PDF)
-      homeRemediesProvided: JSON.stringify(homeRemedies.map((r) => r.id)),
-
-      // Red flags + handoff
-      redFlagsDetected: JSON.stringify(protocol?.redFlags ?? []),
-      escalatedToHuman: status === 'ESCALATED',
-      escalationReason:
-        status === 'ESCALATED' ? 'High urgency requires in-person evaluation' : null,
-
-      // Photos
-      photoUrls: JSON.stringify([]),
-      photoAnalysisFindings: null,
-
-      // PDF
-      pdfReportUrl:
-        status === 'COMPLETED'
-          ? `https://r2.datunai.com/reports/consultation-${sequence}.pdf`
-          : null,
-      pdfGeneratedAt: status === 'COMPLETED' ? completedAt : null,
-
-      // AI telemetry
-      aiModelUsed,
-      aiInputTokens: faker.number.int({ min: 800, max: 8000 }),
-      aiOutputTokens: faker.number.int({ min: 200, max: 2500 }),
-      aiCostUsd: faker.number.float({ min: 0.01, max: 0.4, fractionDigits: 4 }),
-      aiLatencyMs: faker.number.int({ min: 800, max: 12000 }),
-
       // Status + lifecycle
       status,
-      startedAt,
+      language: localeCode,
+
+      // Clinical (text fields)
+      chiefComplaint,
+      diagnosis: condition.nameEnglish,
+      treatmentPlan: protocol?.treatmentPlanEnglish ?? 'Routine examination and counselling',
+      homeRemedies: homeRemedies.map((r) => r.id).join(', '),
+
+      // Json fields — pass arrays/objects directly (Prisma serializes)
+      dosList: Prisma.JsonNull,
+      dontsList: Prisma.JsonNull,
+      redFlags: protocol?.redFlags ?? Prisma.JsonNull,
+      medications: Prisma.JsonNull,
+      investigationsNeeded: [...new Set(investigations)],
+      photoUrls: Prisma.JsonNull,
+      safetyFlags: Prisma.JsonNull,
+
+      // Diagnosis ICD-10
+      primaryDiagnosisIcd10: condition.icd10Code,
+      icd10Code: condition.icd10Code,
+      icd10ChapterCode: condition.chapter,
+      severity: urgency,
+      urgency,
+      chiefComplaintLocale: localeCode,
+
+      // AI tracking
+      aiProvider: 'claude',
+      aiModel,
+      aiLatencyMs: faker.number.int({ min: 800, max: 12000 }),
+      aiTokensUsed: faker.number.int({ min: 1000, max: 10500 }),
+      aiCostUsd: new Prisma.Decimal(faker.number.float({ min: 0.01, max: 0.4, fractionDigits: 4 })),
+
+      // Source + metadata
+      sourceChannel: 'WEB',
+      isAiOnly: !transient.doctorId,
+      requiresPhysicalVisit: urgency === 'EMERGENCY' || urgency === 'URGENT',
+      needsHumanReview: status === 'ESCALATED',
+      consentGiven: true,
+      totalMessages: 0,
+      aiCircuitBreakerHits: 0,
+
+      // PDF
+      pdfUrl: status === 'COMPLETED' ? `https://r2.datunai.com/reports/${randomUUID()}.pdf` : null,
+      pdfGeneratedAt: status === 'COMPLETED' ? completedAt : null,
+
+      // Timestamps
       completedAt,
-      abandonedAt: status === 'ABANDONED' ? new Date(startedAt.getTime() + 5 * 60 * 1000) : null,
-
-      // Follow-up
-      followUp3DaySent: status === 'COMPLETED' && faker.datatype.boolean({ probability: 0.7 }),
-      followUp3DaySentAt: null,
-      followUp7DaySent: status === 'COMPLETED' && faker.datatype.boolean({ probability: 0.5 }),
-      followUp7DaySentAt: null,
-
-      // Patient feedback
-      patientRating:
-        status === 'COMPLETED'
-          ? (faker.helpers.maybe(() => faker.number.int({ min: 3, max: 5 }), {
-              probability: 0.4,
-            }) ?? null)
-          : null,
-      patientFeedback: null,
-
       createdAt: startedAt,
       updatedAt: new Date(),
       deletedAt: null,
@@ -212,7 +228,7 @@ export const consultationFactory = defineFactory<Consultation, ConsultationTrans
 
   persist: async (consultation, prisma) => {
     return prisma.consultation.upsert({
-      where: { id: consultation.id },
+      where: { id: (consultation as { id: string }).id },
       create: consultation as never,
       update: { updatedAt: new Date() },
     });

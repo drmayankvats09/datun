@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 // LOGGER — Pino-style structured logger for modules
 // JSON output for production, pretty-print for development
+// FAANG canonical: errors → stderr, info → stdout (separate streams)
 // ═══════════════════════════════════════════════════════════════
 
 import type { ModuleLogger } from './module.types';
@@ -27,6 +28,10 @@ class ConsoleLogger implements ModuleLogger {
       ...meta,
     };
 
+    // Errors and warnings to stderr (FAANG convention).
+    // Info/debug to stdout. CI captures both, but separation aids grep/log-tools.
+    const stream = level === 'error' || level === 'warn' ? 'stderr' : 'stdout';
+
     if (this.pretty) {
       const color =
         level === 'error'
@@ -39,11 +44,32 @@ class ConsoleLogger implements ModuleLogger {
       const reset = '\x1b[0m';
       const ctx =
         Object.keys({ ...this.bindings, ...meta }).length > 0
-          ? ` ${JSON.stringify({ ...this.bindings, ...meta })}`
+          ? ` ${this.safeStringify({ ...this.bindings, ...meta })}`
           : '';
-      console.log(`${color}[${level.toUpperCase()}]${reset} ${msg}${ctx}`);
+      const line = `${color}[${level.toUpperCase()}]${reset} ${msg}${ctx}\n`;
+      if (stream === 'stderr') process.stderr.write(line);
+      else process.stdout.write(line);
     } else {
-      console.log(JSON.stringify(record));
+      const line = this.safeStringify(record) + '\n';
+      if (stream === 'stderr') process.stderr.write(line);
+      else process.stdout.write(line);
+    }
+  }
+
+  /** JSON.stringify with cycle/BigInt safety — never throws */
+  private safeStringify(obj: unknown): string {
+    const seen = new WeakSet<object>();
+    try {
+      return JSON.stringify(obj, (_k, v) => {
+        if (typeof v === 'bigint') return String(v);
+        if (typeof v === 'object' && v !== null) {
+          if (seen.has(v)) return '[Circular]';
+          seen.add(v);
+        }
+        return v;
+      });
+    } catch (e) {
+      return `[Unstringifiable: ${e instanceof Error ? e.message : String(e)}]`;
     }
   }
 

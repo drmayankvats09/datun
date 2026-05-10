@@ -65,20 +65,14 @@ export function buildFullConsultation(opts: FullConsultationOptions): FullConsul
 
   const consultation = consultationFactory.build(undefined, {
     patientId: opts.patient.id,
+    userId: opts.patient.userId,
+    initiatedByUserId: opts.patient.userId,
     doctorId: opts.doctorId ?? undefined,
     clinicId: opts.clinicId ?? undefined,
     forceIcd10: opts.forceIcd10 ?? opts.patient.primaryConditionIcd10 ?? undefined,
     forceUrgency: opts.forceUrgency,
     forceStatus: opts.forceStatus ?? 'COMPLETED',
-    locale: opts.patient.preferredLocale as
-      | 'hindi'
-      | 'english'
-      | 'punjabi'
-      | 'bengali'
-      | 'tamil'
-      | 'telugu'
-      | 'marathi'
-      | 'gujarati',
+    locale: opts.patient.preferredLocale,
     patientArchetypeIcd10: archetype?.primaryConditionIcd10,
     chiefComplaint: archetype?.typicalChiefComplaint,
   });
@@ -93,15 +87,7 @@ export function buildFullConsultation(opts: FullConsultationOptions): FullConsul
         consultationId: consultation.id,
         turnIndex: i,
         role,
-        locale: consultation.chiefComplaintLocale as
-          | 'hindi'
-          | 'english'
-          | 'punjabi'
-          | 'bengali'
-          | 'tamil'
-          | 'telugu'
-          | 'marathi'
-          | 'gujarati',
+        locale: consultation.chiefComplaintLocale ?? undefined,
       }),
     );
   }
@@ -115,6 +101,7 @@ export function buildFullConsultation(opts: FullConsultationOptions): FullConsul
     prescription = prescriptionFactory.build(undefined, {
       consultationId: consultation.id,
       patientId: opts.patient.id,
+      userId: opts.patient.userId,
       doctorId: opts.doctorId,
       icd10Code: consultation.primaryDiagnosisIcd10 ?? undefined,
       patientProfile: {
@@ -138,6 +125,7 @@ export function buildFullConsultation(opts: FullConsultationOptions): FullConsul
   if (opts.bookAppointment && opts.clinicId) {
     appointment = appointmentFactory.build(undefined, {
       patientId: opts.patient.id,
+      userId: opts.patient.userId,
       clinicId: opts.clinicId,
       doctorId: opts.doctorId,
       consultationId: consultation.id,
@@ -150,7 +138,9 @@ export function buildFullConsultation(opts: FullConsultationOptions): FullConsul
   if (consultation.status === 'COMPLETED') {
     whatsappMessages.push(
       whatsappMessageFactory.build(undefined, {
+        phoneNumber: opts.patient.phone ?? '+919999000000',
         recipientPhone: opts.patient.phone ?? '+919999000000',
+        userId: opts.patient.userId,
         templateName: 'consultation_complete',
         patientId: opts.patient.id,
         consultationId: consultation.id,

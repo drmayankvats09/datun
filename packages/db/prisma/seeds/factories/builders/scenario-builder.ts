@@ -69,7 +69,10 @@ export class ScenarioBuilder {
   ): this {
     this.patientResults.forEach((patient, pIdx) => {
       for (let i = 0; i < perPatient; i++) {
-        let cb = consultationFor(patient.id);
+        // Pass patient.userId so consultation factory's required userId field is populated.
+        // Fallback to synthetic test ID for legacy/unit-test patients without userId set.
+        const userId = (patient as { userId?: string }).userId ?? `test-user-${patient.id}`;
+        let cb = consultationFor(patient.id, userId);
         if (this.clinicResult) cb = cb.atClinic(this.clinicResult.id);
         if (builderFn) cb = builderFn(cb, pIdx, i);
         this.consultationResults.push(cb.build());

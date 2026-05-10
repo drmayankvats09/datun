@@ -188,6 +188,12 @@ export interface SeedModule {
   readonly checkIdempotency: (ctx: ModuleContext) => Promise<boolean>;
   /** Main seed function */
   readonly run: (ctx: ModuleContext) => Promise<ModuleResult>;
+  /**
+   * Re-populate this module's registry keys from DB when run() is skipped via idempotency.
+   * Required for downstream modules that consume this module's keys to work on re-runs.
+   * If omitted, registry will be empty when this module is skipped.
+   */
+  readonly hydrateRegistry?: (ctx: ModuleContext) => Promise<void>;
   /** Compensating action for saga rollback */
   readonly compensate?: CompensationFn;
   /** Dry-run estimator */

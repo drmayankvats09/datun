@@ -40,6 +40,8 @@ export const prescriptionsModule = defineModule({
         if (!needsRx) continue;
         const patient = patientById.get(c.patientId);
         if (!patient) continue;
+        // Defensive: schema requires userId for Prescription
+        if (!patient.userId) continue;
 
         const allergies = JSON.parse((patient.knownAllergies as string) ?? '[]');
         const meds = JSON.parse((patient.currentMedications as string) ?? '[]');
@@ -53,8 +55,10 @@ export const prescriptionsModule = defineModule({
           prescriptionFactory.build(undefined, {
             consultationId: c.id,
             patientId: c.patientId,
+            userId: patient.userId, // REQUIRED — User FK
             doctorId: c.doctorId ?? undefined,
             icd10Code: c.primaryDiagnosisIcd10 ?? undefined,
+            diagnosisLabel: c.diagnosis ?? undefined,
             patientProfile: {
               ageYears: patient.ageYears ?? 30,
               pregnancyStatus: patient.pregnancyStatus ?? 'NOT_APPLICABLE',
@@ -98,6 +102,11 @@ export const prescriptionsModule = defineModule({
         metadata: {},
       };
     }),
+
+  hydrateRegistry: async (ctx) => {
+    const ids = (await ctx.prisma.prescription.findMany({ select: { id: true } })).map((r) => r.id);
+    ctx.registry.set(REGISTRY_KEYS.PRESCRIPTION_IDS, ids);
+  },
 
   compensate: async (ctx) => {
     const ids = ctx.registry.get<string[]>(REGISTRY_KEYS.PRESCRIPTION_IDS);

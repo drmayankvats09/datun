@@ -79,16 +79,10 @@ export function buildPatientJourney(opts: JourneyOptions = {}): JourneyResult {
       { createdAt: startedAt } as never,
       {
         patientId: patient.id,
+        userId: user.id,
+        initiatedByUserId: user.id,
         clinicId: opts.homeClinicId,
-        locale: patient.preferredLocale as
-          | 'hindi'
-          | 'english'
-          | 'punjabi'
-          | 'bengali'
-          | 'tamil'
-          | 'telugu'
-          | 'marathi'
-          | 'gujarati',
+        locale: patient.preferredLocale,
       } as never,
     );
 
@@ -103,15 +97,7 @@ export function buildPatientJourney(opts: JourneyOptions = {}): JourneyResult {
           consultationId: consultation.id,
           turnIndex: m,
           role,
-          locale: patient.preferredLocale as
-            | 'hindi'
-            | 'english'
-            | 'punjabi'
-            | 'bengali'
-            | 'tamil'
-            | 'telugu'
-            | 'marathi'
-            | 'gujarati',
+          locale: patient.preferredLocale,
         }),
       );
     }
@@ -124,6 +110,7 @@ export function buildPatientJourney(opts: JourneyOptions = {}): JourneyResult {
         prescriptionFactory.build(undefined, {
           consultationId: consultation.id,
           patientId: patient.id,
+          userId: user.id,
           icd10Code: consultation.primaryDiagnosisIcd10 ?? undefined,
           patientProfile: {
             ageYears: patient.ageYears ?? 30,
@@ -143,6 +130,7 @@ export function buildPatientJourney(opts: JourneyOptions = {}): JourneyResult {
       appointments.push(
         appointmentFactory.build(undefined, {
           patientId: patient.id,
+          userId: user.id,
           clinicId: opts.homeClinicId,
           consultationId: consultation.id,
           daysFromNow: -daysAgo + 7,

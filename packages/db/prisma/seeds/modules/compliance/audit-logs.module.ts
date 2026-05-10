@@ -27,6 +27,7 @@ export const auditLogsModule = defineModule({
     REGISTRY_KEYS.CONSULTATION_IDS,
     REGISTRY_KEYS.APPOINTMENT_IDS,
     REGISTRY_KEYS.PRESCRIPTION_IDS,
+    REGISTRY_KEYS.ADMIN_USER_IDS,
   ],
   providesRegistryKeys: [REGISTRY_KEYS.AUDIT_LOG_IDS],
 
@@ -39,43 +40,52 @@ export const auditLogsModule = defineModule({
       const consultations = ctx.registry.getRequired<string[]>(REGISTRY_KEYS.CONSULTATION_IDS);
       const appointments = ctx.registry.getRequired<string[]>(REGISTRY_KEYS.APPOINTMENT_IDS);
       const prescriptions = ctx.registry.getRequired<string[]>(REGISTRY_KEYS.PRESCRIPTION_IDS);
+      // Admin users perform the audited actions; null fallback if missing
+      const adminUserIds = ctx.registry.get<string[]>(REGISTRY_KEYS.ADMIN_USER_IDS) ?? [];
+
+      const pickActor = (i: number): string | null =>
+        adminUserIds.length > 0 ? adminUserIds[i % adminUserIds.length]! : null;
 
       const logs: ReturnType<typeof auditLogFactory.build>[] = [];
 
-      for (const id of consultations) {
+      consultations.forEach((id, i) => {
         logs.push(
           auditLogFactory.build(undefined, {
+            actorUserId: pickActor(i),
             entityType: 'CONSULTATION',
             entityId: id,
-            action: 'CREATED',
-          } as never),
+            action: 'CREATE',
+          }),
         );
         logs.push(
           auditLogFactory.build(undefined, {
+            actorUserId: pickActor(i + 1),
             entityType: 'CONSULTATION',
             entityId: id,
-            action: 'UPDATED',
-          } as never),
+            action: 'UPDATE',
+          }),
         );
-      }
-      for (const id of appointments) {
+      });
+      appointments.forEach((id, i) => {
         logs.push(
           auditLogFactory.build(undefined, {
+            actorUserId: pickActor(i),
             entityType: 'APPOINTMENT',
             entityId: id,
-            action: 'CREATED',
-          } as never),
+            action: 'CREATE',
+          }),
         );
-      }
-      for (const id of prescriptions) {
+      });
+      prescriptions.forEach((id, i) => {
         logs.push(
           auditLogFactory.build(undefined, {
+            actorUserId: pickActor(i),
             entityType: 'PRESCRIPTION',
             entityId: id,
-            action: 'CREATED',
-          } as never),
+            action: 'CREATE',
+          }),
         );
-      }
+      });
 
       let created = 0;
       await runInScope(auditLogsModule, ctx, async (tx) => {

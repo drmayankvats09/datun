@@ -17,8 +17,8 @@ name: Migration Validate
 on:
   pull_request:
     paths:
-      - "packages/db/prisma/migrations/**"
-      - "packages/db/prisma/schema.prisma"
+      - 'packages/db/prisma/migrations/**'
+      - 'packages/db/prisma/schema.prisma'
 
 permissions:
   contents: read
@@ -78,9 +78,13 @@ jobs:
         id: detect
         run: |
           set -euo pipefail
+          # Only timestamp-prefixed folders are actual migrations.
+          # Filter out migration_lock.toml (it's a file, not a folder) and any non-folder paths.
+          # Pattern: packages/db/prisma/migrations/<14-digit-timestamp>_<name>/migration.sql
           changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD \
             -- packages/db/prisma/migrations/ \
-            | awk -F/ '{print $5}' | sort -u | grep -v '^$' || true)
+            | awk -F/ 'NF>=6 && $5 ~ /^[0-9]{14}_/ {print $5}' \
+            | sort -u | grep -v '^$' || true)
           if [ -z "$changed" ]; then
             echo "No migration folders changed"
             echo "changed=" >> "$GITHUB_OUTPUT"
