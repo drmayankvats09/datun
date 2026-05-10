@@ -1,0 +1,68 @@
+name: Seed Load Bench
+
+on:
+  schedule:
+    - cron: '0 4 * * 6' # Saturday 04:00 UTC weekly
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Bench iterations'
+        required: true
+        default: '3'
+
+concurrency:
+  group: seed-load-bench
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: perf-bench p50/p95/p99
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: datun_test_user
+          POSTGRES_PASSWORD: datun_test_pass
+          POSTGRES_DB: datun_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U datun_test_user -d datun_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://datun_test_user:datun_test_pass@localhost:5432/datun_test
+      SEED_ANONYMIZATION_SALT: bench-salt
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+      - run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Run perf-bench
+        env:
+          INPUT_ITERATIONS: ${{ inputs.iterations || '3' }}
+        run: |
+          pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts bench \
+            --iterations "$INPUT_ITERATIONS" \
+            > bench-report.txt
+          cat bench-report.txt
+
+      - name: Upload bench report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report-${{ github.run_id }}
+          path: bench-report.txt
+          retention-days: 90

@@ -1,0 +1,49 @@
+# ═══════════════════════════════════════════════════════════════
+# NIGHTLY COMPREHENSIVE VALIDATION — full Wave 6 test surface
+# ═══════════════════════════════════════════════════════════════
+name: seed-comprehensive-validate
+
+on:
+  schedule:
+    - cron: '17 3 * * *' # 03:17 UTC daily
+  workflow_dispatch:
+  pull_request:
+    paths: ['packages/db/prisma/seeds/**']
+
+concurrency:
+  group: seed-comp-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: datun_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/datun_test
+      SKIP_TESTCONTAINERS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+      - run: pnpm --filter @repo/db exec prisma db push
+      - name: Run validation suite (with coverage)
+        run: pnpm --filter @repo/db exec vitest run --coverage
+      - name: Verify coverage thresholds
+        run: pnpm --filter @repo/db exec vitest run --coverage --reporter=junit
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./packages/db/coverage/lcov.info
+          flags: seed-comprehensive

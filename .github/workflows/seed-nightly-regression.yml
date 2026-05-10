@@ -1,0 +1,94 @@
+name: Seed Nightly Regression
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # 02:30 UTC = 08:00 IST daily
+  workflow_dispatch:
+
+concurrency:
+  group: seed-nightly-regression
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  regression:
+    name: Regression suite (Postgres 18 + Vitest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: datun_test_user
+          POSTGRES_PASSWORD: datun_test_pass
+          POSTGRES_DB: datun_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U datun_test_user -d datun_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://datun_test_user:datun_test_pass@localhost:5432/datun_test
+      SEED_ANONYMIZATION_SALT: ci-test-salt-not-for-production
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/db exec prisma generate
+
+      - name: Apply migrations
+        run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Type-check seed package
+        run: pnpm --filter @repo/db exec tsc --noEmit
+
+      - name: Validate module DAG
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts validate dag
+
+      - name: Run regression scenario
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts seed --strategy regression --seed 4242
+
+      - name: Compare to golden fixture
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts validate golden regression-baseline
+        continue-on-error: true
+
+      - name: Vitest smoke + contract tests
+        run: pnpm --filter @repo/db exec vitest run prisma/seeds/e2e-harness/smoke-tests.ts prisma/seeds/e2e-harness/contract-tests.ts
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-failure-${{ github.run_id }}
+          path: |
+            packages/db/prisma/seeds/checkpoints/
+            packages/db/prisma/seeds/audit-logs/
+
+      - name: Open issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Nightly regression failed — ${new Date().toISOString().slice(0,10)}`,
+              body: `Run ID: ${context.runId}\nWorkflow: ${context.workflow}\nSee: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['ci-failure', 'priority-high'],
+            });

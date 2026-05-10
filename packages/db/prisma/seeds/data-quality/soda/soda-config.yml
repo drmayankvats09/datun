@@ -1,0 +1,17 @@
+# Soda Core configuration — Datun production data quality
+# Reference: https://docs.soda.io/soda-core/configuration.html
+data_source datun_production:
+  type: postgres
+  connection:
+    host: ${POSTGRES_HOST}
+    port: 5432
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    database: ${POSTGRES_DB}
+    schema: public
+    ssl: true
+
+soda_cloud:
+  host: cloud.soda.io
+  api_key_id: ${SODA_API_KEY_ID}
+  api_key_secret: ${SODA_API_KEY_SECRET}

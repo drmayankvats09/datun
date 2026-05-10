@@ -1,0 +1,62 @@
+name: Seed Test Matrix
+
+on:
+  pull_request:
+    paths:
+      - 'packages/db/prisma/seeds/**'
+      - 'packages/db/prisma/schema.prisma'
+      - '.github/workflows/seed-*.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: seed-test-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: ${{ matrix.scenario }} on Postgres ${{ matrix.postgres }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ['16-alpine', '17-alpine', '18-alpine']
+        scenario: [minimal, demo, e2e-test, regression]
+
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: datun_test_user
+          POSTGRES_PASSWORD: datun_test_pass
+          POSTGRES_DB: datun_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U datun_test_user -d datun_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://datun_test_user:datun_test_pass@localhost:5432/datun_test
+      SEED_ANONYMIZATION_SALT: matrix-test-salt
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+      - run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Run scenario ${{ matrix.scenario }}
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts seed --strategy ${{ matrix.scenario }} --seed 42
+
+      - name: Validate idempotency (re-run should skip)
+        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts seed --strategy ${{ matrix.scenario }} --seed 42

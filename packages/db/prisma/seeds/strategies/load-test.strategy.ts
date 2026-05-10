@@ -1,0 +1,36 @@
+import type { StrategySpec } from './strategy.types';
+
+export const loadTestStrategy: StrategySpec = {
+  name: 'load-test',
+  description: '1L users + 1L consultations + 365-day Pareto historical (max-scale stress)',
+  env: 'staging',
+  includeCategories: [
+    'reference',
+    'identity',
+    'organization',
+    'people',
+    'clinical',
+    'operational',
+    'compliance',
+    'analytics',
+    'time-travel',
+  ],
+  counts: {
+    clinics: 500,
+    doctors: 2000,
+    patients: 100000,
+    consultations: 100000,
+    appointments: 30000,
+    historicalDaysBack: 365,
+  },
+  anonymize: false,
+  snapshotAfter: true,
+  snapshotName: 'load-test-100k',
+  parallelExec: true,
+  dryRunFirst: true,
+  stopOnError: false,
+  compensateOnFailure: false,
+  maxDurationMinutes: 60,
+  memoryBudgetMb: 8192,
+  expectedScenarioCount: 100000,
+};

@@ -37,8 +37,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '20'
-  DATABASE_URL: 'postgresql://test:test@localhost:5432/datun_test'
+  NODE_VERSION: '22'
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/datun_shadow_ci'
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
@@ -110,6 +110,11 @@ jobs:
         env:
           SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
 
+      - name: Sync schema to test DB (Task #43 — covers schema-only models)
+        run: pnpm --filter @repo/db exec prisma db push --skip-generate --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/datun_shadow_ci
+
       - name: Apply migrations to shadow DB
         run: pnpm --filter @repo/db prisma migrate deploy
         env:
@@ -137,7 +142,7 @@ jobs:
           JWT_SECRET: 'ci-jwt-secret-minimum-32-characters-long-for-testing'
           JWT_REFRESH_SECRET: 'ci-refresh-secret-minimum-32-characters-different'
           ANTHROPIC_API_KEY: 'sk-ant-ci-test-key'
-          DATABASE_URL: 'postgresql://test:test@localhost:5432/datun_test'
+          DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/datun_shadow_ci'
 
       # Phase 9: Translation completeness — blocks merge if Hindi keys missing
       - name: Translation Check (i18n)

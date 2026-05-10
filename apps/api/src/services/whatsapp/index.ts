@@ -24,6 +24,7 @@ import { Sentry } from '../../lib/sentry.js';
 import { env } from '../../config/env.js';
 import { CircuitBreaker, DEFAULT_CIRCUIT_BREAKER_CONFIG } from '../../lib/circuit-breaker.js';
 import { MetaWhatsAppProvider } from './meta.provider.js';
+import type { WhatsAppTemplateName } from '@repo/db';
 import { GupshupProvider } from './gupshup.provider.js';
 import { AiSensyProvider } from './aisensy.provider.js';
 import { isWindowOpen } from './window-tracker.js';
@@ -291,7 +292,7 @@ async function trackMessage(data: {
     await prisma.whatsAppMessage.create({
       data: {
         phoneNumber: data.phone,
-        templateName: data.templateName,
+        templateName: data.templateName as WhatsAppTemplateName | null,
         content: data.content.slice(0, 5000),
         direction: 'OUTBOUND',
         provider: providerEnum,

@@ -50,6 +50,7 @@ function onRateLimitHit(req: Request, limitName: string): void {
 // ═══════════════════════════════════════════════════════════════
 
 export const generalLimiter = rateLimit({
+  validate: false, // disable env-quirk validations (ERR_ERL_DOUBLE_COUNT, trust proxy warnings)
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500,
   keyGenerator: keyGen,
@@ -76,6 +77,7 @@ export const generalLimiter = rateLimit({
 // ═══════════════════════════════════════════════════════════════
 
 export const chatLimiter = rateLimit({
+  validate: false, // disable env-quirk validations (ERR_ERL_DOUBLE_COUNT, trust proxy warnings)
   windowMs: 60 * 1000, // 1 minute
   max: 20,
   keyGenerator: keyGen,
@@ -102,6 +104,7 @@ export const chatLimiter = rateLimit({
 // ═══════════════════════════════════════════════════════════════
 
 export const authLimiter = rateLimit({
+  validate: false, // disable env-quirk validations (ERR_ERL_DOUBLE_COUNT, trust proxy warnings)
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 10,
   keyGenerator: keyGen,

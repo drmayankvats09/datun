@@ -1,0 +1,69 @@
+name: Seed Export Snapshot
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Sunday 03:00 UTC weekly
+  workflow_dispatch:
+    inputs:
+      compliance:
+        description: 'Compliance profile'
+        required: true
+        default: 'DPDP'
+        type: choice
+        options: [DPDP, HIPAA, GDPR, DPDP_HIPAA, DPDP_HIPAA_GDPR]
+      compression:
+        description: 'Compression algorithm'
+        required: true
+        default: 'gzip'
+        type: choice
+        options: [gzip, zstd, none]
+
+concurrency:
+  group: seed-export-snapshot
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  export:
+    name: Anonymized weekly export
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      SEED_ANONYMIZATION_SALT: ${{ secrets.SEED_ANONYMIZATION_SALT }}
+      AWS_REGION: ap-south-1
+      AWS_S3_EXPORT_BUCKET: ${{ secrets.AWS_S3_EXPORT_BUCKET }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Export anonymized dump
+        env:
+          INPUT_COMPLIANCE: ${{ inputs.compliance || 'DPDP' }}
+          INPUT_COMPRESSION: ${{ inputs.compression || 'gzip' }}
+        run: |
+          pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts export dump \
+            --output ./tmp/datun-staging-$(date -u +%Y%m%d).jsonl \
+            --compliance "$INPUT_COMPLIANCE" \
+            --compression "$INPUT_COMPRESSION" \
+            --s3-bucket "$AWS_S3_EXPORT_BUCKET" \
+            --s3-prefix datun-exports/weekly
+
+      - name: Verify manifest written
+        run: ls -la ./tmp/*.manifest.json

@@ -144,7 +144,7 @@ async function handleIncomingMessage(m: UnifiedIncomingMessage): Promise<void> {
     await prisma.whatsAppMessage.create({
       data: {
         phoneNumber: m.from,
-        templateName: '__inbound__',
+        templateName: null,
         content: m.text ?? `[${m.type}]`,
         direction: 'INBOUND',
         provider: m.provider === 'meta' ? 'META' : m.provider === 'gupshup' ? 'GUPSHUP' : 'AISENSY',

@@ -1,0 +1,50 @@
+// ═══════════════════════════════════════════════════════════════
+// SEED ERROR CODES — Structured codes for telemetry + grouping
+// Pattern: Stripe API error codes, AWS SDK error codes
+//
+// Format: SEED_<CATEGORY>_<SPECIFIC>
+// Categories: PROD (production safety), FK (foreign key),
+//             SCHEMA, IDEMPOTENCY, IO, CLI, ANON
+// ═══════════════════════════════════════════════════════════════
+
+export const SEED_ERROR_CODES = {
+  // Production safety violations (CRITICAL — page on call)
+  PROD_NODE_ENV: 'SEED_PROD_NODE_ENV',
+  PROD_DATABASE_URL: 'SEED_PROD_DATABASE_URL',
+  PROD_NO_FORCE_FLAG: 'SEED_PROD_NO_FORCE_FLAG',
+
+  // Foreign key / referential integrity
+  FK_ORPHAN_DETECTED: 'SEED_FK_ORPHAN_DETECTED',
+  FK_PARENT_MISSING: 'SEED_FK_PARENT_MISSING',
+  FK_CYCLE_DETECTED: 'SEED_FK_CYCLE_DETECTED',
+
+  // Schema mismatch (seed expectations vs Prisma reality)
+  SCHEMA_MISMATCH: 'SEED_SCHEMA_MISMATCH',
+  SCHEMA_FIELD_MISSING: 'SEED_SCHEMA_FIELD_MISSING',
+  SCHEMA_ENUM_VALUE_INVALID: 'SEED_SCHEMA_ENUM_VALUE_INVALID',
+
+  // Idempotency violations
+  IDEMPOTENCY_DUPLICATE_INSERT: 'SEED_IDEMPOTENCY_DUPLICATE_INSERT',
+  IDEMPOTENCY_NON_DETERMINISTIC: 'SEED_IDEMPOTENCY_NON_DETERMINISTIC',
+
+  // I/O failures
+  IO_DB_UNREACHABLE: 'SEED_IO_DB_UNREACHABLE',
+  IO_BACKUP_FAILED: 'SEED_IO_BACKUP_FAILED',
+  IO_BACKUP_RESTORE_FAILED: 'SEED_IO_BACKUP_RESTORE_FAILED',
+
+  // CLI argument parsing
+  CLI_UNKNOWN_COMMAND: 'SEED_CLI_UNKNOWN_COMMAND',
+  CLI_INVALID_FLAG: 'SEED_CLI_INVALID_FLAG',
+  CLI_MISSING_REQUIRED: 'SEED_CLI_MISSING_REQUIRED',
+
+  // Anonymization
+  ANON_PII_LEAK: 'SEED_ANON_PII_LEAK',
+  ANON_REGEX_FAILED: 'SEED_ANON_REGEX_FAILED',
+
+  // Module execution
+  MODULE_TIMEOUT: 'SEED_MODULE_TIMEOUT',
+  MODULE_TRANSACTION_ROLLBACK: 'SEED_MODULE_TRANSACTION_ROLLBACK',
+  MODULE_DEPENDENCY_FAILED: 'SEED_MODULE_DEPENDENCY_FAILED',
+} as const;
+
+export type SeedErrorCode = (typeof SEED_ERROR_CODES)[keyof typeof SEED_ERROR_CODES];

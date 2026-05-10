@@ -9,9 +9,9 @@
 // PRISMA CLIENT GENERATOR
 // ─────────────────────────────────────────────────────────────────────────
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["postgresqlExtensions"]
-    binaryTargets   = ["native", "debian-openssl-3.0.x"] // native = local Windows, debian = Railway production
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+  binaryTargets   = ["native", "debian-openssl-3.0.x"]
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -32,9 +32,9 @@ generator client {
 // Production: NOT applicable (uses migrate deploy only)
 //
 datasource db {
-    provider          = "postgresql"
-    url               = env("DATABASE_URL")
-    shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -42,287 +42,530 @@ datasource db {
 // ═══════════════════════════════════════════════════════════════
 
 enum UserPrimaryRole {
-    PATIENT
-    CLINIC_OWNER
-    CLINIC_STAFF
-    DOCTOR
-    ADMIN
-    SUPER_ADMIN
+  PATIENT
+  CLINIC_OWNER
+  CLINIC_STAFF
+  DOCTOR
+  OWNER
+  ADMIN
+  SUPER_ADMIN
 }
 
 enum AuthProvider {
-    EMAIL
-    GOOGLE
-    PHONE
-    AUTH0
-    APPLE
-    MAGIC_LINK
+  EMAIL
+  GOOGLE
+  PHONE
+  AUTH0
+  APPLE
+  MAGIC_LINK
 }
 
 enum Gender {
-    MALE
-    FEMALE
-    OTHER
-    PREFER_NOT_TO_SAY
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
 }
 
 enum SmokingStatus {
-    NEVER
-    FORMER
-    CURRENT
+  NEVER
+  FORMER
+  CURRENT
+  // ── B-3: Factory + builder aliases ──
+  NEVER_SMOKER
+  CURRENT_SMOKER
+  FORMER_SMOKER
+  OCCASIONAL_SMOKER
 }
 
 enum PregnancyStatus {
-    NOT_PREGNANT
-    PREGNANT
-    BREASTFEEDING
-    NOT_APPLICABLE
+  NOT_PREGNANT
+  PREGNANT
+  BREASTFEEDING
+  NOT_APPLICABLE
 }
 
 enum SubscriptionTier {
-    FREE
-    PRO
+  // ── B2C (patient-facing) ──
+  FREE // Default — all patients (per Datun memory: B2C always free)
+
+  // ── B2B (clinic-facing) ──
+  TRIAL // 30-day clinic free trial
+  STARTER // Rs 999/month — small clinics (1-2 doctors)
+  PRO // Rs 2,000/month — primary clinic tier (Datun revenue driver)
+  ENTERPRISE // Rs 10,000+/month — multi-clinic chains
+
+  // ── User-facing premium (future per memory: Rs 99/month Pro tier for end-users) ──
+  PATIENT_PRO // Rs 99/month — patient pro tier (priority queue, longer history)
 }
 
 enum PatientRelationship {
-    SELF
-    PARENT
-    SPOUSE
-    CHILD
-    SIBLING
-    CAREGIVER
-    GUARDIAN
-    OTHER
+  SELF
+  PARENT
+  SPOUSE
+  CHILD
+  SIBLING
+  CAREGIVER
+  GUARDIAN
+  OTHER
 }
 
 enum AccessLevel {
-    FULL
-    VIEW_ONLY
-    EMERGENCY
+  FULL
+  VIEW_ONLY
+  EMERGENCY
 }
 
 enum RoleType {
-    PATIENT
-    CLINIC_OWNER
-    CLINIC_STAFF
-    DOCTOR
-    ADMIN
-    SUPER_ADMIN
+  PATIENT
+  CLINIC_OWNER
+  CLINIC_STAFF
+  DOCTOR
+  ADMIN
+  SUPER_ADMIN
 }
 
 enum ClinicTier {
-    LITE
-    GROW
-    PRO
-    ENTERPRISE
+  LITE
+  GROW
+  PRO
+  ENTERPRISE
 }
 
 enum ClinicMemberRole {
-    OWNER
-    ADMIN
-    RECEPTIONIST
-    DOCTOR
+  OWNER
+  ADMIN
+  RECEPTIONIST
+  DOCTOR
 }
 
 enum InvitationStatus {
-    PENDING
-    ACCEPTED
-    EXPIRED
-    REVOKED
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
 
 enum ConsultationStatus {
-    IN_PROGRESS
-    COMPLETED
-    ABANDONED
-    EXPIRED
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+  EXPIRED
+  // ── B-1 v2: Workflow expansion ──
+  AWAITING_PATIENT
+  AWAITING_DOCTOR
+  ESCALATED
+  HANDED_OFF_TO_DOCTOR
+  PHYSICAL_VISIT_RECOMMENDED
+  EMERGENCY_REFERRED
 }
 
 enum UrgencyLevel {
-    EMERGENCY
-    URGENT
-    MODERATE
-    ROUTINE
+  EMERGENCY
+  URGENT
+  MODERATE
+  ROUTINE
 }
 
 enum MessageRole {
-    USER
-    ASSISTANT
-    SYSTEM
+  USER
+  ASSISTANT
+  SYSTEM
+  // ── B-1 v2: Clinical-context aliases (factories use these) ──
+  PATIENT
+  AI
+  DOCTOR
+  NURSE
+  PHARMACIST
+  SYSTEM_AUTOMATION
 }
 
 enum MessageContentType {
-    TEXT
-    IMAGE
-    CHIPS
-    SYSTEM_EVENT
+  TEXT
+  IMAGE
+  CHIPS
+  SYSTEM_EVENT
 }
 
 enum AppointmentStatus {
-    SCHEDULED
-    CONFIRMED
-    IN_PROGRESS
-    COMPLETED
-    CANCELLED
-    NO_SHOW
-    RESCHEDULED
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+  RESCHEDULED
 }
 
 enum AppointmentType {
-    FIRST_VISIT
-    FOLLOW_UP
-    EMERGENCY
-    ROUTINE_CHECKUP
+  FIRST_VISIT
+  FOLLOW_UP
+  EMERGENCY
+  ROUTINE_CHECKUP
 }
 
 enum PaymentStatus {
-    PENDING
-    PAID
-    REFUNDED
+  PENDING
+  PAID
+  REFUNDED
 }
 
 enum AppointmentSource {
-    DATUN_AI
-    DIRECT
-    PHONE
-    WALKIN
+  DATUN_AI
+  DIRECT
+  PHONE
+  WALKIN
 }
 
 enum ReviewSource {
-    POST_APPOINTMENT
-    ORGANIC
-    INVITED
+  POST_APPOINTMENT
+  ORGANIC
+  INVITED
 }
 
 enum LeadStatus {
-    NEW
-    CONTACTED
-    APPOINTMENT_BOOKED
-    CONVERTED
-    CLOSED
-    EXPIRED
+  NEW
+  CONTACTED
+  APPOINTMENT_BOOKED
+  CONVERTED
+  CLOSED
+  EXPIRED
 }
 
 enum NotificationType {
-    CONSULTATION_COMPLETE
-    APPOINTMENT_REMINDER
-    FOLLOW_UP
-    REVIEW_REQUEST
-    LEAD_NEW
-    PAYMENT_SUCCESS
-    PAYMENT_FAILED
-    SYSTEM
-    PROMOTIONAL
+  CONSULTATION_COMPLETE
+  APPOINTMENT_REMINDER
+  FOLLOW_UP
+  REVIEW_REQUEST
+  LEAD_NEW
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  SYSTEM
+  PROMOTIONAL
 }
 
 enum NotificationChannel {
-    IN_APP
-    EMAIL
-    WHATSAPP
-    SMS
-    PUSH
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
 }
 
 enum SubscriptionStatus {
-    ACTIVE
-    TRIAL
-    PAST_DUE
-    CANCELLED
-    PAUSED
-    EXPIRED
+  ACTIVE
+  TRIAL
+  PAST_DUE
+  CANCELLED
+  PAUSED
+  EXPIRED
 }
 
 enum BillingCycle {
-    MONTHLY
-    ANNUAL
+  MONTHLY
+  ANNUAL
 }
 
 enum InvoiceStatus {
-    DRAFT
-    SENT
-    PAID
-    OVERDUE
-    CANCELLED
-    REFUNDED
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  REFUNDED
 }
 
 enum TransactionStatus {
-    INITIATED
-    AUTHORIZED
-    CAPTURED
-    FAILED
-    REFUNDED
-    PARTIALLY_REFUNDED
+  INITIATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
 }
 
 enum WhatsAppStatus {
-    QUEUED
-    SENT
-    DELIVERED
-    READ
-    FAILED
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  // ── B-1 v2: Lifecycle states ──
+  PENDING
+  SCHEDULED
+  EXPIRED
+  REJECTED_BY_USER
+  SUPERSEDED
 }
 
 enum WhatsAppDirection {
-    OUTBOUND
-    INBOUND
+  OUTBOUND
+  INBOUND
 }
 
 enum WhatsAppProvider {
-    META
-    GUPSHUP
-    AISENSY
+  META
+  GUPSHUP
+  AISENSY
 }
 
 enum SourceChannel {
-    WEB
-    WHATSAPP
-    APP
+  WEB
+  WHATSAPP
+  APP
 }
 
 enum ConsentPurpose {
-    PRIVACY_POLICY
-    AI_CONSULTATION
-    WHATSAPP_OPTIN
-    MARKETING
-    DATA_TRAINING
-    TREATMENT_DISCLAIMER
+  PRIVACY_POLICY
+  AI_CONSULTATION
+  WHATSAPP_OPTIN
+  MARKETING
+  DATA_TRAINING
+  TREATMENT_DISCLAIMER
 }
 
 enum ConsentStatus {
-    GRANTED
-    REVOKED
-    EXPIRED
+  GRANTED
+  REVOKED
+  EXPIRED
 }
 
 enum ReviewStatusEnum {
-    PENDING_REVIEW
-    APPROVED
-    NEEDS_CORRECTION
-    CORRECTED
+  PENDING_REVIEW
+  APPROVED
+  NEEDS_CORRECTION
+  CORRECTED
 }
 
 enum EmailStatus {
-    QUEUED
-    SENT
-    DELIVERED
-    BOUNCED
-    FAILED
+  QUEUED
+  SENT
+  DELIVERED
+  BOUNCED
+  FAILED
 }
 
 enum WhatsAppHealthStatus {
-    HEALTHY
-    DEGRADED
-    UNHEALTHY
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
 }
 
 enum JobStatus {
-    QUEUED
-    ACTIVE
-    COMPLETED
-    FAILED
-    DELAYED
-    STALLED
+  QUEUED
+  ACTIVE
+  COMPLETED
+  FAILED
+  DELAYED
+  STALLED
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE B-1 v2: NEW ENUMS — Research-backed (NMC, DPDP, WHO, Meta)
+// ═══════════════════════════════════════════════════════════════
+
+/// Meta WhatsApp Cloud API template categories (post-July 2025 strict enforcement)
+/// Source: https://developers.facebook.com/docs/whatsapp/.../templates/template-categorization
+enum WhatsAppTemplateCategory {
+  MARKETING
+  UTILITY
+  AUTHENTICATION
+  AUTHENTICATION_INTERNATIONAL
+  SERVICE
+}
+
+/// Strict template names (Datun's 6 Meta-approved templates + future)
+enum WhatsAppTemplateName {
+  consultation_complete
+  internal_alert
+  three_day_followup
+  seven_day_followup
+  appointment_reminder
+  weekly_tip
+  appointment_confirmation
+  prescription_ready
+  payment_reminder
+  onboarding_welcome
+}
+
+/// DPDP Act 2023 compliance profile per tenant
+/// Source: https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf
+enum ComplianceProfile {
+  DPDP_INDIA
+  HIPAA_US
+  GDPR_EU
+  PIPEDA_CANADA
+  LGPD_BRAZIL
+  PDPA_SINGAPORE
+  NONE
+}
+
+/// Strict typed seed module error codes (replaces free-text error strings)
+enum SeedErrorCode {
+  E_NEED_USERS
+  E_NEED_OWNER_USERS
+  E_NEED_DOCTOR_USERS
+  E_NEED_PATIENT_USERS
+  E_NEED_CLINICS
+  E_MODULE_NOT_ALLOWED_TEST
+  E_MODULE_NOT_ALLOWED_DEV
+  E_MODULE_NOT_ALLOWED_PROD
+  E_MODULE_NOT_ALLOWED_STAGING
+  E_DEPENDENCY_MISSING
+  E_INVARIANT_VIOLATED
+  E_QUOTA_EXCEEDED
+  E_DATA_DRIFT
+  E_DETERMINISM_FAILED
+  E_ANONYMIZATION_FAILED
+  E_SCHEMA_MISMATCH
+}
+
+/// Pharmacology category (WHO ATC classification first letter)
+/// Source: WHO ATC/DDD Index 2024
+enum MedicationCategory {
+  ANTIBIOTIC
+  ANALGESIC_OPIOID
+  ANALGESIC_NON_OPIOID
+  NSAID
+  ANTACID_PPI
+  ANTI_INFLAMMATORY
+  LOCAL_ANESTHETIC
+  ANTIFUNGAL
+  ANTIVIRAL
+  ANTISEPTIC_ORAL
+  SEDATIVE_HYPNOTIC
+  CORTICOSTEROID
+  MOUTHWASH
+  TOPICAL_DENTAL
+  VITAMIN_MINERAL
+  HEMOSTATIC
+  OTHER
+}
+
+/// FDA-style pregnancy safety category (used in Indian Pharmacopoeia)
+enum PregnancyCategory {
+  A
+  B
+  C
+  D
+  X
+  UNKNOWN
+}
+
+/// CDSCO/MoHFW drug schedule classification
+/// Source: Drugs and Cosmetics Act, 1940 — Schedule listing
+enum DrugSchedule {
+  OTC
+  SCHEDULE_G
+  SCHEDULE_H
+  SCHEDULE_H1
+  SCHEDULE_X
+  SCHEDULE_K
+  NARCOTIC
+  PSYCHOTROPIC
+  NONE
+}
+
+/// Drug-drug interaction severity (Lexicomp-aligned)
+enum InteractionSeverity {
+  CONTRAINDICATED
+  MAJOR
+  MODERATE
+  MINOR
+  UNKNOWN
+}
+
+/// Indian regional archetype locales (8 supported by Datun + meta tiers)
+enum ArchetypeLocale {
+  NORTH_INDIA_URBAN
+  NORTH_INDIA_RURAL
+  SOUTH_INDIA_URBAN
+  SOUTH_INDIA_RURAL
+  EAST_INDIA_URBAN
+  EAST_INDIA_RURAL
+  WEST_INDIA_URBAN
+  WEST_INDIA_RURAL
+  CENTRAL_INDIA_URBAN
+  CENTRAL_INDIA_RURAL
+  METRO_TIER_1
+  METRO_TIER_2
+  METRO_TIER_3
+}
+
+/// System prompt use cases (versioning + A/B testing)
+enum PromptUseCase {
+  CONSULTATION_TRIAGE
+  DIAGNOSIS_GENERATION
+  PRESCRIPTION_GENERATION
+  HOME_REMEDIES
+  APPOINTMENT_SUMMARY
+  SAFETY_CHECK
+  HANDOFF_DOCTOR
+  PATIENT_FOLLOWUP
+  PHOTO_ANALYSIS
+  URGENCY_TRIAGE
+  SYMPTOM_CLARIFICATION
+  DRUG_INTERACTION_CHECK
+  PREGNANCY_SAFETY_CHECK
+  PEDIATRIC_DOSING_ADJUSTMENT
+}
+
+/// Prescription line item review/safety status
+enum LineItemReviewStatus {
+  NOT_REVIEWED
+  APPROVED
+  FLAGGED_ALLERGY
+  FLAGGED_PREGNANCY
+  FLAGGED_INTERACTION
+  FLAGGED_DOSAGE
+  FLAGGED_BLOOD_THINNER
+  FLAGGED_PEDIATRIC
+  FLAGGED_RENAL_IMPAIRMENT
+  FLAGGED_HEPATIC_IMPAIRMENT
+  REJECTED_BY_DOCTOR
+}
+
+/// 8 Indian languages supported by Datun (subset of 22 DPDP-mandated languages)
+/// Source: DPDP Rules 2025, Schedule 8 Indian Constitution
+enum LocaleCode {
+  en
+  hi
+  pa
+  bn
+  ta
+  te
+  mr
+  gu
+  kn
+  ml
+  or
+  as
+  ur
+}
+
+/// Identity verification level (DPDP + NMC patient identity verification)
+enum KycLevel {
+  NONE
+  BASIC_PHONE_VERIFIED
+  EMAIL_VERIFIED
+  GOVERNMENT_ID_PENDING
+  GOVERNMENT_ID_VERIFIED
+  ABHA_VERIFIED
+  DOCTOR_VERIFIED
+}
+
+/// DPDP processing purpose (data minimization compliance)
+enum ProcessingPurpose {
+  CONSULTATION
+  APPOINTMENT
+  PRESCRIPTION
+  BILLING
+  AUDIT_LOG
+  LEGAL_COMPLIANCE
+  AI_TRAINING
+  ANALYTICS_AGGREGATED
+  MARKETING
+  EMERGENCY_CARE
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -332,68 +575,76 @@ enum JobStatus {
 // ═══════════════════════════════════════════════════════════════
 
 model User {
-    id                 String           @id @default(uuid()) @db.Uuid
-    email              String           @unique
-    phone              String?          @unique
-    passwordHash       String?
-    name               String
-    avatarUrl          String?
-    dateOfBirth        DateTime?
-    gender             Gender?
-    languagePreference String           @default("en")
-    city               String?
-    state              String?
-    pincode            String?
-    latitude           Float?
-    longitude          Float?
-    primaryRole        UserPrimaryRole  @default(PATIENT)
-    isEmailVerified    Boolean          @default(false)
-    isPhoneVerified    Boolean          @default(false)
-    isActive           Boolean          @default(true)
-    lastLoginAt        DateTime?
-    lastLoginIp        String?
-    lastLoginDevice    String?
-    referralCode       String?          @unique
-    referredById       String?          @db.Uuid
-    referredBy         User?            @relation("UserReferrals", fields: [referredById], references: [id])
-    referrals          User[]           @relation("UserReferrals")
-    subscriptionTier   SubscriptionTier @default(FREE)
-    metadata           Json?
-    createdAt          DateTime         @default(now())
-    updatedAt          DateTime         @updatedAt
-    deletedAt          DateTime?
+  id           String  @id @default(uuid()) @db.Uuid
+  email        String  @unique
+  phone        String? @unique
+  passwordHash String?
+  name         String  @default("")
+  avatarUrl    String?
 
-    // ── Relations ──
-    patient              Patient?
-    roles                UserRole[]
-    authIdentities       UserAuthIdentity[]
-    clinicsOwned         Clinic[]
-    clinicMemberships    ClinicMember[]
-    clinicInvitesSent    ClinicInvitation[]       @relation("InvitedByUser")
-    doctor               Doctor?
-    consultations        Consultation[]           @relation("UserConsultations")
-    consultationsStarted Consultation[]           @relation("InitiatedByUser")
-    appointments         Appointment[]            @relation("PatientAppointments")
-    prescriptions        Prescription[]           @relation("UserPrescriptions")
-    reviewsGiven         Review[]
-    leadsAsPatient       Lead[]                   @relation("PatientLeads")
-    notifications        Notification[]
-    notificationPrefs    NotificationPreference[]
-    whatsappMessages     WhatsAppMessage[]
-    auditLogs            AuditLog[]
-    consentLogs          ConsentLog[]
-    emailLogs            EmailLog[]
-    mediaUploads         MediaAsset[]             @relation("UploadedByUser")
-    trainingLabels       TrainingLabel[]
-    patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
-    jobLogs              JobLog[]
+  // ── Wave 3 v2 denormalized fields (factory-friendly) ──
+  firstName          String?
+  lastName           String?
+  fullName           String?
+  role               UserPrimaryRole? // mirror of primaryRole; @deprecated, use primaryRole
+  googleId           String?          @unique
+  appleId            String?          @unique
+  dateOfBirth        DateTime?
+  gender             Gender?
+  languagePreference String           @default("en")
+  city               String?
+  state              String?
+  pincode            String?
+  latitude           Float?
+  longitude          Float?
+  primaryRole        UserPrimaryRole  @default(PATIENT)
+  isEmailVerified    Boolean          @default(false)
+  isPhoneVerified    Boolean          @default(false)
+  isActive           Boolean          @default(true)
+  lastLoginAt        DateTime?
+  lastLoginIp        String?
+  lastLoginDevice    String?
+  referralCode       String?          @unique
+  referredById       String?          @db.Uuid
+  referredBy         User?            @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals          User[]           @relation("UserReferrals")
+  subscriptionTier   SubscriptionTier @default(FREE)
+  metadata           Json?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  deletedAt          DateTime?
 
-    @@index([email])
-    @@index([phone])
-    @@index([createdAt(sort: Desc)])
-    @@index([primaryRole])
-    @@index([referralCode])
-    @@map("users")
+  // ── Relations ──
+  patient              Patient?
+  roles                UserRole[]
+  authIdentities       UserAuthIdentity[]
+  clinicsOwned         Clinic[]
+  clinicMemberships    ClinicMember[]
+  clinicInvitesSent    ClinicInvitation[]       @relation("InvitedByUser")
+  doctor               Doctor?
+  consultations        Consultation[]           @relation("UserConsultations")
+  consultationsStarted Consultation[]           @relation("InitiatedByUser")
+  appointments         Appointment[]            @relation("PatientAppointments")
+  prescriptions        Prescription[]           @relation("UserPrescriptions")
+  reviewsGiven         Review[]
+  leadsAsPatient       Lead[]                   @relation("PatientLeads")
+  notifications        Notification[]
+  notificationPrefs    NotificationPreference[]
+  whatsappMessages     WhatsAppMessage[]
+  auditLogs            AuditLog[]
+  consentLogs          ConsentLog[]
+  emailLogs            EmailLog[]
+  mediaUploads         MediaAsset[]             @relation("UploadedByUser")
+  trainingLabels       TrainingLabel[]
+  patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
+  jobLogs              JobLog[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([createdAt(sort: Desc)])
+  @@index([primaryRole])
+  @@index([referralCode])
+  @@map("users")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -403,34 +654,83 @@ model User {
 // ═══════════════════════════════════════════════════════════════
 
 model Patient {
-    id                    String           @id @default(uuid()) @db.Uuid
-    userId                String           @unique @db.Uuid
-    user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-    bloodGroup            String?
-    allergies             Json?
-    medicalConditions     Json?
-    currentMedications    Json?
-    emergencyContactName  String?
-    emergencyContactPhone String?
-    dentalHistory         Json?
-    lastDentalVisit       DateTime?
-    smokingStatus         SmokingStatus?
-    tobaccoUse            Boolean?
-    pregnancyStatus       PregnancyStatus?
-    insuranceProvider     String?
-    insurancePolicyNumber String?
-    createdAt             DateTime         @default(now())
-    updatedAt             DateTime         @updatedAt
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    // ── Relations ──
-    accessedBy    UserPatientAccess[]
-    consultations Consultation[]
-    appointments  Appointment[]
-    prescriptions Prescription[]
-    reviews       Review[]
-    leads         Lead[]
+  // ── B-1 v2: Denormalized identity (FAANG perf — eliminate User join on patient queries) ──
+  firstName       String?
+  lastName        String?
+  fullName        String?
+  dateOfBirth     DateTime?
+  ageYears        Int?
+  gender          Gender?
+  phone           String?
+  email           String?
+  preferredLocale LocaleCode @default(en)
 
-    @@map("patients")
+  // ── B-1 v2: NMC patient identity verification ──
+  verifiedNameAt   DateTime?
+  kycLevel         KycLevel  @default(NONE)
+  governmentIdHash String?
+  abhaId           String?
+
+  // ── B-1 v2: Tenant scoping (clinic = tenant in Datun model) ──
+  clinicId String? @db.Uuid
+  clinic   Clinic? @relation("PatientHomeClinic", fields: [clinicId], references: [id])
+
+  // ── Existing medical fields ──
+  bloodGroup            String?
+  allergies             Json?
+  knownAllergies        Json?
+  medicalConditions     Json?
+  currentMedications    Json?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  dentalHistory         Json?
+  lastDentalVisit       DateTime?
+  smokingStatus         SmokingStatus?
+  tobaccoUse            Boolean?
+  alcoholUse            Boolean?
+  pregnancyStatus       PregnancyStatus?
+  insuranceProvider     String?
+  insurancePolicyNumber String?
+
+  // ── B-1 v2: Archetype-driven demographic context ──
+  primaryConditionIcd10   String?
+  comorbidConditionsIcd10 String[]
+  sesTier                 String?
+  residence               String?
+  educationLevel          String?
+  insuranceId             String?
+  referralChannel         String?
+  safetyConstraints       String[]
+  archetypeKey            String?
+
+  // ── DPDP retention tracking ──
+  consentVersion       String?
+  lastConsentRenewedAt DateTime?
+  retentionUntil       DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  accessedBy    UserPatientAccess[]
+  consultations Consultation[]
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  reviews       Review[]
+  leads         Lead[]
+
+  @@index([clinicId])
+  @@index([fullName])
+  @@index([phone])
+  @@index([primaryConditionIcd10])
+  @@index([archetypeKey])
+  @@index([kycLevel])
+  @@index([deletedAt])
+  @@map("patients")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -440,21 +740,21 @@ model Patient {
 // ═══════════════════════════════════════════════════════════════
 
 model UserPatientAccess {
-    id           String              @id @default(uuid()) @db.Uuid
-    userId       String              @db.Uuid
-    user         User                @relation("UserAccesses", fields: [userId], references: [id], onDelete: Cascade)
-    patientId    String              @db.Uuid
-    patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
-    relationship PatientRelationship
-    accessLevel  AccessLevel         @default(FULL)
-    isPrimary    Boolean             @default(false)
-    createdAt    DateTime            @default(now())
-    updatedAt    DateTime            @updatedAt
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @db.Uuid
+  user         User                @relation("UserAccesses", fields: [userId], references: [id], onDelete: Cascade)
+  patientId    String              @db.Uuid
+  patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  relationship PatientRelationship
+  accessLevel  AccessLevel         @default(FULL)
+  isPrimary    Boolean             @default(false)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 
-    @@unique([userId, patientId])
-    @@index([userId])
-    @@index([patientId])
-    @@map("user_patient_accesses")
+  @@unique([userId, patientId])
+  @@index([userId])
+  @@index([patientId])
+  @@map("user_patient_accesses")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -464,17 +764,17 @@ model UserPatientAccess {
 // ═══════════════════════════════════════════════════════════════
 
 model UserRole {
-    id        String   @id @default(uuid()) @db.Uuid
-    userId    String   @db.Uuid
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    role      RoleType
-    clinicId  String?  @db.Uuid
-    clinic    Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-    createdAt DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      RoleType
+  clinicId  String?  @db.Uuid
+  clinic    Clinic?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
 
-    @@unique([userId, role, clinicId])
-    @@index([userId])
-    @@map("user_roles")
+  @@unique([userId, role, clinicId])
+  @@index([userId])
+  @@map("user_roles")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -484,20 +784,20 @@ model UserRole {
 // ═══════════════════════════════════════════════════════════════
 
 model UserAuthIdentity {
-    id              String       @id @default(uuid()) @db.Uuid
-    userId          String       @db.Uuid
-    user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    provider        AuthProvider
-    providerUserId  String
-    emailAtProvider String?
-    phoneAtProvider String?
-    isPrimary       Boolean      @default(false)
-    linkedAt        DateTime     @default(now())
-    lastUsedAt      DateTime?
+  id              String       @id @default(uuid()) @db.Uuid
+  userId          String       @db.Uuid
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider        AuthProvider
+  providerUserId  String
+  emailAtProvider String?
+  phoneAtProvider String?
+  isPrimary       Boolean      @default(false)
+  linkedAt        DateTime     @default(now())
+  lastUsedAt      DateTime?
 
-    @@unique([provider, providerUserId])
-    @@index([userId])
-    @@map("user_auth_identities")
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("user_auth_identities")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -507,61 +807,79 @@ model UserAuthIdentity {
 // ═══════════════════════════════════════════════════════════════
 
 model Clinic {
-    id                  String     @id @default(uuid()) @db.Uuid
-    ownerId             String     @db.Uuid
-    owner               User       @relation(fields: [ownerId], references: [id])
-    name                String
-    slug                String     @unique
-    description         String?    @db.Text
-    phone               String
-    email               String
-    website             String?
-    address             String
-    landmark            String?
-    city                String
-    state               String
-    pincode             String
-    latitude            Float
-    longitude           Float
-    registrationNumber  String?
-    registrationCertUrl String?
-    isVerified          Boolean    @default(false)
-    tier                ClinicTier @default(LITE) // Derived from Subscription — Subscription is source of truth
-    trialEndsAt         DateTime?
-    logoUrl             String?
-    coverImageUrl       String?
-    photos              Json?
-    services            Json?
-    specialties         Json?
-    languages           Json?
-    openingHours        Json?
-    averageRating       Float      @default(0)
-    totalReviews        Int        @default(0)
-    totalLeads          Int        @default(0)
-    totalAppointments   Int        @default(0)
-    isActive            Boolean    @default(true)
-    onboardingStep      Int        @default(0)
-    metadata            Json?
-    createdAt           DateTime   @default(now())
-    updatedAt           DateTime   @updatedAt
-    deletedAt           DateTime?
+  id                  String     @id @default(uuid()) @db.Uuid
+  ownerId             String     @db.Uuid
+  owner               User       @relation(fields: [ownerId], references: [id])
+  name                String
+  slug                String     @unique
+  description         String?    @db.Text
+  phone               String
+  email               String
+  website             String?
+  address             String
+  landmark            String?
+  city                String
+  state               String
+  pincode             String
+  latitude            Float
+  longitude           Float
+  registrationNumber  String?
+  registrationCertUrl String?
+  isVerified          Boolean    @default(false)
+  tier                ClinicTier @default(LITE) // Derived from Subscription — Subscription is source of truth
+  trialEndsAt         DateTime?
+  logoUrl             String?
+  coverImageUrl       String?
+  photos              Json?
+  services            Json?
+  specialties         Json?
+  languages           Json?
+  openingHours        Json?
+  averageRating       Float      @default(0)
+  totalReviews        Int        @default(0)
+  totalLeads          Int        @default(0)
+  totalAppointments   Int        @default(0)
+  isActive            Boolean    @default(true)
+  onboardingStep      Int        @default(0)
+  // ── B-1 v2: Service capabilities ──
+  acceptsEmergencies  Boolean    @default(false)
+  acceptsInsurance    Boolean    @default(false)
+  acceptsTelemedicine Boolean    @default(true)
+  timezone            String     @default("Asia/Kolkata")
+  primaryLocale       LocaleCode @default(en)
 
-    // ── Relations ──
-    members       ClinicMember[]
-    invitations   ClinicInvitation[]
-    doctors       DoctorClinic[]
-    appointments  Appointment[]
-    reviews       Review[]
-    leads         Lead[]
-    subscriptions Subscription[]
-    invoices      Invoice[]
-    userRoles     UserRole[]
+  // ── B-1 v2: Subscription denormalization (mirrors Subscription source-of-truth) ──
+  subscriptionTier      SubscriptionTier @default(FREE)
+  subscriptionExpiresAt DateTime?
 
-    @@index([slug])
-    @@index([city])
-    @@index([ownerId])
-    @@index([isActive, isVerified])
-    @@map("clinics")
+  // ── B-1 v2: DPDP compliance ──
+  complianceProfile ComplianceProfile @default(DPDP_INDIA)
+  dataRetentionDays Int               @default(2555) // ~7 years (DPDP minimum for medical)
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+
+  // ── Relations ──
+  // ── B-1 v2: New back-relations ──
+  homePatients   Patient[]          @relation("PatientHomeClinic")
+  consultations  Consultation[]     @relation("ConsultationClinic")
+  primaryDoctors Doctor[]           @relation("DoctorPrimaryClinic")
+  members        ClinicMember[]
+  invitations    ClinicInvitation[]
+  doctors        DoctorClinic[]
+  appointments   Appointment[]
+  reviews        Review[]
+  leads          Lead[]
+  subscriptions  Subscription[]
+  invoices       Invoice[]
+  userRoles      UserRole[]
+
+  @@index([slug])
+  @@index([city])
+  @@index([ownerId])
+  @@index([isActive, isVerified])
+  @@map("clinics")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -571,26 +889,26 @@ model Clinic {
 // ═══════════════════════════════════════════════════════════════
 
 model ClinicMember {
-    id          String           @id @default(uuid()) @db.Uuid
-    clinicId    String           @db.Uuid
-    clinic      Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-    userId      String           @db.Uuid
-    user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-    role        ClinicMemberRole
-    isActive    Boolean          @default(true)
-    invitedAt   DateTime         @default(now())
-    joinedAt    DateTime?
-    invitedById String?          @db.Uuid
-    createdAt   DateTime         @default(now())
-    updatedAt   DateTime         @updatedAt
+  id          String           @id @default(uuid()) @db.Uuid
+  clinicId    String           @db.Uuid
+  clinic      Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  userId      String           @db.Uuid
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        ClinicMemberRole
+  isActive    Boolean          @default(true)
+  invitedAt   DateTime         @default(now())
+  joinedAt    DateTime?
+  invitedById String?          @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-    // ── Relations ──
-    leadsAssigned Lead[]
+  // ── Relations ──
+  leadsAssigned Lead[]
 
-    @@unique([clinicId, userId])
-    @@index([clinicId])
-    @@index([userId])
-    @@map("clinic_members")
+  @@unique([clinicId, userId])
+  @@index([clinicId])
+  @@index([userId])
+  @@map("clinic_members")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -600,24 +918,24 @@ model ClinicMember {
 // ═══════════════════════════════════════════════════════════════
 
 model ClinicInvitation {
-    id           String           @id @default(uuid()) @db.Uuid
-    clinicId     String           @db.Uuid
-    clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-    emailOrPhone String
-    role         ClinicMemberRole
-    invitedById  String           @db.Uuid
-    invitedBy    User             @relation("InvitedByUser", fields: [invitedById], references: [id])
-    tokenHash    String           @unique
-    expiresAt    DateTime
-    acceptedAt   DateTime?
-    status       InvitationStatus @default(PENDING)
-    createdAt    DateTime         @default(now())
-    updatedAt    DateTime         @updatedAt
+  id           String           @id @default(uuid()) @db.Uuid
+  clinicId     String           @db.Uuid
+  clinic       Clinic           @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  emailOrPhone String
+  role         ClinicMemberRole
+  invitedById  String           @db.Uuid
+  invitedBy    User             @relation("InvitedByUser", fields: [invitedById], references: [id])
+  tokenHash    String           @unique
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  status       InvitationStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-    @@index([clinicId])
-    @@index([emailOrPhone])
-    @@index([tokenHash])
-    @@map("clinic_invitations")
+  @@index([clinicId])
+  @@index([emailOrPhone])
+  @@index([tokenHash])
+  @@map("clinic_invitations")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -627,31 +945,61 @@ model ClinicInvitation {
 // ═══════════════════════════════════════════════════════════════
 
 model Doctor {
-    id                  String   @id @default(uuid()) @db.Uuid
-    userId              String   @unique @db.Uuid
-    user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    registrationNumber  String
-    registrationCouncil String?
-    qualification       String
-    specialization      String?
-    experienceYears     Int?
-    bio                 String?  @db.Text
-    avatarUrl           String?
-    isAcceptingPatients Boolean  @default(true)
-    rating              Float    @default(0)
-    totalConsultations  Int      @default(0)
-    createdAt           DateTime @default(now())
-    updatedAt           DateTime @updatedAt
+  id     String @id @default(uuid()) @db.Uuid
+  userId String @unique @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    // ── Relations ──
-    clinics               DoctorClinic[]
-    appointments          Appointment[]
-    reviews               Review[]
-    consultationsReviewed Consultation[] @relation("ReviewedByDoctor")
-    prescriptionsSigned   Prescription[] @relation("SignedByDoctor")
-    prescriptionsReviewed Prescription[] @relation("ReviewedByDoctor")
+  // ── B-1 v2: NMC mandatory fields ──
+  registrationNumber     String
+  registrationCouncil    String?
+  registrationState      String?
+  registrationVerifiedAt DateTime?
 
-    @@map("doctors")
+  // ── Identity denormalization ──
+  title     String? @default("Dr.")
+  firstName String?
+  lastName  String?
+
+  // ── Qualification ──
+  qualifications  String
+  degree          String?
+  specialization  String?
+  yearsExperience Int?
+
+  // ── Profile ──
+  bio                 String? @db.Text
+  avatarUrl           String?
+  isAcceptingPatients Boolean @default(true)
+  acceptsEmergencies  Boolean @default(false)
+  acceptsTelemedicine Boolean @default(true)
+  rating              Float   @default(0)
+  totalConsultations  Int     @default(0)
+
+  // ── B-1 v2: Primary clinic ──
+  clinicId String? @db.Uuid
+  clinic   Clinic? @relation("DoctorPrimaryClinic", fields: [clinicId], references: [id])
+
+  // ── Languages spoken (for patient matching) ──
+  languagesSpoken LocaleCode[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  clinics               DoctorClinic[]
+  appointments          Appointment[]
+  reviews               Review[]
+  consultationsReviewed Consultation[] @relation("ReviewedByDoctor")
+  consultations         Consultation[] @relation("ConsultationDoctor")
+  prescriptionsSigned   Prescription[] @relation("SignedByDoctor")
+  prescriptionsReviewed Prescription[] @relation("ReviewedByDoctor")
+
+  @@index([clinicId])
+  @@index([isAcceptingPatients])
+  @@index([acceptsEmergencies])
+  @@index([deletedAt])
+  @@index([registrationNumber])
+  @@map("doctors")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -661,23 +1009,23 @@ model Doctor {
 // ═══════════════════════════════════════════════════════════════
 
 model DoctorClinic {
-    id                   String    @id @default(uuid()) @db.Uuid
-    doctorId             String    @db.Uuid
-    doctor               Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-    clinicId             String    @db.Uuid
-    clinic               Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
-    isPrimaryClinic      Boolean   @default(false)
-    consultationFeePaisa Int?
-    isActive             Boolean   @default(true)
-    startDate            DateTime  @default(now())
-    endDate              DateTime?
-    createdAt            DateTime  @default(now())
-    updatedAt            DateTime  @updatedAt
+  id                   String    @id @default(uuid()) @db.Uuid
+  doctorId             String    @db.Uuid
+  doctor               Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  clinicId             String    @db.Uuid
+  clinic               Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  isPrimaryClinic      Boolean   @default(false)
+  consultationFeePaisa Int?
+  isActive             Boolean   @default(true)
+  startDate            DateTime  @default(now())
+  endDate              DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-    @@unique([doctorId, clinicId])
-    @@index([doctorId])
-    @@index([clinicId])
-    @@map("doctor_clinics")
+  @@unique([doctorId, clinicId])
+  @@index([doctorId])
+  @@index([clinicId])
+  @@map("doctor_clinics")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -687,80 +1035,112 @@ model DoctorClinic {
 // ═══════════════════════════════════════════════════════════════
 
 model Consultation {
-    id                     String             @id @default(uuid()) @db.Uuid
-    patientId              String             @db.Uuid
-    patient                Patient            @relation(fields: [patientId], references: [id])
-    initiatedByUserId      String             @db.Uuid
-    initiatedByUser        User               @relation("InitiatedByUser", fields: [initiatedByUserId], references: [id])
-    userId                 String             @db.Uuid
-    user                   User               @relation("UserConsultations", fields: [userId], references: [id])
-    clientUuid             String?            @unique
-    status                 ConsultationStatus @default(IN_PROGRESS)
-    language               String             @default("en")
-    chiefComplaint         String?            @db.Text
-    diagnosis              String?            @db.Text
-    urgency                UrgencyLevel?
-    treatmentPlan          String?            @db.Text
-    homeRemedies           String?            @db.Text
-    dosList                Json?
-    dontsList              Json?
-    redFlags               Json?
-    medications            Json?
-    investigationsNeeded   Json?
-    visualFindings         String?            @db.Text
-    photoUrls              Json?
-    followUpDays           Int?
-    // ── AI tracking ──
-    aiProvider             String             @default("claude")
-    aiModel                String?
-    aiLatencyMs            Int?
-    aiTokensUsed           Int?
-    aiCostUsd              Decimal?           @db.Decimal(10, 6)
-    promptVersion          String?
-    workflowVersion        String?
-    safetyFlags            Json?
-    // ── Human review (proprietary AI path) ──
-    needsHumanReview       Boolean            @default(false)
-    reviewStatus           ReviewStatusEnum?
-    reviewedByDoctorId     String?            @db.Uuid
-    reviewedByDoctor       Doctor?            @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
-    reviewedAt             DateTime?
-    reviewNotes            String?            @db.Text
-    // ── Stats ──
-    totalMessages          Int                @default(0)
-    durationSeconds        Int?
-    // ── PDF ──
-    pdfUrl                 String?
-    pdfGeneratedAt         DateTime?
-    shareableSlug          String?            @unique
-    shareableLinkExpiresAt DateTime?
-    // ── Compliance ──
-    consentGiven           Boolean            @default(false)
-    consentAt              DateTime?
-    // ── Source ──
-    sourceChannel          SourceChannel      @default(WEB)
-    leadId                 String?            @db.Uuid
-    lead                   Lead?              @relation(fields: [leadId], references: [id])
-    metadata               Json?
-    completedAt            DateTime?
-    createdAt              DateTime           @default(now())
-    updatedAt              DateTime           @updatedAt
-    deletedAt              DateTime?
+  id                     String             @id @default(uuid()) @db.Uuid
+  patientId              String             @db.Uuid
+  patient                Patient            @relation(fields: [patientId], references: [id])
+  initiatedByUserId      String             @db.Uuid
+  initiatedByUser        User               @relation("InitiatedByUser", fields: [initiatedByUserId], references: [id])
+  userId                 String             @db.Uuid
+  user                   User               @relation("UserConsultations", fields: [userId], references: [id])
+  clientUuid             String?            @unique
+  status                 ConsultationStatus @default(IN_PROGRESS)
+  language               String             @default("en")
+  chiefComplaint         String?            @db.Text
+  diagnosis              String?            @db.Text
+  urgency                UrgencyLevel?
+  treatmentPlan          String?            @db.Text
+  homeRemedies           String?            @db.Text
+  dosList                Json?
+  dontsList              Json?
+  redFlags               Json?
+  medications            Json?
+  investigationsNeeded   Json?
+  visualFindings         String?            @db.Text
+  photoUrls              Json?
+  followUpDays           Int?
+  // ── AI tracking ──
+  aiProvider             String             @default("claude")
+  aiModel                String?
+  aiLatencyMs            Int?
+  aiTokensUsed           Int?
+  aiCostUsd              Decimal?           @db.Decimal(10, 6)
+  promptVersion          String?
+  workflowVersion        String?
+  safetyFlags            Json?
+  // ── Human review (proprietary AI path) ──
+  needsHumanReview       Boolean            @default(false)
+  reviewStatus           ReviewStatusEnum?
+  reviewedByDoctorId     String?            @db.Uuid
+  reviewedByDoctor       Doctor?            @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
+  reviewedAt             DateTime?
+  reviewNotes            String?            @db.Text
+  // ── Stats ──
+  totalMessages          Int                @default(0)
+  durationSeconds        Int?
+  // ── PDF ──
+  pdfUrl                 String?
+  pdfGeneratedAt         DateTime?
+  shareableSlug          String?            @unique
+  shareableLinkExpiresAt DateTime?
+  // ── Compliance ──
+  consentGiven           Boolean            @default(false)
+  consentAt              DateTime?
+  // ── Source ──
+  sourceChannel          SourceChannel      @default(WEB)
+  leadId                 String?            @db.Uuid
+  lead                   Lead?              @relation(fields: [leadId], references: [id])
+  // ── B-1 v2: Doctor assignment (separate from review) ──
+  doctorId               String?            @db.Uuid
+  doctor                 Doctor?            @relation("ConsultationDoctor", fields: [doctorId], references: [id])
 
-    // ── Relations ──
-    messages         ConsultationMessage[]
-    trainingLabels   TrainingLabel[]
-    appointments     Appointment[]
-    prescription     Prescription?
-    whatsappMessages WhatsAppMessage[]
-    emailLogs        EmailLog[]
-    jobLogs          JobLog[]
+  // ── B-1.6: Final diagnosis ICD-10 (separate from chief-complaint icd10Code) ──
+  primaryDiagnosisIcd10 String?
 
-    @@index([userId, status, updatedAt(sort: Desc)])
-    @@index([patientId])
-    @@index([createdAt(sort: Desc)])
-    @@index([shareableSlug])
-    @@map("consultations")
+  // ── B-1 v2: Tenant scoping ──
+  clinicId String? @db.Uuid
+  clinic   Clinic? @relation("ConsultationClinic", fields: [clinicId], references: [id])
+
+  // ── B-1 v2: NMC compliance ──
+  ageVerifiedAt         DateTime?
+  ageVerifiedMethod     String?
+  consentVersion        String?
+  isAiOnly              Boolean   @default(true)
+  requiresPhysicalVisit Boolean   @default(false)
+
+  // ── B-1 v2: ICD-10 diagnosis (separate from free-text) ──
+  icd10Code        String?
+  icd10ChapterCode String?
+
+  // ── B-1 v2: Patient context snapshot at consultation ──
+  patientAge             Int?
+  patientGender          Gender?
+  patientPregnancyStatus PregnancyStatus?
+  severity               UrgencyLevel?
+  chiefComplaintLocale   LocaleCode?
+
+  // ── B-1 v2: AI provider tracking enhancement ──
+  fallbackProviderUsed String?
+  aiCircuitBreakerHits Int       @default(0)
+  metadata             Json?
+  completedAt          DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  // ── Relations ──
+  messages         ConsultationMessage[]
+  trainingLabels   TrainingLabel[]
+  appointments     Appointment[]
+  prescription     Prescription?
+  whatsappMessages WhatsAppMessage[]
+  emailLogs        EmailLog[]
+  jobLogs          JobLog[]
+
+  @@index([userId, status, updatedAt(sort: Desc)])
+  @@index([patientId])
+  @@index([createdAt(sort: Desc)])
+  @@index([shareableSlug])
+  @@map("consultations")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -770,25 +1150,25 @@ model Consultation {
 // ═══════════════════════════════════════════════════════════════
 
 model ConsultationMessage {
-    id             String             @id @default(uuid()) @db.Uuid
-    consultationId String             @db.Uuid
-    consultation   Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-    role           MessageRole
-    content        String             @db.Text
-    contentType    MessageContentType @default(TEXT)
-    imageUrl       String?
-    chips          Json?
-    selectedChip   String?
-    aiLatencyMs    Int?
-    aiTokensUsed   Int?
-    sequenceNumber Int
-    createdAt      DateTime           @default(now())
+  id             String             @id @default(uuid()) @db.Uuid
+  consultationId String             @db.Uuid
+  consultation   Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String             @db.Text
+  contentType    MessageContentType @default(TEXT)
+  imageUrl       String?
+  chips          Json?
+  selectedChip   String?
+  aiLatencyMs    Int?
+  aiTokensUsed   Int?
+  sequenceNumber Int
+  createdAt      DateTime           @default(now())
 
-    // ── Relations ──
-    trainingLabels TrainingLabel[]
+  // ── Relations ──
+  trainingLabels TrainingLabel[]
 
-    @@index([consultationId, sequenceNumber])
-    @@map("consultation_messages")
+  @@index([consultationId, sequenceNumber])
+  @@map("consultation_messages")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -798,24 +1178,24 @@ model ConsultationMessage {
 // ═══════════════════════════════════════════════════════════════
 
 model TrainingLabel {
-    id             String               @id @default(uuid()) @db.Uuid
-    consultationId String               @db.Uuid
-    consultation   Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-    messageId      String?              @db.Uuid
-    message        ConsultationMessage? @relation(fields: [messageId], references: [id])
-    labeledById    String               @db.Uuid
-    labeledBy      User                 @relation(fields: [labeledById], references: [id])
-    qualityScore   Int
-    isCorrect      Boolean
-    correctionText String?              @db.Text
-    clinicalNotes  String?              @db.Text
-    category       String?
-    createdAt      DateTime             @default(now())
-    updatedAt      DateTime             @updatedAt
+  id             String               @id @default(uuid()) @db.Uuid
+  consultationId String               @db.Uuid
+  consultation   Consultation         @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  messageId      String?              @db.Uuid
+  message        ConsultationMessage? @relation(fields: [messageId], references: [id])
+  labeledById    String               @db.Uuid
+  labeledBy      User                 @relation(fields: [labeledById], references: [id])
+  qualityScore   Int
+  isCorrect      Boolean
+  correctionText String?              @db.Text
+  clinicalNotes  String?              @db.Text
+  category       String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
-    @@index([consultationId])
-    @@index([labeledById])
-    @@map("training_labels")
+  @@index([consultationId])
+  @@index([labeledById])
+  @@map("training_labels")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -825,57 +1205,57 @@ model TrainingLabel {
 // ═══════════════════════════════════════════════════════════════
 
 model Appointment {
-    id                   String            @id @default(uuid()) @db.Uuid
-    patientId            String            @db.Uuid
-    patient              Patient           @relation(fields: [patientId], references: [id])
-    userId               String            @db.Uuid
-    user                 User              @relation("PatientAppointments", fields: [userId], references: [id])
-    clinicId             String            @db.Uuid
-    clinic               Clinic            @relation(fields: [clinicId], references: [id])
-    doctorId             String?           @db.Uuid
-    doctor               Doctor?           @relation(fields: [doctorId], references: [id])
-    consultationId       String?           @db.Uuid
-    consultation         Consultation?     @relation(fields: [consultationId], references: [id])
-    leadId               String?           @db.Uuid
-    lead                 Lead?             @relation(fields: [leadId], references: [id])
-    scheduledAt          DateTime
-    durationMinutes      Int               @default(30)
-    timezone             String            @default("Asia/Kolkata")
-    status               AppointmentStatus @default(SCHEDULED)
-    type                 AppointmentType   @default(FIRST_VISIT)
-    chiefComplaint       String?           @db.Text
-    urgency              UrgencyLevel?
-    notes                String?           @db.Text
-    cancelledAt          DateTime?
-    cancelledById        String?           @db.Uuid
-    cancellationReason   String?           @db.Text
-    reminderSentAt       DateTime?
-    confirmedAt          DateTime?
-    checkInAt            DateTime?
-    startedAt            DateTime?
-    endedAt              DateTime?
-    completedAt          DateTime?
-    rescheduledFromId    String?           @db.Uuid
-    rescheduledFrom      Appointment?      @relation("Reschedules", fields: [rescheduledFromId], references: [id])
-    rescheduledTo        Appointment[]     @relation("Reschedules")
-    patientFeedbackScore Int?
-    amountPaisa          Int?
-    paymentStatus        PaymentStatus?
-    sourceChannel        AppointmentSource @default(DATUN_AI)
-    metadata             Json?
-    createdAt            DateTime          @default(now())
-    updatedAt            DateTime          @updatedAt
+  id                   String            @id @default(uuid()) @db.Uuid
+  patientId            String            @db.Uuid
+  patient              Patient           @relation(fields: [patientId], references: [id])
+  userId               String            @db.Uuid
+  user                 User              @relation("PatientAppointments", fields: [userId], references: [id])
+  clinicId             String            @db.Uuid
+  clinic               Clinic            @relation(fields: [clinicId], references: [id])
+  doctorId             String?           @db.Uuid
+  doctor               Doctor?           @relation(fields: [doctorId], references: [id])
+  consultationId       String?           @db.Uuid
+  consultation         Consultation?     @relation(fields: [consultationId], references: [id])
+  leadId               String?           @db.Uuid
+  lead                 Lead?             @relation(fields: [leadId], references: [id])
+  scheduledAt          DateTime
+  durationMinutes      Int               @default(30)
+  timezone             String            @default("Asia/Kolkata")
+  status               AppointmentStatus @default(SCHEDULED)
+  type                 AppointmentType   @default(FIRST_VISIT)
+  chiefComplaint       String?           @db.Text
+  urgency              UrgencyLevel?
+  notes                String?           @db.Text
+  cancelledAt          DateTime?
+  cancelledById        String?           @db.Uuid
+  cancellationReason   String?           @db.Text
+  reminderSentAt       DateTime?
+  confirmedAt          DateTime?
+  checkInAt            DateTime?
+  startedAt            DateTime?
+  endedAt              DateTime?
+  completedAt          DateTime?
+  rescheduledFromId    String?           @db.Uuid
+  rescheduledFrom      Appointment?      @relation("Reschedules", fields: [rescheduledFromId], references: [id])
+  rescheduledTo        Appointment[]     @relation("Reschedules")
+  patientFeedbackScore Int?
+  amountPaisa          Int?
+  paymentStatus        PaymentStatus?
+  sourceChannel        AppointmentSource @default(DATUN_AI)
+  metadata             Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
-    // ── Relations ──
-    review              Review?
-    paymentTransactions PaymentTransaction[]
+  // ── Relations ──
+  review              Review?
+  paymentTransactions PaymentTransaction[]
 
-    @@index([patientId])
-    @@index([clinicId])
-    @@index([doctorId])
-    @@index([scheduledAt])
-    @@index([status])
-    @@map("appointments")
+  @@index([patientId])
+  @@index([clinicId])
+  @@index([doctorId])
+  @@index([scheduledAt])
+  @@index([status])
+  @@map("appointments")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -885,41 +1265,62 @@ model Appointment {
 // ═══════════════════════════════════════════════════════════════
 
 model Prescription {
-    id                  String            @id @default(uuid()) @db.Uuid
-    consultationId      String            @unique @db.Uuid
-    consultation        Consultation      @relation(fields: [consultationId], references: [id])
-    patientId           String            @db.Uuid
-    patient             Patient           @relation(fields: [patientId], references: [id])
-    userId              String            @db.Uuid
-    user                User              @relation("UserPrescriptions", fields: [userId], references: [id])
-    prescribedByName    String            @default("Dr. Mayank Vats")
-    signedByDoctorId    String?           @db.Uuid
-    signedByDoctor      Doctor?           @relation("SignedByDoctor", fields: [signedByDoctorId], references: [id])
-    diagnosis           String            @db.Text
-    medications         Json
-    investigations      Json?
-    procedures          Json?
-    homeRemedies        Json?
-    followUpDate        DateTime?
-    specialInstructions String?           @db.Text
-    pdfUrl              String?
-    pdfVersion          Int               @default(1)
-    shareableSlug       String?           @unique
-    expiresAt           DateTime?
-    viewCount           Int               @default(0)
-    isActive            Boolean           @default(true)
-    // ── Review ──
-    reviewStatus        ReviewStatusEnum?
-    reviewedByDoctorId  String?           @db.Uuid
-    reviewedByDoctor    Doctor?           @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
-    reviewedAt          DateTime?
-    signatureUrl        String?
-    createdAt           DateTime          @default(now())
-    updatedAt           DateTime          @updatedAt
+  id                            String            @id @default(uuid()) @db.Uuid
+  consultationId                String            @unique @db.Uuid
+  consultation                  Consultation      @relation(fields: [consultationId], references: [id])
+  patientId                     String            @db.Uuid
+  patient                       Patient           @relation(fields: [patientId], references: [id])
+  userId                        String            @db.Uuid
+  user                          User              @relation("UserPrescriptions", fields: [userId], references: [id])
+  prescribedByName              String            @default("Dr. Mayank Vats")
+  signedByDoctorId              String?           @db.Uuid
+  signedByDoctor                Doctor?           @relation("SignedByDoctor", fields: [signedByDoctorId], references: [id])
+  diagnosis                     String            @db.Text
+  medications                   Json
+  investigations                Json?
+  procedures                    Json?
+  homeRemedies                  Json?
+  followUpDate                  DateTime?
+  specialInstructions           String?           @db.Text
+  pdfUrl                        String?
+  pdfVersion                    Int               @default(1)
+  shareableSlug                 String?           @unique
+  expiresAt                     DateTime?
+  viewCount                     Int               @default(0)
+  isActive                      Boolean           @default(true)
+  // ── Review ──
+  reviewStatus                  ReviewStatusEnum?
+  reviewedByDoctorId            String?           @db.Uuid
+  reviewedByDoctor              Doctor?           @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
+  reviewedAt                    DateTime?
+  signatureUrl                  String?
+  // ── B-1 v2: NMC mandatory prescriber details ──
+  prescriberRegistrationNumber  String
+  prescriberRegistrationCouncil String?
+  prescriberSpecialization      String?
 
-    @@index([patientId])
-    @@index([shareableSlug])
-    @@map("prescriptions")
+  // ── B-1 v2: Safety check audit trail ──
+  pregnancyChecked       Boolean @default(false)
+  allergiesChecked       Boolean @default(false)
+  bloodThinnerChecked    Boolean @default(false)
+  pediatricDosingApplied Boolean @default(false)
+  interactionsChecked    Boolean @default(false)
+
+  // ── B-1 v2: Line item denormalization ──
+  lineItemCount Int @default(0)
+
+  // ── B-1 v2: Telemedicine eligibility ──
+  isTelemedicinePrescription      Boolean @default(false)
+  physicalConsultationRecommended Boolean @default(false)
+
+  // ── B-1 v2: Relations ──
+  lineItems PrescriptionLineItem[]
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+
+  @@index([patientId])
+  @@index([shareableSlug])
+  @@map("prescriptions")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -929,38 +1330,38 @@ model Prescription {
 // ═══════════════════════════════════════════════════════════════
 
 model Review {
-    id                String       @id @default(uuid()) @db.Uuid
-    patientId         String       @db.Uuid
-    patient           Patient      @relation(fields: [patientId], references: [id])
-    userId            String       @db.Uuid
-    user              User         @relation(fields: [userId], references: [id])
-    clinicId          String       @db.Uuid
-    clinic            Clinic       @relation(fields: [clinicId], references: [id])
-    doctorId          String?      @db.Uuid
-    doctor            Doctor?      @relation(fields: [doctorId], references: [id])
-    appointmentId     String?      @unique @db.Uuid
-    appointment       Appointment? @relation(fields: [appointmentId], references: [id])
-    overallRating     Int
-    cleanlinessRating Int?
-    staffRating       Int?
-    doctorRating      Int?
-    waitTimeRating    Int?
-    valueRating       Int?
-    reviewText        String?      @db.Text
-    clinicResponse    String?      @db.Text
-    clinicRespondedAt DateTime?
-    isVerified        Boolean      @default(false)
-    isPublished       Boolean      @default(true)
-    isFlagged         Boolean      @default(false)
-    flagReason        String?
-    helpfulCount      Int          @default(0)
-    source            ReviewSource @default(ORGANIC)
-    createdAt         DateTime     @default(now())
-    updatedAt         DateTime     @updatedAt
+  id                String       @id @default(uuid()) @db.Uuid
+  patientId         String       @db.Uuid
+  patient           Patient      @relation(fields: [patientId], references: [id])
+  userId            String       @db.Uuid
+  user              User         @relation(fields: [userId], references: [id])
+  clinicId          String       @db.Uuid
+  clinic            Clinic       @relation(fields: [clinicId], references: [id])
+  doctorId          String?      @db.Uuid
+  doctor            Doctor?      @relation(fields: [doctorId], references: [id])
+  appointmentId     String?      @unique @db.Uuid
+  appointment       Appointment? @relation(fields: [appointmentId], references: [id])
+  overallRating     Int
+  cleanlinessRating Int?
+  staffRating       Int?
+  doctorRating      Int?
+  waitTimeRating    Int?
+  valueRating       Int?
+  reviewText        String?      @db.Text
+  clinicResponse    String?      @db.Text
+  clinicRespondedAt DateTime?
+  isVerified        Boolean      @default(false)
+  isPublished       Boolean      @default(true)
+  isFlagged         Boolean      @default(false)
+  flagReason        String?
+  helpfulCount      Int          @default(0)
+  source            ReviewSource @default(ORGANIC)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
-    @@index([clinicId, isPublished])
-    @@index([patientId])
-    @@map("reviews")
+  @@index([clinicId, isPublished])
+  @@index([patientId])
+  @@map("reviews")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -970,51 +1371,51 @@ model Review {
 // ═══════════════════════════════════════════════════════════════
 
 model Lead {
-    id                  String               @id @default(uuid()) @db.Uuid
-    patientId           String               @db.Uuid
-    patient             Patient              @relation(fields: [patientId], references: [id])
-    userId              String               @db.Uuid
-    user                User                 @relation("PatientLeads", fields: [userId], references: [id])
-    clinicId            String               @db.Uuid
-    clinic              Clinic               @relation(fields: [clinicId], references: [id])
-    status              LeadStatus           @default(NEW)
-    urgency             UrgencyLevel?
-    diagnosis           String?              @db.Text
-    patientName         String
-    patientPhone        String?
-    patientArea         String?
-    distanceKm          Float?
-    // ── CRM fields ──
-    assignedToMemberId  String?              @db.Uuid
-    assignedToMember    ClinicMember?        @relation(fields: [assignedToMemberId], references: [id])
-    firstResponseAt     DateTime?
-    lastContactAt       DateTime?
-    nextFollowUpAt      DateTime?
-    followUpCount       Int                  @default(0)
-    lostReasonCode      String?
-    // ── Lifecycle ──
-    contactedAt         DateTime?
-    appointmentBookedAt DateTime?
-    convertedAt         DateTime?
-    closedAt            DateTime?
-    closedReason        String?
-    notes               String?              @db.Text
-    notifiedVia         NotificationChannel?
-    notifiedAt          DateTime?
-    revenue             Int?
-    metadata            Json?
-    createdAt           DateTime             @default(now())
-    updatedAt           DateTime             @updatedAt
+  id                  String               @id @default(uuid()) @db.Uuid
+  patientId           String               @db.Uuid
+  patient             Patient              @relation(fields: [patientId], references: [id])
+  userId              String               @db.Uuid
+  user                User                 @relation("PatientLeads", fields: [userId], references: [id])
+  clinicId            String               @db.Uuid
+  clinic              Clinic               @relation(fields: [clinicId], references: [id])
+  status              LeadStatus           @default(NEW)
+  urgency             UrgencyLevel?
+  diagnosis           String?              @db.Text
+  patientName         String
+  patientPhone        String?
+  patientArea         String?
+  distanceKm          Float?
+  // ── CRM fields ──
+  assignedToMemberId  String?              @db.Uuid
+  assignedToMember    ClinicMember?        @relation(fields: [assignedToMemberId], references: [id])
+  firstResponseAt     DateTime?
+  lastContactAt       DateTime?
+  nextFollowUpAt      DateTime?
+  followUpCount       Int                  @default(0)
+  lostReasonCode      String?
+  // ── Lifecycle ──
+  contactedAt         DateTime?
+  appointmentBookedAt DateTime?
+  convertedAt         DateTime?
+  closedAt            DateTime?
+  closedReason        String?
+  notes               String?              @db.Text
+  notifiedVia         NotificationChannel?
+  notifiedAt          DateTime?
+  revenue             Int?
+  metadata            Json?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-    // ── Relations ──
-    consultations Consultation[]
-    appointments  Appointment[]
-    activities    LeadActivity[]
+  // ── Relations ──
+  consultations Consultation[]
+  appointments  Appointment[]
+  activities    LeadActivity[]
 
-    @@index([clinicId, status])
-    @@index([patientId])
-    @@index([nextFollowUpAt])
-    @@map("leads")
+  @@index([clinicId, status])
+  @@index([patientId])
+  @@index([nextFollowUpAt])
+  @@map("leads")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1024,18 +1425,18 @@ model Lead {
 // ═══════════════════════════════════════════════════════════════
 
 model LeadActivity {
-    id            String               @id @default(uuid()) @db.Uuid
-    leadId        String               @db.Uuid
-    lead          Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade)
-    action        String
-    notes         String?              @db.Text
-    performedById String?              @db.Uuid
-    channel       NotificationChannel?
-    metadata      Json?
-    createdAt     DateTime             @default(now())
+  id            String               @id @default(uuid()) @db.Uuid
+  leadId        String               @db.Uuid
+  lead          Lead                 @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  action        String
+  notes         String?              @db.Text
+  performedById String?              @db.Uuid
+  channel       NotificationChannel?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
 
-    @@index([leadId, createdAt(sort: Desc)])
-    @@map("lead_activities")
+  @@index([leadId, createdAt(sort: Desc)])
+  @@map("lead_activities")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1045,37 +1446,37 @@ model LeadActivity {
 // ═══════════════════════════════════════════════════════════════
 
 model Subscription {
-    id                     String             @id @default(uuid()) @db.Uuid
-    clinicId               String             @db.Uuid
-    clinic                 Clinic             @relation(fields: [clinicId], references: [id])
-    plan                   ClinicTier
-    status                 SubscriptionStatus @default(TRIAL)
-    billingCycle           BillingCycle       @default(MONTHLY)
-    amountPaisa            Int
-    currency               String             @default("INR")
-    trialStartedAt         DateTime?
-    trialEndsAt            DateTime?
-    currentPeriodStart     DateTime
-    currentPeriodEnd       DateTime
-    razorpaySubscriptionId String?
-    razorpayCustomerId     String?
-    stripeFallbackId       String?
-    cancelledAt            DateTime?
-    cancellationReason     String?            @db.Text
-    pausedAt               DateTime?
-    resumesAt              DateTime?
-    dunningAttempts        Int                @default(0)
-    lastDunningAt          DateTime?
-    seatLimit              Int
-    createdAt              DateTime           @default(now())
-    updatedAt              DateTime           @updatedAt
+  id                     String             @id @default(uuid()) @db.Uuid
+  clinicId               String             @db.Uuid
+  clinic                 Clinic             @relation(fields: [clinicId], references: [id])
+  plan                   ClinicTier
+  status                 SubscriptionStatus @default(TRIAL)
+  billingCycle           BillingCycle       @default(MONTHLY)
+  amountPaisa            Int
+  currency               String             @default("INR")
+  trialStartedAt         DateTime?
+  trialEndsAt            DateTime?
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  razorpaySubscriptionId String?
+  razorpayCustomerId     String?
+  stripeFallbackId       String?
+  cancelledAt            DateTime?
+  cancellationReason     String?            @db.Text
+  pausedAt               DateTime?
+  resumesAt              DateTime?
+  dunningAttempts        Int                @default(0)
+  lastDunningAt          DateTime?
+  seatLimit              Int
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
-    // ── Relations ──
-    invoices Invoice[]
+  // ── Relations ──
+  invoices Invoice[]
 
-    @@index([clinicId])
-    @@index([status])
-    @@map("subscriptions")
+  @@index([clinicId])
+  @@index([status])
+  @@map("subscriptions")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1085,50 +1486,50 @@ model Subscription {
 // ═══════════════════════════════════════════════════════════════
 
 model Invoice {
-    id                 String        @id @default(uuid()) @db.Uuid
-    subscriptionId     String        @db.Uuid
-    subscription       Subscription  @relation(fields: [subscriptionId], references: [id])
-    clinicId           String        @db.Uuid
-    clinic             Clinic        @relation(fields: [clinicId], references: [id])
-    invoiceNumber      String        @unique
-    status             InvoiceStatus @default(DRAFT)
-    subtotalPaisa      Int
-    taxPaisa           Int
-    totalPaisa         Int
-    currency           String        @default("INR")
-    taxBreakdown       Json?
-    // ── Immutable buyer snapshot ──
-    buyerName          String
-    buyerAddress       String?
-    buyerState         String?
-    buyerPincode       String?
-    buyerGstin         String?
-    // ── Seller snapshot ──
-    sellerName         String        @default("Datun")
-    sellerAddress      String?
-    sellerGstin        String?
-    placeOfSupply      String?
-    // ── Billing period ──
-    billingPeriodStart DateTime
-    billingPeriodEnd   DateTime
-    paidAt             DateTime?
-    razorpayPaymentId  String?
-    paymentMethod      String?
-    pdfUrl             String?
-    sentAt             DateTime?
-    dueDate            DateTime
-    notes              String?       @db.Text
-    createdAt          DateTime      @default(now())
-    updatedAt          DateTime      @updatedAt
+  id                 String        @id @default(uuid()) @db.Uuid
+  subscriptionId     String        @db.Uuid
+  subscription       Subscription  @relation(fields: [subscriptionId], references: [id])
+  clinicId           String        @db.Uuid
+  clinic             Clinic        @relation(fields: [clinicId], references: [id])
+  invoiceNumber      String        @unique
+  status             InvoiceStatus @default(DRAFT)
+  subtotalPaisa      Int
+  taxPaisa           Int
+  totalPaisa         Int
+  currency           String        @default("INR")
+  taxBreakdown       Json?
+  // ── Immutable buyer snapshot ──
+  buyerName          String
+  buyerAddress       String?
+  buyerState         String?
+  buyerPincode       String?
+  buyerGstin         String?
+  // ── Seller snapshot ──
+  sellerName         String        @default("Datun")
+  sellerAddress      String?
+  sellerGstin        String?
+  placeOfSupply      String?
+  // ── Billing period ──
+  billingPeriodStart DateTime
+  billingPeriodEnd   DateTime
+  paidAt             DateTime?
+  razorpayPaymentId  String?
+  paymentMethod      String?
+  pdfUrl             String?
+  sentAt             DateTime?
+  dueDate            DateTime
+  notes              String?       @db.Text
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-    // ── Relations ──
-    lineItems           InvoiceLineItem[]
-    paymentTransactions PaymentTransaction[]
+  // ── Relations ──
+  lineItems           InvoiceLineItem[]
+  paymentTransactions PaymentTransaction[]
 
-    @@index([clinicId])
-    @@index([subscriptionId])
-    @@index([invoiceNumber])
-    @@map("invoices")
+  @@index([clinicId])
+  @@index([subscriptionId])
+  @@index([invoiceNumber])
+  @@map("invoices")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1138,21 +1539,21 @@ model Invoice {
 // ═══════════════════════════════════════════════════════════════
 
 model InvoiceLineItem {
-    id             String   @id @default(uuid()) @db.Uuid
-    invoiceId      String   @db.Uuid
-    invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-    description    String
-    quantity       Int      @default(1)
-    unitPricePaisa Int
-    totalPaisa     Int
-    hsnSacCode     String?
-    taxRate        Decimal? @db.Decimal(5, 2)
-    taxPaisa       Int?
-    metadata       Json?
-    createdAt      DateTime @default(now())
+  id             String   @id @default(uuid()) @db.Uuid
+  invoiceId      String   @db.Uuid
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description    String
+  quantity       Int      @default(1)
+  unitPricePaisa Int
+  totalPaisa     Int
+  hsnSacCode     String?
+  taxRate        Decimal? @db.Decimal(5, 2)
+  taxPaisa       Int?
+  metadata       Json?
+  createdAt      DateTime @default(now())
 
-    @@index([invoiceId])
-    @@map("invoice_line_items")
+  @@index([invoiceId])
+  @@map("invoice_line_items")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1162,34 +1563,34 @@ model InvoiceLineItem {
 // ═══════════════════════════════════════════════════════════════
 
 model PaymentTransaction {
-    id                  String            @id @default(uuid()) @db.Uuid
-    invoiceId           String?           @db.Uuid
-    invoice             Invoice?          @relation(fields: [invoiceId], references: [id])
-    appointmentId       String?           @db.Uuid
-    appointment         Appointment?      @relation(fields: [appointmentId], references: [id])
-    entityType          String
-    entityId            String            @db.Uuid
-    gateway             String
-    gatewayOrderId      String?
-    gatewayPaymentId    String?
-    amountPaisa         Int
-    feePaisa            Int?
-    taxPaisa            Int?
-    status              TransactionStatus @default(INITIATED)
-    paidAt              DateTime?
-    failedAt            DateTime?
-    failureCode         String?
-    failureReason       String?
-    refundedAmountPaisa Int?
-    refundedAt          DateTime?
-    rawPayload          Json?
-    createdAt           DateTime          @default(now())
-    updatedAt           DateTime          @updatedAt
+  id                  String            @id @default(uuid()) @db.Uuid
+  invoiceId           String?           @db.Uuid
+  invoice             Invoice?          @relation(fields: [invoiceId], references: [id])
+  appointmentId       String?           @db.Uuid
+  appointment         Appointment?      @relation(fields: [appointmentId], references: [id])
+  entityType          String
+  entityId            String            @db.Uuid
+  gateway             String
+  gatewayOrderId      String?
+  gatewayPaymentId    String?
+  amountPaisa         Int
+  feePaisa            Int?
+  taxPaisa            Int?
+  status              TransactionStatus @default(INITIATED)
+  paidAt              DateTime?
+  failedAt            DateTime?
+  failureCode         String?
+  failureReason       String?
+  refundedAmountPaisa Int?
+  refundedAt          DateTime?
+  rawPayload          Json?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
 
-    @@index([invoiceId])
-    @@index([gateway, gatewayPaymentId])
-    @@index([entityType, entityId])
-    @@map("payment_transactions")
+  @@index([invoiceId])
+  @@index([gateway, gatewayPaymentId])
+  @@index([entityType, entityId])
+  @@map("payment_transactions")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1199,22 +1600,22 @@ model PaymentTransaction {
 // ═══════════════════════════════════════════════════════════════
 
 model AuditLog {
-    id         String   @id @default(uuid()) @db.Uuid
-    userId     String?  @db.Uuid
-    user       User?    @relation(fields: [userId], references: [id])
-    action     String
-    entityType String
-    entityId   String
-    changes    Json?
-    ipAddress  String?
-    userAgent  String?
-    metadata   Json?
-    createdAt  DateTime @default(now())
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
 
-    @@index([userId])
-    @@index([entityType, entityId])
-    @@index([createdAt(sort: Desc)])
-    @@map("audit_logs")
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1224,30 +1625,39 @@ model AuditLog {
 // ═══════════════════════════════════════════════════════════════
 
 model Notification {
-    id            String              @id @default(uuid()) @db.Uuid
-    userId        String              @db.Uuid
-    user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-    type          NotificationType
-    channel       NotificationChannel
-    title         String
-    body          String              @db.Text
-    actionUrl     String?
-    isRead        Boolean             @default(false)
-    readAt        DateTime?
-    isSent        Boolean             @default(false)
-    sentAt        DateTime?
-    failedAt      DateTime?
-    failureReason String?
-    retryCount    Int                 @default(0)
-    scheduledFor  DateTime?
-    expiresAt     DateTime?
-    metadata      Json?
-    createdAt     DateTime            @default(now())
+  id                String              @id @default(uuid()) @db.Uuid
+  userId            String              @db.Uuid
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              NotificationType
+  channel           NotificationChannel
+  title             String
+  body              String              @db.Text
+  actionUrl         String?
+  isRead            Boolean             @default(false)
+  readAt            DateTime?
+  isSent            Boolean             @default(false)
+  sentAt            DateTime?
+  failedAt          DateTime?
+  failureReason     String?
+  retryCount        Int                 @default(0)
+  scheduledFor      DateTime?
+  expiresAt         DateTime?
+  // ── B-1 v2: Generic cross-entity link ──
+  relatedEntityType String?
+  relatedEntityId   String?
 
-    @@index([userId, isRead])
-    @@index([scheduledFor])
-    @@index([type, channel])
-    @@map("notifications")
+  // ── B-1 v2: Locale ──
+  locale LocaleCode @default(en)
+
+  // ── B-1 v2: Update tracking ──
+  updatedAt DateTime @default(now()) @updatedAt
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([scheduledFor])
+  @@index([type, channel])
+  @@map("notifications")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1257,21 +1667,21 @@ model Notification {
 // ═══════════════════════════════════════════════════════════════
 
 model NotificationPreference {
-    id              String              @id @default(uuid()) @db.Uuid
-    userId          String              @db.Uuid
-    user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-    channel         NotificationChannel
-    category        NotificationType
-    isEnabled       Boolean             @default(true)
-    quietHoursStart String?
-    quietHoursEnd   String?
-    language        String              @default("en")
-    createdAt       DateTime            @default(now())
-    updatedAt       DateTime            @updatedAt
+  id              String              @id @default(uuid()) @db.Uuid
+  userId          String              @db.Uuid
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel         NotificationChannel
+  category        NotificationType
+  isEnabled       Boolean             @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  language        String              @default("en")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-    @@unique([userId, channel, category])
-    @@index([userId])
-    @@map("notification_preferences")
+  @@unique([userId, channel, category])
+  @@index([userId])
+  @@map("notification_preferences")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1281,28 +1691,65 @@ model NotificationPreference {
 // ═══════════════════════════════════════════════════════════════
 
 model WhatsAppMessage {
-    id              String            @id @default(uuid()) @db.Uuid
-    userId          String?           @db.Uuid
-    user            User?             @relation(fields: [userId], references: [id])
-    consultationId  String?           @db.Uuid
-    consultation    Consultation?     @relation(fields: [consultationId], references: [id])
-    templateName    String
-    phoneNumber     String
-    waMessageId     String?
-    status          WhatsAppStatus    @default(QUEUED)
-    statusUpdatedAt DateTime?
-    failureReason   String?
-    direction       WhatsAppDirection @default(OUTBOUND)
-    content         String?           @db.Text
-    provider        WhatsAppProvider  @default(META)
-    costPaisa       Int?
-    createdAt       DateTime          @default(now())
+  id String @id @default(uuid()) @db.Uuid
 
-    @@index([userId])
-    @@index([consultationId])
-    @@index([waMessageId])
-    @@index([status])
-    @@map("whatsapp_messages")
+  // ── Recipient denormalization ──
+  userId         String?       @db.Uuid
+  user           User?         @relation(fields: [userId], references: [id])
+  patientId      String?       @db.Uuid
+  consultationId String?       @db.Uuid
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
+  appointmentId  String?       @db.Uuid
+
+  // ── B-1 v2: Strict template fields (Meta July 2025 enforcement) ──
+  templateName       WhatsAppTemplateName?
+  templateNameLegacy String?
+  templateCategory   WhatsAppTemplateCategory?
+  templateLocale     LocaleCode                @default(en)
+
+  // ── Phone fields ──
+  phoneNumber         String
+  recipientPhone      String?
+  senderPhoneNumberId String?
+
+  // ── Provider IDs ──
+  waMessageId   String?
+  metaMessageId String?
+
+  // ── Lifecycle ──
+  status          WhatsAppStatus    @default(QUEUED)
+  statusUpdatedAt DateTime?
+  failureReason   String?
+  direction       WhatsAppDirection @default(OUTBOUND)
+  content         String?           @db.Text
+  provider        WhatsAppProvider  @default(META)
+
+  // ── B-1 v2: Per-message pricing tracking (Meta July 2025 model) ──
+  costPaisa       Int?
+  pricingCategory String?
+
+  // ── B-1 v2: Lifecycle tracking ──
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  readAt       DateTime?
+  scheduledFor DateTime?
+
+  // ── B-1 v2: Generic relation ──
+  relatedEntityType String?
+  relatedEntityId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([consultationId])
+  @@index([waMessageId])
+  @@index([metaMessageId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([patientId])
+  @@index([templateCategory])
+  @@map("whatsapp_messages")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1312,21 +1759,21 @@ model WhatsAppMessage {
 // ═══════════════════════════════════════════════════════════════
 
 model ConsentLog {
-    id        String         @id @default(uuid()) @db.Uuid
-    userId    String?        @db.Uuid
-    user      User?          @relation(fields: [userId], references: [id])
-    purpose   ConsentPurpose
-    status    ConsentStatus  @default(GRANTED)
-    version   String
-    ipAddress String?
-    userAgent String?
-    source    String?
-    grantedAt DateTime       @default(now())
-    revokedAt DateTime?
-    createdAt DateTime       @default(now())
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String?        @db.Uuid
+  user      User?          @relation(fields: [userId], references: [id])
+  purpose   ConsentPurpose
+  status    ConsentStatus  @default(GRANTED)
+  version   String
+  ipAddress String?
+  userAgent String?
+  source    String?
+  grantedAt DateTime       @default(now())
+  revokedAt DateTime?
+  createdAt DateTime       @default(now())
 
-    @@index([userId, purpose])
-    @@map("consent_logs")
+  @@index([userId, purpose])
+  @@map("consent_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1336,24 +1783,24 @@ model ConsentLog {
 // ═══════════════════════════════════════════════════════════════
 
 model MediaAsset {
-    id           String    @id @default(uuid()) @db.Uuid
-    storageKey   String
-    publicUrl    String
-    mimeType     String
-    sizeBytes    Int?
-    checksum     String?
-    entityType   String
-    entityId     String    @db.Uuid
-    uploadedById String?   @db.Uuid
-    uploadedBy   User?     @relation("UploadedByUser", fields: [uploadedById], references: [id])
-    isSensitive  Boolean   @default(false)
-    metadata     Json?
-    createdAt    DateTime  @default(now())
-    deletedAt    DateTime?
+  id           String    @id @default(uuid()) @db.Uuid
+  storageKey   String
+  publicUrl    String
+  mimeType     String
+  sizeBytes    Int?
+  checksum     String?
+  entityType   String
+  entityId     String    @db.Uuid
+  uploadedById String?   @db.Uuid
+  uploadedBy   User?     @relation("UploadedByUser", fields: [uploadedById], references: [id])
+  isSensitive  Boolean   @default(false)
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
 
-    @@index([entityType, entityId])
-    @@index([uploadedById])
-    @@map("media_assets")
+  @@index([entityType, entityId])
+  @@index([uploadedById])
+  @@map("media_assets")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1365,28 +1812,28 @@ model MediaAsset {
 // ═══════════════════════════════════════════════════════════════
 
 model EmailLog {
-    id                String        @id @default(uuid()) @db.Uuid
-    to                String
-    template          String // "otp", "welcome", "consultation_complete"
-    subject           String
-    provider          String // "resend", "ses"
-    status            EmailStatus   @default(QUEUED)
-    providerMessageId String? // Resend/SES message ID
-    error             String?       @db.Text
-    userId            String?       @db.Uuid
-    user              User?         @relation(fields: [userId], references: [id])
-    consultationId    String?       @db.Uuid
-    consultation      Consultation? @relation(fields: [consultationId], references: [id])
-    metadata          Json? // Template variables, request context
-    createdAt         DateTime      @default(now())
+  id                String        @id @default(uuid()) @db.Uuid
+  to                String
+  template          String // "otp", "welcome", "consultation_complete"
+  subject           String
+  provider          String // "resend", "ses"
+  status            EmailStatus   @default(QUEUED)
+  providerMessageId String? // Resend/SES message ID
+  error             String?       @db.Text
+  userId            String?       @db.Uuid
+  user              User?         @relation(fields: [userId], references: [id])
+  consultationId    String?       @db.Uuid
+  consultation      Consultation? @relation(fields: [consultationId], references: [id])
+  metadata          Json? // Template variables, request context
+  createdAt         DateTime      @default(now())
 
-    @@index([to])
-    @@index([template])
-    @@index([userId])
-    @@index([consultationId])
-    @@index([status])
-    @@index([createdAt])
-    @@map("email_logs")
+  @@index([to])
+  @@index([template])
+  @@index([userId])
+  @@index([consultationId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1397,22 +1844,22 @@ model EmailLog {
 // ═══════════════════════════════════════════════════════════════
 
 model WhatsAppProviderHealth {
-    id                     String               @id @default(uuid()) @db.Uuid
-    provider               WhatsAppProvider
-    status                 WhatsAppHealthStatus @default(HEALTHY)
-    consecutiveFailures    Int                  @default(0)
-    lastSuccessAt          DateTime?
-    lastFailureAt          DateTime?
-    unhealthyUntil         DateTime?
-    totalRequests          Int                  @default(0)
-    totalFailures          Int                  @default(0)
-    lastHeartbeatAt        DateTime?
-    lastHeartbeatLatencyMs Int?
-    lastHeartbeatError     String?              @db.Text
-    updatedAt              DateTime             @updatedAt
+  id                     String               @id @default(uuid()) @db.Uuid
+  provider               WhatsAppProvider
+  status                 WhatsAppHealthStatus @default(HEALTHY)
+  consecutiveFailures    Int                  @default(0)
+  lastSuccessAt          DateTime?
+  lastFailureAt          DateTime?
+  unhealthyUntil         DateTime?
+  totalRequests          Int                  @default(0)
+  totalFailures          Int                  @default(0)
+  lastHeartbeatAt        DateTime?
+  lastHeartbeatLatencyMs Int?
+  lastHeartbeatError     String?              @db.Text
+  updatedAt              DateTime             @updatedAt
 
-    @@unique([provider])
-    @@map("whatsapp_provider_health")
+  @@unique([provider])
+  @@map("whatsapp_provider_health")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1424,31 +1871,31 @@ model WhatsAppProviderHealth {
 // ═══════════════════════════════════════════════════════════════
 
 model JobLog {
-    id             String        @id @default(uuid()) @db.Uuid
-    queueName      String // "whatsapp", "email", "pdf", "scheduled"
-    jobName        String // Specific job type within queue
-    jobId          String        @unique // BullMQ job ID (idempotency key)
-    status         JobStatus     @default(QUEUED)
-    attempt        Int           @default(1)
-    maxAttempts    Int           @default(5)
-    payload        Json // Sanitized data (no secrets, PII redacted)
-    result         Json? // Job return value on success
-    error          String?       @db.Text
-    errorStack     String?       @db.Text
-    durationMs     Int?
-    queuedAt       DateTime      @default(now())
-    startedAt      DateTime?
-    completedAt    DateTime?
-    userId         String?       @db.Uuid
-    user           User?         @relation(fields: [userId], references: [id])
-    consultationId String?       @db.Uuid
-    consultation   Consultation? @relation(fields: [consultationId], references: [id])
+  id             String        @id @default(uuid()) @db.Uuid
+  queueName      String // "whatsapp", "email", "pdf", "scheduled"
+  jobName        String // Specific job type within queue
+  jobId          String        @unique // BullMQ job ID (idempotency key)
+  status         JobStatus     @default(QUEUED)
+  attempt        Int           @default(1)
+  maxAttempts    Int           @default(5)
+  payload        Json // Sanitized data (no secrets, PII redacted)
+  result         Json? // Job return value on success
+  error          String?       @db.Text
+  errorStack     String?       @db.Text
+  durationMs     Int?
+  queuedAt       DateTime      @default(now())
+  startedAt      DateTime?
+  completedAt    DateTime?
+  userId         String?       @db.Uuid
+  user           User?         @relation(fields: [userId], references: [id])
+  consultationId String?       @db.Uuid
+  consultation   Consultation? @relation(fields: [consultationId], references: [id])
 
-    @@index([queueName, status])
-    @@index([userId])
-    @@index([consultationId])
-    @@index([queuedAt(sort: Desc)])
-    @@map("job_logs")
+  @@index([queueName, status])
+  @@index([userId])
+  @@index([consultationId])
+  @@index([queuedAt(sort: Desc)])
+  @@map("job_logs")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1475,36 +1922,36 @@ model JobLog {
 /// Prisma's `_prisma_migrations` is internal — we don't query it directly.
 /// MigrationAudit is OUR system for observability and compliance.
 model MigrationAudit {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    // Migration identity
-    migrationName String // e.g. "0_init", "20260503_add_clinic_table"
+  // Migration identity
+  migrationName String // e.g. "0_init", "20260503_add_clinic_table"
 
-    // Application context
-    appliedAt   DateTime @default(now())
-    appliedBy   String // "ci" | "railway-build" | "local-dev:mayank" | "manual"
-    appliedFrom String // Hostname or "github-actions" or "railway"
+  // Application context
+  appliedAt   DateTime @default(now())
+  appliedBy   String // "ci" | "railway-build" | "local-dev:mayank" | "manual"
+  appliedFrom String // Hostname or "github-actions" or "railway"
 
-    // Performance & outcome
-    durationMs   Int // Migration execution time in ms
-    success      Boolean @default(true)
-    errorMessage String? // Populated only on failure
+  // Performance & outcome
+  durationMs   Int // Migration execution time in ms
+  success      Boolean @default(true)
+  errorMessage String? // Populated only on failure
 
-    // Forensics
-    schemaChecksum  String // SHA-256 of schema.prisma at apply time
-    prismaVersion   String // e.g. "6.16.2"
-    postgresVersion String // e.g. "16.4"
+  // Forensics
+  schemaChecksum  String // SHA-256 of schema.prisma at apply time
+  prismaVersion   String // e.g. "6.16.2"
+  postgresVersion String // e.g. "16.4"
 
-    // Audit trail
-    gitCommitSha String? // commit SHA at deploy time
-    gitBranch    String? // branch at deploy time
+  // Audit trail
+  gitCommitSha String? // commit SHA at deploy time
+  gitBranch    String? // branch at deploy time
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@index([migrationName])
-    @@index([appliedAt])
-    @@index([success])
-    @@map("migration_audit")
+  @@index([migrationName])
+  @@index([appliedAt])
+  @@index([success])
+  @@map("migration_audit")
 }
 
 /// SchemaSnapshot — Periodic schema state captures
@@ -1513,25 +1960,717 @@ model MigrationAudit {
 /// If two consecutive snapshots differ without a corresponding migration,
 /// drift is detected → alert.
 model SchemaSnapshot {
-    id String @id @default(cuid())
+  id String @id @default(cuid())
 
-    // Snapshot identity
-    takenAt DateTime @default(now())
-    takenBy String // "nightly-cron" | "manual" | "post-migration"
+  // Snapshot identity
+  takenAt DateTime @default(now())
+  takenBy String // "nightly-cron" | "manual" | "post-migration"
 
-    // State capture
-    schemaChecksum String // SHA-256 of full schema dump
-    tableCount     Int // Number of tables at snapshot time
-    totalRows      BigInt // Approximate row count across all tables
-    totalIndexes   Int // Number of indexes
+  // State capture
+  schemaChecksum String // SHA-256 of full schema dump
+  tableCount     Int // Number of tables at snapshot time
+  totalRows      BigInt // Approximate row count across all tables
+  totalIndexes   Int // Number of indexes
 
-    // Drift detection
-    driftDetected Boolean @default(false)
-    driftDetails  Json? // If drift detected, JSON describing what differs
+  // Drift detection
+  driftDetected Boolean @default(false)
+  driftDetails  Json? // If drift detected, JSON describing what differs
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    @@index([takenAt])
-    @@index([driftDetected])
-    @@map("schema_snapshot")
+  @@index([takenAt])
+  @@index([driftDetected])
+  @@map("schema_snapshot")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WAVE 6+ EXTENSIONS — append to baseline schema (Day 17)
+// All 17 new models from Wave 6 audit, Wave 7 ai-training,
+// Wave 8 data-quality, Wave 10 outbox, Wave 12 continuous-training
+// ═══════════════════════════════════════════════════════════════
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 6 — Audit DB (hash-chained tamper-evident audit log)
+// ─────────────────────────────────────────────────────────────────────────
+model SeedAuditLog {
+  id            String    @id @default(cuid())
+  runId         String
+  module        String
+  action        String
+  payload       Json      @default("{}")
+  prevHash      String?
+  rowHash       String
+  occurredAt    DateTime  @default(now())
+  retentionTier String    @default("HOT")
+  archivedAt    DateTime?
+
+  @@index([runId, occurredAt])
+  @@index([module, occurredAt])
+  @@index([retentionTier])
+  @@map("seed_audit_log")
+}
+
+model SeedAnonymizationAudit {
+  id                String   @id @default(cuid())
+  runId             String
+  table             String
+  field             String
+  rule              String
+  rowsAffected      Int
+  complianceProfile String
+  saltHash          String
+  occurredAt        DateTime @default(now())
+
+  @@index([runId])
+  @@index([complianceProfile, occurredAt])
+  @@map("seed_anonymization_audit")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 7 — AI Training Lineage (training data provenance + fine-tune runs)
+// ─────────────────────────────────────────────────────────────────────────
+model TrainingExample {
+  id               String    @id @default(cuid())
+  chiefComplaint   String    @db.Text
+  locale           String
+  patientContext   Json
+  expectedResponse Json?
+  qualityScore     Float?
+  difficulty       Int?
+  category         String?
+  source           String
+  parentId         String?
+  generatorModel   String?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  approvedAt       DateTime?
+  usedInRuns       String[]  @default([])
+  excludedReason   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([source])
+  @@index([parentId])
+  @@index([approvedAt])
+  @@map("training_example")
+}
+
+model FineTuneRun {
+  id                 String    @id @default(cuid())
+  modelBase          String
+  trainingExampleIds String[]
+  evalSuiteId        String?
+  hyperparameters    Json
+  startedAt          DateTime  @default(now())
+  finishedAt         DateTime?
+  resultMetrics      Json?
+  status             String
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("fine_tune_run")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 7 — RLHF Preference Pairs (DPO/GRPO reward modeling)
+// ─────────────────────────────────────────────────────────────────────────
+model PreferencePair {
+  id              String   @id @default(cuid())
+  prompt          String   @db.Text
+  responseA       String   @db.Text
+  responseB       String   @db.Text
+  preferred       String
+  confidence      Int
+  rationale       String?  @db.Text
+  reviewerId      String
+  reviewedAt      DateTime @default(now())
+  promptExampleId String?
+  modelA          String
+  modelB          String
+  difficultyTag   String?
+  safetyRelevant  Boolean  @default(false)
+
+  @@index([reviewerId, reviewedAt])
+  @@index([safetyRelevant])
+  @@map("preference_pair")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 7 — Privacy Budget (ε composition tracking)
+// ─────────────────────────────────────────────────────────────────────────
+model PrivacyBudget {
+  id               String               @id @default(cuid())
+  scope            String               @unique
+  totalBudget      Float
+  consumedEpsilon  Float                @default(0)
+  remainingEpsilon Float
+  lastResetAt      DateTime             @default(now())
+  spends           PrivacyBudgetSpend[]
+
+  @@map("privacy_budget")
+}
+
+model PrivacyBudgetSpend {
+  id           String        @id @default(cuid())
+  budgetId     String
+  budget       PrivacyBudget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  runId        String
+  epsilonSpent Float
+  mechanism    String
+  occurredAt   DateTime      @default(now())
+
+  @@index([budgetId, occurredAt])
+  @@index([runId])
+  @@map("privacy_budget_spend")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 8 — Data Quality (quarantine, anomaly, SLO tracking)
+// ─────────────────────────────────────────────────────────────────────────
+model QuarantinedRow {
+  id              String    @id @default(cuid())
+  sourceTable     String
+  sourceRowId     String
+  payload         Json
+  reason          String    @db.Text
+  contractVersion String
+  severity        String
+  status          String    @default("pending")
+  remediatedAt    DateTime?
+  remediatedBy    String?
+  createdAt       DateTime  @default(now())
+
+  @@index([sourceTable, status])
+  @@index([createdAt])
+  @@map("quarantined_row")
+}
+
+model DataQualityAnomaly {
+  id             String    @id
+  kind           String
+  tableName      String
+  columnName     String
+  observedValue  Float
+  expectedMin    Float
+  expectedMax    Float
+  zScore         Float?
+  severity       String
+  message        String    @db.Text
+  detectedAt     DateTime
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  @@index([tableName, detectedAt])
+  @@index([severity, acknowledgedAt])
+  @@map("data_quality_anomaly")
+}
+
+model SloBreach {
+  id             String    @id @default(cuid())
+  sloName        String
+  budgetBurnPct  Float
+  observedValue  Float
+  thresholdValue Float
+  severity       String
+  detectedAt     DateTime  @default(now())
+  resolvedAt     DateTime?
+
+  @@index([sloName, detectedAt])
+  @@map("slo_breach")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 10 — Outbox (transactional event publishing)
+// ─────────────────────────────────────────────────────────────────────────
+model OutboxEvent {
+  id            String    @id @default(cuid())
+  sequenceId    BigInt    @unique @default(autoincrement())
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  headers       Json      @default("{}")
+  partitionKey  String?
+  status        String    @default("pending")
+  attemptCount  Int       @default(0)
+  lastError     String?   @db.Text
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  nextAttemptAt DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+
+  @@index([status, nextAttemptAt])
+  @@index([aggregateType, aggregateId])
+  @@index([createdAt])
+  @@map("outbox_event")
+}
+
+model OutboxDeadLetter {
+  id            String    @id @default(cuid())
+  originalId    String
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  payload       Json
+  finalError    String    @db.Text
+  attemptCount  Int
+  createdAt     DateTime  @default(now())
+  retriedAt     DateTime?
+
+  @@index([aggregateType, createdAt])
+  @@map("outbox_dead_letter")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WAVE 12 — Continuous Training (drift, guardrails, prompts, shadow)
+// ─────────────────────────────────────────────────────────────────────────
+model DriftAlert {
+  id             String    @id
+  kind           String
+  metric         String
+  observedValue  Float
+  threshold      Float
+  windowDays     Int
+  severity       String
+  actionRequired String    @db.Text
+  detectedAt     DateTime
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+
+  @@index([metric, detectedAt])
+  @@index([severity, acknowledgedAt])
+  @@map("drift_alert")
+}
+
+model GuardrailViolation {
+  id              String   @id @default(cuid())
+  consultationId  String?
+  side            String
+  kind            String
+  severity        String
+  message         String   @db.Text
+  redactedExcerpt String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  @@index([consultationId, createdAt])
+  @@index([kind, severity])
+  @@index([createdAt])
+  @@map("guardrail_violation")
+}
+
+model PromptVersion {
+  id           String             @id @default(cuid())
+  version      String
+  modelTarget  String
+  systemPrompt String             @db.Text
+  notes        String?            @db.Text
+  active       Boolean            @default(false)
+  releasedAt   DateTime           @default(now())
+  retiredAt    DateTime?
+  createdBy    String?
+  cacheKey     String?
+  rolloutPlan  PromptRolloutPlan?
+
+  @@unique([version, modelTarget])
+  @@index([modelTarget, active])
+  @@map("prompt_version")
+}
+
+model PromptRolloutPlan {
+  id                String        @id @default(cuid())
+  promptVersionId   String        @unique
+  promptVersion     PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
+  startTrafficPct   Int           @default(10)
+  rampStepPct       Int           @default(20)
+  rampIntervalHours Int           @default(24)
+  currentTrafficPct Int           @default(0)
+  status            String        @default("draft")
+  rollbackReason    String?       @db.Text
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  @@map("prompt_rollout_plan")
+}
+
+model ShadowComparison {
+  id                 String    @id
+  prompt             String    @db.Text
+  productionResponse String    @db.Text
+  candidateResponse  String    @db.Text
+  productionModel    String
+  candidateModel     String
+  compositeDelta     Float
+  safetyDelta        Float
+  latencyDelta       Int
+  recommendedAction  String
+  comparedAt         DateTime
+  reviewedAt         DateTime?
+  reviewedBy         String?
+
+  @@index([candidateModel, comparedAt])
+  @@index([recommendedAction])
+  @@map("shadow_comparison")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE B-1 v2: NEW MODELS — Research-backed reference data
+// ═══════════════════════════════════════════════════════════════
+
+/// Catalog of medication salts (200+ from Indian Pharmacopoeia 2022 + CDSCO).
+/// FAANG-grade with NMC telemedicine compliance + WHO ATC classification.
+/// Source: Indian Pharmacopoeia 2022, CDSCO approved drugs, WHO ATC/DDD Index
+model MedicationSalt {
+  id String @id @default(uuid()) @db.Uuid
+
+  // ── Identity ──
+  name           String  @unique
+  genericName    String
+  brandNames     Json?
+  atcCode        String?
+  ipMonographRef String?
+  nameLocalized  Json?
+
+  // ── Classification ──
+  category       MedicationCategory
+  subcategory    String?
+  schedule       DrugSchedule       @default(NONE)
+  isScheduleX    Boolean            @default(false)
+  isNarcotic     Boolean            @default(false)
+  isPsychotropic Boolean            @default(false)
+  isOTC          Boolean            @default(false)
+
+  // ── Telemedicine eligibility (NMC compliance) ──
+  isTelemedicineEligible   Boolean @default(true)
+  telemedicineRestrictions Json?
+
+  // ── Dosing ──
+  dosageForms       Json
+  defaultDosageMg   Decimal? @db.Decimal(10, 4)
+  maxDailyDoseMg    Decimal? @db.Decimal(10, 4)
+  pediatricDosing   Json?
+  geriatricDosing   Json?
+  renalAdjustment   Json?
+  hepaticAdjustment Json?
+
+  // ── Safety ──
+  pregnancyCategory PregnancyCategory @default(UNKNOWN)
+  lactationCategory String?
+  contraindications Json?
+  sideEffects       Json?
+  blackBoxWarnings  Json?
+  indications       Json?
+
+  // ── Status ──
+  isActive          Boolean   @default(true)
+  deprecatedAt      DateTime?
+  deprecationReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  interactionsAsA MedicationInteraction[] @relation("InteractionSaltA")
+  interactionsAsB MedicationInteraction[] @relation("InteractionSaltB")
+  lineItems       PrescriptionLineItem[]
+
+  @@index([category])
+  @@index([schedule])
+  @@index([isTelemedicineEligible])
+  @@index([isActive])
+  @@index([atcCode])
+  @@map("medication_salts")
+}
+
+/// Drug-drug interaction matrix (Lexicomp-aligned severity).
+/// Symmetric — query both directions with @@unique constraint.
+model MedicationInteraction {
+  id          String              @id @default(uuid()) @db.Uuid
+  saltAId     String              @db.Uuid
+  saltA       MedicationSalt      @relation("InteractionSaltA", fields: [saltAId], references: [id])
+  saltBId     String              @db.Uuid
+  saltB       MedicationSalt      @relation("InteractionSaltB", fields: [saltBId], references: [id])
+  severity    InteractionSeverity
+  description String              @db.Text
+  mechanism   String?             @db.Text
+  management  String?             @db.Text
+  references  Json?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([saltAId, saltBId])
+  @@index([severity])
+  @@map("medication_interactions")
+}
+
+/// ICD-10 K00-K14 hierarchical dental conditions.
+/// Source: WHO ICD-10 (K10 intentionally skipped — historical numbering).
+/// 3-level: chapter (K00-K14) → subchapter (K00.0) → specific (K00.01)
+model DentalCondition {
+  id String @id @default(uuid()) @db.Uuid
+
+  // ── ICD-10 hierarchy ──
+  icd10Code      String  @unique
+  chapterCode    String
+  subchapterCode String?
+  parentCode     String?
+
+  // ── Display ──
+  name             String
+  nameLocalized    Json?
+  shortDescription String?
+  fullDescription  String? @db.Text
+
+  // ── Classification ──
+  category    String
+  subcategory String?
+  isLeafCode  Boolean @default(false)
+
+  // ── Cross-references ──
+  excludesCodes String[]
+  includesCodes String[]
+  seeAlsoCodes  String[]
+
+  // ── Clinical context ──
+  prevalencePercent  Float?
+  typicalSeverity    UrgencyLevel @default(ROUTINE)
+  isUrgent           Boolean      @default(false)
+  requiresXray       Boolean      @default(false)
+  affectedAgeGroups  Json?
+  riskFactors        Json?
+  symptoms           Json?
+  homeRemedies       Json?
+  typicalMedications Json?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterCode])
+  @@index([subchapterCode])
+  @@index([parentCode])
+  @@index([isUrgent])
+  @@index([isLeafCode])
+  @@index([isActive])
+  @@map("dental_conditions")
+}
+
+/// 50 patient archetypes for archetype-driven seed generation.
+/// Based on NFHS-5 demographic distribution + Indian healthcare access patterns.
+model PatientArchetype {
+  id           String  @id @default(uuid()) @db.Uuid
+  archetypeKey String  @unique
+  name         String
+  description  String? @db.Text
+
+  // ── Demographics (NFHS-5 informed) ──
+  locale           ArchetypeLocale
+  ageMin           Int
+  ageMax           Int
+  gender           Json
+  sesTiers         Json
+  residence        Json
+  educationLevels  Json
+  populationWeight Float           @default(1.0)
+
+  // ── Clinical patterns ──
+  primaryConditionIcd10   String
+  comorbidConditionsIcd10 Json?
+  pregnancyStatus         Json
+  smokingStatus           Json
+
+  // ── Cultural ──
+  preferredLanguages Json
+  insuranceLikely    Json
+  referralChannels   Json
+  behaviors          Json?
+
+  // ── Compliance / safety constraints ──
+  safetyConstraints Json?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([locale])
+  @@index([primaryConditionIcd10])
+  @@index([isActive])
+  @@map("patient_archetypes")
+}
+
+/// Versioned system prompts — A/B testing + rollout governance.
+model SystemPrompt {
+  id             String        @id @default(uuid()) @db.Uuid
+  name           String
+  version        String
+  useCase        PromptUseCase
+  content        String        @db.Text
+  contentLocale  LocaleCode    @default(en)
+  modelTarget    String?
+  temperature    Float?
+  maxTokens      Int?
+  isActive       Boolean       @default(true)
+  isCanonical    Boolean       @default(false)
+  rolloutPercent Int           @default(0)
+  deprecatedAt   DateTime?
+  releasedById   String?       @db.Uuid
+  metadata       Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([name, version, contentLocale])
+  @@index([useCase])
+  @@index([isActive, isCanonical])
+  @@map("system_prompts")
+}
+
+/// Prescription line items (medical-legal accountability table).
+/// Every item carries safety check audit trail per NMC + IP.
+model PrescriptionLineItem {
+  id               String          @id @default(uuid()) @db.Uuid
+  prescriptionId   String          @db.Uuid
+  prescription     Prescription    @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicationSaltId String?         @db.Uuid
+  medicationSalt   MedicationSalt? @relation(fields: [medicationSaltId], references: [id])
+
+  medicationNameLegacy String?
+  brandNameSuggested   String?
+
+  // ── Dosing (NMC mandatory: drug name, dose, route, frequency, duration) ──
+  dosageMg              Decimal?    @db.Decimal(10, 4)
+  dosageUnit            String?     @default("mg")
+  frequency             String
+  duration              String
+  durationDays          Int?
+  routeOfAdministration String?     @default("oral")
+  instructions          String?     @db.Text
+  instructionsLocale    LocaleCode?
+
+  // ── Safety check audit trail (per medication) ──
+  allergyChecked           Boolean @default(false)
+  pregnancyChecked         Boolean @default(false)
+  bloodThinnerChecked      Boolean @default(false)
+  pediatricDoseAdjusted    Boolean @default(false)
+  geriatricDoseAdjusted    Boolean @default(false)
+  interactionChecked       Boolean @default(false)
+  renalAdjustmentApplied   Boolean @default(false)
+  hepaticAdjustmentApplied Boolean @default(false)
+
+  // ── Review status ──
+  reviewStatus LineItemReviewStatus @default(NOT_REVIEWED)
+  reviewNotes  String?              @db.Text
+
+  sequenceNumber Int @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([prescriptionId])
+  @@index([medicationSaltId])
+  @@index([reviewStatus])
+  @@map("prescription_line_items")
+}
+
+/// DPDP Rules 2025 — processing logs (1-year minimum retention).
+/// Source: DPDP Rules 2025 Rule 6 — security safeguards.
+model ProcessingLog {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         String? @db.Uuid
+  patientId      String? @db.Uuid
+  consultationId String? @db.Uuid
+
+  purpose        ProcessingPurpose
+  dataCategories String[]
+  legalBasis     String
+
+  accessedBy     String?
+  accessedFromIp String?
+  accessedFromUa String?
+  consentVersion String?
+
+  success      Boolean @default(true)
+  errorMessage String?
+
+  retentionUntil DateTime
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([patientId])
+  @@index([consultationId])
+  @@index([purpose])
+  @@index([retentionUntil])
+  @@index([createdAt])
+  @@map("processing_logs")
+}
+
+/// DPDP-compliant deletion request (48-hour erasure notice rule).
+/// Source: DPDP Rules 2025 — Erasure notice 48hr before deletion.
+model DeletionRequest {
+  id                String  @id @default(uuid()) @db.Uuid
+  requestedByUserId String? @db.Uuid
+  targetUserId      String? @db.Uuid
+  targetPatientId   String? @db.Uuid
+
+  requestType   String
+  requestReason String? @db.Text
+
+  // ── DPDP 48-hour erasure notice ──
+  noticeIssuedAt       DateTime?
+  noticeAcknowledgedAt DateTime?
+
+  // ── Lifecycle ──
+  status              String    @default("PENDING")
+  scheduledDeletionAt DateTime?
+  deletedAt           DateTime?
+  cancellationReason  String?
+
+  // ── Verification ──
+  verifiedByMethod String?
+  verifiedAt       DateTime?
+
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([requestedByUserId])
+  @@index([targetUserId])
+  @@index([targetPatientId])
+  @@index([status])
+  @@index([scheduledDeletionAt])
+  @@map("deletion_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EXPERIMENT ASSIGNMENT — Wave 12 A/B harness
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Stores per-user variant assignment for an experiment. Used by:
+//   - prisma/seeds/continuous-training/experiments/experiment-store.ts
+//   - prisma/seeds/continuous-training/experiments/srm-detector.ts
+//
+// Determinism: bucketHash (0-99) is stable per (experimentKey, userId) so
+// a user always falls in the same variant across requests. assignmentReason
+// distinguishes 'NEW_RANDOM' (first exposure) vs forced-variant overrides.
+//
+// Reference: Kohavi et al. 2020 (Trustworthy Online Controlled Experiments)
+// + LinkedIn XLNT + Spotify Confidence harness conventions.
+
+model ExperimentAssignment {
+  id               String  @id @default(cuid())
+  experimentKey    String
+  userId           String
+  variantKey       String
+  bucketHash       Int // 0–99, deterministic per (experimentKey, userId)
+  assignmentReason String  @default("NEW_RANDOM") // NEW_RANDOM | FORCED | RECONCILED
+  metricExposed    Boolean @default(false)
+  conversionEvents Json    @default("[]")
+  conversionValue  Float   @default(0)
+
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  endedAt   DateTime?
+
+  @@unique([experimentKey, userId])
+  @@index([experimentKey, variantKey])
+  @@index([userId])
+  @@map("experiment_assignments")
 }

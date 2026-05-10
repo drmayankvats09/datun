@@ -10,6 +10,7 @@ import { chatRouter } from './chat.router.js';
 import { consultationRouter } from './consultation.router.js';
 import { userRouter } from './user.router.js';
 import { webhookRouter } from './webhook.router.js';
+import { adminRouter } from './admin/index.js';
 import { generalLimiter } from '../middleware/rate-limit.js';
 
 export function mountRoutes(app: Express): void {
@@ -21,6 +22,9 @@ export function mountRoutes(app: Express): void {
   app.use('/api', chatRouter);
   app.use('/api', consultationRouter);
   app.use('/api', userRouter);
+
+  // Admin API — JWT + ADMIN role required, gated by ADMIN_ROUTES_ENABLED flag
+  app.use('/api/admin', adminRouter);
 
   // WhatsApp webhook — no rate limit (Meta sends bursts)
   app.use('/webhook', webhookRouter);

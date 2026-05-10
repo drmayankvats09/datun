@@ -1,0 +1,48 @@
+name: ct-shadow-daily
+
+on:
+  schedule:
+    - cron: '30 4 * * *' # 04:30 UTC daily, after eval-nightly
+  workflow_dispatch:
+    inputs:
+      candidate_model:
+        description: 'Model to shadow-test'
+        type: string
+        default: 'claude-haiku-4-5-20251001'
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'pnpm' }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @repo/db exec prisma generate
+      - env:
+          CANDIDATE_MODEL: ${{ github.event.inputs.candidate_model || 'claude-haiku-4-5-20251001' }}
+        run: |
+          pnpm --filter @repo/db exec tsx -e "
+            import { PrismaClient } from '@prisma/client';
+            import { GOLDEN_CASES, AnthropicAdapter } from './prisma/seeds/ai-training/eval';
+            import { runShadow } from './prisma/seeds/continuous-training/shadow/shadow-runner';
+            import { compareShadow } from './prisma/seeds/continuous-training/shadow/shadow-comparator';
+            import { saveShadowComparison } from './prisma/seeds/continuous-training/shadow/shadow-store';
+            (async () => {
+              const p = new PrismaClient();
+              const prod = new AnthropicAdapter('production-claude-sonnet-4-6', 'claude-sonnet-4-6');
+              const cand = new AnthropicAdapter('candidate', process.env.CANDIDATE_MODEL || 'claude-haiku-4-5-20251001');
+              for (const c of GOLDEN_CASES.slice(0, 10)) {
+                const run = await runShadow('You are Datun dental triage AI.', c.chiefComplaint, prod, cand);
+                const cmp = await compareShadow(c, run);
+                await saveShadowComparison(p, cmp);
+                console.log(c.id, cmp.recommendedAction, 'composite delta', cmp.compositeDelta.toFixed(3));
+              }
+              await p.\$disconnect();
+            })();
+          "

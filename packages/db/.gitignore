@@ -1,3 +1,5 @@
 .env
 node_modules
 dist
+SEED_ANONYMIZATION_SALT=local-dev-salt-do-not-use-in-prod
+SEED_AUDIT_DIR=./tmp/audit-logs

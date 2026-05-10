@@ -1,0 +1,10 @@
+export { ClaudeGenerator } from './claude-generator';
+export { BackTranslator } from './back-translator';
+export { runSynthesisPipeline } from './synthesis-orchestrator';
+export { exactDedup, semanticDedup } from './dedup-engine';
+export { enumeratePersonas } from './persona-generator';
+export { selfInstructGenerate } from './self-instruct';
+export { registerSynthesisCommand } from './synthesis-cli';
+export type { SynthesisStrategy, SynthesisRequest, SynthesizedExample } from './synthesis.types';
+export type { SynthesisPipelineResult } from './synthesis-orchestrator';
+export type { PersonaVariation } from './persona-generator';

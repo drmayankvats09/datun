@@ -1,10 +1,34 @@
 {
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src",
-    "types": ["node"]
+    "outDir": "./dist",
+    "rootDir": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "declarationMap": false,
+    "isolatedDeclarations": false,
+    "paths": {
+      "@seeds": ["./prisma/seeds/index.ts"],
+      "@seeds/*": ["./prisma/seeds/*"],
+      "@seeds/factories": ["./prisma/seeds/factories/index.ts"],
+      "@seeds/factories/*": ["./prisma/seeds/factories/*"],
+      "@seeds/modules": ["./prisma/seeds/modules/index.ts"],
+      "@seeds/modules/*": ["./prisma/seeds/modules/*"],
+      "@seeds/strategies": ["./prisma/seeds/strategies/index.ts"],
+      "@seeds/strategies/*": ["./prisma/seeds/strategies/*"],
+      "@seeds/anonymization": ["./prisma/seeds/anonymization/index.ts"],
+      "@seeds/anonymization/*": ["./prisma/seeds/anonymization/*"],
+      "@seeds/multi-tenant": ["./prisma/seeds/multi-tenant/index.ts"],
+      "@seeds/multi-tenant/*": ["./prisma/seeds/multi-tenant/*"],
+      "@seeds/validation": ["./prisma/seeds/validation/index.ts"],
+      "@seeds/validation/*": ["./prisma/seeds/validation/*"]
+    }
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", "dist", "**/.stryker-tmp/**", "**/*.prisma.archived"]
 }

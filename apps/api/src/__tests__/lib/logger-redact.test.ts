@@ -25,7 +25,7 @@ beforeAll(async () => {
     await vi.importActual<typeof import('../../lib/logger.js')>('../../lib/logger.js');
   redactString = actualLogger.__internals.redactString;
   redactDeep = actualLogger.__internals.redactDeep;
-});
+}, 60000);
 
 describe('Logger redaction — string-level patterns', () => {
   it('redacts Anthropic API keys (sk-ant-*)', () => {

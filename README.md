@@ -36,7 +36,7 @@ Turborepo monorepo:
 
 - Node.js 20 or later
 - pnpm 9 or later
-- PostgreSQL 16 (Railway or local)
+- PostgreSQL 18 (Railway or local)
 
 ## Local Development
 
