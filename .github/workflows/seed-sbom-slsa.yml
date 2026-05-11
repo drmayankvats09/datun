@@ -27,11 +27,16 @@ jobs:
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
       - id: sbom
-        name: Generate CycloneDX SBOM
+        name: Generate CycloneDX SBOM (pnpm-native)
         run: |
-          pnpm --filter @repo/db exec cyclonedx-npm \
-            --output-format JSON \
-            --output-file packages/db/tmp/sbom.cyclonedx.json
+          # cdxgen is pnpm-aware. cyclonedx-npm shells out to `npm ls`
+          # which can't parse pnpm's workspace hoisting and produces
+          # invalid SBOM with hundreds of false errors.
+          mkdir -p packages/db/tmp
+          npx -y @cyclonedx/cdxgen \
+            --type pnpm \
+            --output packages/db/tmp/sbom.cyclonedx.json \
+            packages/db
           echo "sbom_path=packages/db/tmp/sbom.cyclonedx.json" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v4
         with:

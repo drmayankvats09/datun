@@ -25,15 +25,41 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          MISSING=()
+          [ -z "${AWS_OIDC_ROLE_ARN}" ] && MISSING+=("AWS_OIDC_ROLE_ARN")
+          [ -z "${STAGING_DR_DATABASE_URL}" ] && MISSING+=("STAGING_DR_DATABASE_URL")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Skipping DR drill — missing secrets: ${MISSING[*]}."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          AWS_OIDC_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          STAGING_DR_DATABASE_URL: ${{ secrets.STAGING_DR_DATABASE_URL }}
+
       - uses: aws-actions/configure-aws-credentials@v4
+        if: steps.preflight.outputs.skip != 'true'
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ap-south-1
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
+
       - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.skip != 'true'
         with: { node-version: '22', cache: 'pnpm' }
+
       - run: pnpm install --frozen-lockfile
+        if: steps.preflight.outputs.skip != 'true'
+
       - name: Run DR drill
+        if: steps.preflight.outputs.skip != 'true'
         env:
           DATABASE_URL: ${{ secrets.STAGING_DR_DATABASE_URL }}
           AWS_S3_EXPORT_BUCKET: datun-dr-snapshots
@@ -52,8 +78,9 @@ jobs:
             if (!r.passed) process.exit(1);
           })();
           "
+
       - name: Notify Slack on failure
-        if: failure()
+        if: failure() && steps.preflight.outputs.skip != 'true'
         run: |
           curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
             -H 'Content-Type: application/json' \

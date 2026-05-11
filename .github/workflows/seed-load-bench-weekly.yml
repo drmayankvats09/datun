@@ -1,6 +1,3 @@
-# ═══════════════════════════════════════════════════════════════
-# WEEKLY LOAD BENCH — staging only, never prod
-# ═══════════════════════════════════════════════════════════════
 name: seed-load-bench
 
 on:
@@ -25,32 +22,58 @@ jobs:
     env:
       BASE_URL: ${{ secrets.STAGING_API_URL }}
       DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      K6_TYPE: ${{ github.event.inputs.k6_type || 'smoke' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          MISSING=()
+          [ -z "${STAGING_API_URL}" ] && MISSING+=("STAGING_API_URL")
+          [ -z "${STAGING_DATABASE_URL}" ] && MISSING+=("STAGING_DATABASE_URL")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Skipping load bench — missing secrets: ${MISSING[*]}. Configure when staging API is set up."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
+
       - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.skip != 'true'
         with: { node-version: '22', cache: 'pnpm' }
+
       - name: Verify not production
+        if: steps.preflight.outputs.skip != 'true'
         run: |
           if [[ "$BASE_URL" == *"api.datunai.com"* ]] && [[ "$BASE_URL" != *"staging"* ]]; then
             echo "::error::Refusing to run load test against production"
             exit 1
           fi
+
       - run: pnpm install --frozen-lockfile
-      - name: Install k6
-        run: |
-          sudo gpg -k
-          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update && sudo apt-get install -y k6
-      - name: Run k6
-        env:
-          K6_TYPE: ${{ github.event.inputs.k6_type || 'smoke' }}
+        if: steps.preflight.outputs.skip != 'true'
+
+      - name: Run k6 test
+        if: steps.preflight.outputs.skip != 'true'
         run: k6 run "packages/db/prisma/seeds/load-bench/k6/${K6_TYPE}.k6.js"
+
       - name: Run bench harness
+        if: steps.preflight.outputs.skip != 'true'
         run: pnpm --filter @repo/db exec tsx prisma/seeds/load-bench/bench-harness.ts
+
       - name: Upload reports
+        if: steps.preflight.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: bench-reports-${{ github.run_id }}
-          path: packages/db/tmp/*.json
+          name: load-bench-${{ github.run_id }}
+          path: |
+            ./summary.json
+            ./bench-report.json
+          retention-days: 30

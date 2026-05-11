@@ -69,7 +69,9 @@ jobs:
         continue-on-error: true
 
       - name: Vitest smoke + contract tests
-        run: pnpm --filter @repo/db exec vitest run prisma/seeds/e2e-harness/smoke-tests.ts prisma/seeds/e2e-harness/contract-tests.ts
+        run: |
+          pnpm --filter @repo/db exec vitest run \
+            --include='prisma/seeds/e2e-harness/*-tests.ts'
 
       - name: Upload artifacts on failure
         if: failure()

@@ -40,14 +40,32 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          if [ -z "${STAGING_DATABASE_URL}" ]; then
+            echo "::warning::STAGING_DATABASE_URL not configured — skipping anonymization."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
       - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.skip != 'true'
         with: { node-version: 22, cache: pnpm }
 
       - run: pnpm install --frozen-lockfile
+        if: steps.preflight.outputs.skip != 'true'
       - run: pnpm --filter @repo/db exec prisma generate
+        if: steps.preflight.outputs.skip != 'true'
 
       - name: Anonymize each table
+        if: steps.preflight.outputs.skip != 'true'
         env:
           INPUT_TABLES: ${{ inputs.tables }}
           INPUT_COMPLIANCE: ${{ inputs.compliance }}

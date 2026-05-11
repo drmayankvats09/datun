@@ -13,8 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Node 20 reached EOL Oct 2025 + conflicts with engines.node>=22.
+        # Postgres 16 still active LTS until 2028, kept for compat testing.
         postgres: ['16-alpine', '17-alpine', '18-alpine']
-        node: ['20', '22', '24']
+        node: ['22', '24']
     runs-on: ubuntu-latest
     timeout-minutes: 30
     services:

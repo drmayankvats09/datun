@@ -40,20 +40,45 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          MISSING=()
+          [ -z "${STAGING_DATABASE_URL}" ] && MISSING+=("STAGING_DATABASE_URL")
+          [ -z "${AWS_OIDC_ROLE_ARN}" ] && MISSING+=("AWS_OIDC_ROLE_ARN")
+          [ -z "${AWS_S3_EXPORT_BUCKET_NAME}" ] && MISSING+=("AWS_S3_EXPORT_BUCKET")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Skipping — missing secrets: ${MISSING[*]}. Configure when AWS S3 backup is set up."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+          AWS_OIDC_ROLE_ARN: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+          AWS_S3_EXPORT_BUCKET_NAME: ${{ secrets.AWS_S3_EXPORT_BUCKET }}
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
       - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.skip != 'true'
         with: { node-version: 22, cache: pnpm }
 
       - run: pnpm install --frozen-lockfile
+        if: steps.preflight.outputs.skip != 'true'
       - run: pnpm --filter @repo/db exec prisma generate
+        if: steps.preflight.outputs.skip != 'true'
 
       - name: Configure AWS credentials
+        if: steps.preflight.outputs.skip != 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
           aws-region: ap-south-1
 
       - name: Export anonymized dump
+        if: steps.preflight.outputs.skip != 'true'
         env:
           INPUT_COMPLIANCE: ${{ inputs.compliance || 'DPDP' }}
           INPUT_COMPRESSION: ${{ inputs.compression || 'gzip' }}
@@ -66,4 +91,5 @@ jobs:
             --s3-prefix datun-exports/weekly
 
       - name: Verify manifest written
+        if: steps.preflight.outputs.skip != 'true'
         run: ls -la ./tmp/*.manifest.json

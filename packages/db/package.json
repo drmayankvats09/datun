@@ -63,7 +63,7 @@
     "synthesize": "tsx prisma/seeds/cli/index.ts synthesize",
     "synthesize:full": "tsx prisma/seeds/cli/index.ts synthesize --strategy persona-vary --per-seed 10 --target-final 1000",
     "training:test": "vitest run prisma/seeds/ai-training",
-    "training:lineage:risk": "tsx -e \"import('./prisma/seeds/ai-training/lineage').then(m => new m.LineageStore(prisma).modelCollapseRiskReport()).then(console.log)\"",
+    "training:lineage:risk": "tsx prisma/seeds/cli/scripts/lineage-risk-cli.ts",
     "rlhf:export-dpo": "tsx -e \"import('./prisma/seeds/ai-training/rlhf').then(m => m.exportDpoDataset(prisma, './tmp/datun-dpo.jsonl'))\"",
     "privacy:budget:check": "tsx -e \"import('./prisma/seeds/ai-training/privacy-budget').then(m => new m.BudgetAccumulator(prisma).getUsage('global')).then(console.log)\"",
     "outbox:status": "tsx prisma/seeds/outbox/outbox-cli.ts status",

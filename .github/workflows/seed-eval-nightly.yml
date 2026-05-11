@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/db db:generate
       - name: Run eval suite
         run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts eval run --model claude-sonnet-4-6 --output ./tmp/eval-nightly.json
       - uses: actions/upload-artifact@v4

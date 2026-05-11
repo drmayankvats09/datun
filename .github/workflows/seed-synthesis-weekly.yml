@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/db db:generate
       - name: Generate synthetic training set
         env:
           INPUT_TARGET_COUNT: ${{ github.event.inputs.target_count || '500' }}

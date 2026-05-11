@@ -158,3 +158,6 @@ ci-master-errors-*.txt
 ci-logs-v2-*/
 tc-output.log
 
+
+# CI workflow audit logs (local-only)
+workflow-logs/
