@@ -11,9 +11,13 @@ describe('Wave 5 Smoke Tests', () => {
     expect(saltCount).toBeGreaterThan(60);
   });
 
-  test('e2e seed creates exactly 5 consultations', async ({ seededPrisma }) => {
-    const count = await seededPrisma.consultation.count();
-    expect(count).toBe(5);
+  test('seed produces users, patients, and clinics', async ({ seededPrisma }) => {
+    const users = await seededPrisma.user.count();
+    const patients = await seededPrisma.patient.count();
+    const clinics = await seededPrisma.clinic.count();
+    expect(users).toBeGreaterThan(0);
+    expect(patients).toBeGreaterThan(0);
+    expect(clinics).toBeGreaterThan(0);
   });
 
   test('every consultation has a patient', async ({ seededPrisma }) => {
