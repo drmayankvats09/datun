@@ -8,7 +8,7 @@ name: seed-chaos-probe
 
 on:
   schedule:
-    - cron: '37 5 * * *' # 05:37 UTC daily
+#    - cron: '37 5 * * *' # 05:37 UTC daily
   workflow_dispatch:
 
 concurrency:

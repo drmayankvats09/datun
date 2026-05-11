@@ -3,7 +3,7 @@ name: Synthesis — Weekly Refresh
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # Monday 06:00 UTC = 11:30 IST Monday
+#    - cron: '0 6 * * 1' # Monday 06:00 UTC = 11:30 IST Monday
   workflow_dispatch:
     inputs:
       strategy:
