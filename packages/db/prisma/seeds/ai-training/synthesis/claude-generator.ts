@@ -7,6 +7,14 @@ import { randomUUID } from 'node:crypto';
 import type { SynthesisRequest, SynthesizedExample } from './synthesis.types';
 import type { Locale } from '../eval/eval.types';
 
+interface ParsedVariation {
+  chiefComplaint: string;
+  locale: Locale;
+  ageYears: number;
+  gender: 'M' | 'F' | 'O';
+  safetyConstraints: string[];
+}
+
 const PERSONA_VARY_PROMPT = `Generate {count} variations of this dental complaint, varying patient demographics (age, gender, regional Indian language) but preserving the underlying clinical scenario.
 
 Original complaint: "{complaint}"
@@ -29,6 +37,48 @@ Original: "{complaint}"
 
 Output JSON: { "chiefComplaint": "...", "locale": "{locale}", "ageYears": int, "gender": "M|F|O", "safetyConstraints": [...] }`;
 
+/**
+ * Safely parse Claude's JSON response.
+ * Claude sometimes returns extra text before/after JSON, or multiple JSON objects.
+ * Strategy: try full parse → extract first JSON array → extract single object → give up.
+ */
+function safeParseVariations(raw: string): ParsedVariation[] {
+  const cleaned = raw.replace(/```json|```/g, '').trim();
+
+  // Attempt 1: direct parse (happy path — Claude returned clean JSON)
+  try {
+    const result = JSON.parse(cleaned);
+    return Array.isArray(result) ? result : [result];
+  } catch {
+    // fall through
+  }
+
+  // Attempt 2: extract first JSON array from response
+  const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    try {
+      return JSON.parse(arrayMatch[0]);
+    } catch {
+      // fall through
+    }
+  }
+
+  // Attempt 3: extract first JSON object (evol-instruct returns single object)
+  const objMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (objMatch) {
+    try {
+      const single = JSON.parse(objMatch[0]);
+      return [single];
+    } catch {
+      // fall through
+    }
+  }
+
+  // All attempts failed — return empty (graceful degradation, not crash)
+  console.warn('⚠ Could not parse Claude synthesis response, skipping batch');
+  return [];
+}
+
 export class ClaudeGenerator {
   private client: Anthropic;
   constructor(
@@ -50,14 +100,10 @@ export class ClaudeGenerator {
     });
     const text = r.content.find((b) => b.type === 'text');
     if (!text || text.type !== 'text') return [];
-    const cleaned = text.text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(cleaned) as Array<{
-      chiefComplaint: string;
-      locale: Locale;
-      ageYears: number;
-      gender: 'M' | 'F' | 'O';
-      safetyConstraints: string[];
-    }>;
+
+    const parsed = safeParseVariations(text.text);
+    if (parsed.length === 0) return [];
+
     return parsed.map((p) => ({
       id: randomUUID(),
       chiefComplaint: p.chiefComplaint,

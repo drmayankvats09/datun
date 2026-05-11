@@ -28,12 +28,20 @@ export class SeedRunHistoryStore {
   private get model():
     | { create?: (args: object) => Promise<unknown>; update?: (args: object) => Promise<unknown> }
     | undefined {
-    return (
-      this.prisma as unknown as Record<
-        string,
-        { create?: (args: object) => Promise<unknown>; update?: (args: object) => Promise<unknown> }
-      >
-    ).seedRunHistory;
+    try {
+      if (!this.prisma) return undefined;
+      return (
+        this.prisma as unknown as Record<
+          string,
+          {
+            create?: (args: object) => Promise<unknown>;
+            update?: (args: object) => Promise<unknown>;
+          }
+        >
+      )?.seedRunHistory;
+    } catch {
+      return undefined;
+    }
   }
 
   async startRun(args: RunStartArgs): Promise<void> {
