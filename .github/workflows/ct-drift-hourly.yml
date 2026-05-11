@@ -1,11 +1,26 @@
 name: ct-drift-hourly
 
+# ─────────────────────────────────────────────────────────────────────
+# Hourly continuous-training drift check.
+# Detects input drift (age distribution shift) and concept drift
+# (urgency distribution shift) over a rolling 7-day window vs 30-day baseline.
+#
+# Implementation: delegates to packages/db CLI (`drift:detect:training`) which
+# wraps detectAgeDrift + detectUrgencyDistributionDrift via runDriftOrchestration
+# and persists alerts via DriftStore. Single source of truth for drift logic.
+#
+# Pattern: Stripe / Linear cron checks — pre-flight guard on required secrets,
+# graceful skip with warning instead of 24×/day red email spam.
+# ─────────────────────────────────────────────────────────────────────
+
 on:
   schedule:
-    - cron: '0 * * * *' # every hour
+    - cron: '0 * * * *' # every hour, on the hour (UTC)
   workflow_dispatch:
 
-concurrency: { group: ct-drift, cancel-in-progress: false }
+concurrency:
+  group: ct-drift
+  cancel-in-progress: false
 
 jobs:
   drift:
@@ -15,26 +30,46 @@ jobs:
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       PAGERDUTY_INTEGRATION_KEY: ${{ secrets.PAGERDUTY_INTEGRATION_KEY }}
+
     steps:
       - uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────────────────────────
+      # Pre-flight: bail early if PROD_DATABASE_URL not configured.
+      # Without this guard, the workflow fails 24×/day producing email
+      # spam. With it, missing-secret → graceful skip with warning.
+      # Pattern: Stripe / Linear nightly checks use identical guard.
+      # ─────────────────────────────────────────────────────────────
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::PROD_DATABASE_URL secret not configured — skipping drift check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
+
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
-      - run: pnpm install --frozen-lockfile
-      - run: |
-          pnpm --filter @repo/db exec tsx -e "
-            import { PrismaClient } from '@prisma/client';
-            import { detectAgeDrift } from './prisma/seeds/continuous-training/drift/input-drift';
-            import { detectUrgencyDistributionDrift } from './prisma/seeds/continuous-training/drift/concept-drift';
-            import { DriftStore } from './prisma/seeds/continuous-training/drift/drift-store';
-            (async () => {
-              const p = new PrismaClient();
-              const store = new DriftStore(p);
-              const a = await detectAgeDrift(p);
-              const u = await detectUrgencyDistributionDrift(p);
-              if (a) await store.record(a);
-              if (u) await store.record(u);
-              console.log({ ageDrift: a, urgencyDrift: u });
-              await p.\$disconnect();
-            })();
-          "
+        if: steps.preflight.outputs.skip != 'true'
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: steps.preflight.outputs.skip != 'true'
+        run: pnpm install --frozen-lockfile
+
+      # CRITICAL: prisma generate must run before any code that imports
+      # @prisma/client. Without it, the client has no engines/types and
+      # the drift CLI crashes at import time with a confusing error.
+      - name: Generate Prisma client
+        if: steps.preflight.outputs.skip != 'true'
+        run: pnpm --filter @repo/db db:generate
+
+      - name: Run continuous-training drift detection
+        if: steps.preflight.outputs.skip != 'true'
+        run: pnpm --filter @repo/db drift:detect:training

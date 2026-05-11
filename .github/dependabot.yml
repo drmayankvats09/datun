@@ -1,10 +1,23 @@
 # ═══════════════════════════════════════════════════════════════
-# DEPENDABOT — Auto-create PRs for dependency updates (grouped)
+# DEPENDABOT — Auto-create PRs for dependency updates
+#
+# Strategy: Patch + minor updates only. Major bumps blocked here
+# because they regularly break things (API removals, peer mismatches,
+# engine constraints). Quarterly manual major-version upgrade review
+# is the FAANG pattern — Vercel, Linear, Cal.com all do this.
+#
+# Why open-pull-requests-limit: 3 per ecosystem (not 5):
+# 4 ecosystems × 3 = 12 max weekly PRs. Reviewable in one sitting.
+# At 5 per ecosystem (20 PRs), review backlog accumulates and CI noise
+# drowns real signals — exactly what happened today (2026-05-11).
 # ═══════════════════════════════════════════════════════════════
 
 version: 2
 
 updates:
+  # ──────────────────────────────────────────────────────────────
+  # Root (dev tooling — turbo, prettier, husky, vitest, typescript)
+  # ──────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -12,15 +25,23 @@ updates:
       day: monday
       time: '06:00'
       timezone: Asia/Kolkata
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels: [dependencies, auto-update]
     commit-message:
       prefix: 'chore(deps)'
+    ignore:
+      # Block all semver-major bumps across every package.
+      # Patch + minor only — these have semver guarantees of non-breaking.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       dev-tools:
         patterns:
           ['turbo', 'husky', 'prettier*', 'vitest', '@vitest/*', 'lint-staged', 'typescript']
 
+  # ──────────────────────────────────────────────────────────────
+  # apps/web (Next.js frontend)
+  # ──────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /apps/web
     schedule:
@@ -28,10 +49,13 @@ updates:
       day: monday
       time: '06:00'
       timezone: Asia/Kolkata
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels: [dependencies, web]
     commit-message:
       prefix: 'chore(deps-web)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       react-ecosystem:
         patterns: ['react*', 'next*', '@next/*']
@@ -40,6 +64,9 @@ updates:
       sentry:
         patterns: ['@sentry/*']
 
+  # ──────────────────────────────────────────────────────────────
+  # apps/api (Express backend)
+  # ──────────────────────────────────────────────────────────────
   - package-ecosystem: npm
     directory: /apps/api
     schedule:
@@ -47,10 +74,13 @@ updates:
       day: monday
       time: '06:00'
       timezone: Asia/Kolkata
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels: [dependencies, api]
     commit-message:
       prefix: 'chore(deps-api)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       express-ecosystem:
         patterns: ['express*', 'cors', 'helmet']
@@ -59,6 +89,9 @@ updates:
       observability:
         patterns: ['@sentry/*', '@logtail/*', 'winston']
 
+  # ──────────────────────────────────────────────────────────────
+  # GitHub Actions versions
+  # ──────────────────────────────────────────────────────────────
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -66,6 +99,10 @@ updates:
       day: monday
       time: '06:00'
       timezone: Asia/Kolkata
+    open-pull-requests-limit: 3
     labels: [dependencies, ci]
     commit-message:
       prefix: 'chore(deps-ci)'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']

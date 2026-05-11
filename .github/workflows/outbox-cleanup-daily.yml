@@ -17,6 +17,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
+
+      # CRITICAL: prisma generate must run before code imports @prisma/client.
+      # Pattern: every workflow that runs PrismaClient code in tsx -e or via
+      # a script must follow install → generate → run. Single missing step
+      # causes "PrismaClient is unable to be run" errors at runtime.
+      - run: pnpm --filter @repo/db db:generate
+
       - name: Cleanup published events + archive old DLQ
         run: |
           pnpm --filter @repo/db exec tsx -e "
