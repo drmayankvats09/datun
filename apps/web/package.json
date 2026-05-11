@@ -19,7 +19,7 @@
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/ui": "workspace:*",
-    "@sentry/nextjs": "^10.50.0",
+    "@sentry/nextjs": "^10.52.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
