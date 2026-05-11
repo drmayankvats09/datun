@@ -2,7 +2,7 @@
 name: seed-eval-nightly
 
 on:
-  schedule:
+  # schedule:
 #    - cron: '0 4 * * *' # 04:00 UTC daily
   workflow_dispatch:
 

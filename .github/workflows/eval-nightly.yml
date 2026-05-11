@@ -2,8 +2,8 @@
 name: Eval — Nightly Regression
 
 on:
-  schedule:
-#    - cron: '0 18 * * *' # 18:00 UTC = 23:30 IST
+  # schedule:
+    # - cron: '0 18 * * *' # 18:00 UTC = 23:30 IST
   workflow_dispatch:
     inputs:
       model:

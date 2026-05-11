@@ -1,8 +1,8 @@
 name: ct-shadow-daily
 
 on:
-  schedule:
-#    - cron: '30 4 * * *' # 04:30 UTC daily, after eval-nightly
+  # schedule:
+    # - cron: '30 4 * * *' # 04:30 UTC daily, after eval-nightly
   workflow_dispatch:
     inputs:
       candidate_model:
