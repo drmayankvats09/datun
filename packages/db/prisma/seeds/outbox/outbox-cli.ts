@@ -314,7 +314,24 @@ program
     }
   });
 
-if (require.main === module) {
+// ─────────────────────────────────────────────────────────────────────
+// Bundle-safe entry guard.
+//
+// Why not `require.main === module`:
+// In tsup/esbuild CJS bundles (apps/worker/dist/index.js), every inlined
+// module sees itself as require.main because the bundle is one physical
+// CJS file. Result: program.parseAsync(process.argv) fires at worker
+// boot, prints CLI help, exits 1. Production crash loop.
+//
+// This guard checks the actual entry script via process.argv[1]:
+//   - tsx prisma/seeds/outbox/outbox-cli.ts ...  → matches ✓
+//   - node dist/outbox-cli.js ...                → matches ✓
+//   - node dist/index.js (worker bundle)         → does NOT match ✗
+// ─────────────────────────────────────────────────────────────────────
+const entryPath = process.argv[1] ?? '';
+const isOutboxCliEntry = /(?:^|[\\/])outbox-cli\.(?:ts|mts|cts|js|mjs|cjs)$/i.test(entryPath);
+
+if (isOutboxCliEntry) {
   program.parseAsync(process.argv).catch((err) => {
     logger.error({ err }, 'CLI fatal');
     process.exit(99);

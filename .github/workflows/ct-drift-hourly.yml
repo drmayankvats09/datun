@@ -3,14 +3,15 @@ name: ct-drift-hourly
 # ─────────────────────────────────────────────────────────────────────
 # Hourly continuous-training drift check.
 # Detects input drift (age distribution shift) and concept drift
-# (urgency distribution shift) over a rolling 7-day window vs 30-day baseline.
+# (urgency distribution shift) over a rolling 7-day vs 30-day baseline.
 #
-# Implementation: delegates to packages/db CLI (`drift:detect:training`) which
-# wraps detectAgeDrift + detectUrgencyDistributionDrift via runDriftOrchestration
-# and persists alerts via DriftStore. Single source of truth for drift logic.
+# Implementation: delegates to packages/db CLI (`drift:detect:training`)
+# which wraps detectAgeDrift + detectUrgencyDistributionDrift via
+# runDriftOrchestration and persists via DriftStore. Single source of
+# truth for drift logic.
 #
-# Pattern: Stripe / Linear cron checks — pre-flight guard on required secrets,
-# graceful skip with warning instead of 24×/day red email spam.
+# Pattern: Stripe / Linear cron checks — pre-flight guard on required
+# secrets, graceful skip with warning instead of 24×/day email spam.
 # ─────────────────────────────────────────────────────────────────────
 
 on:
@@ -38,7 +39,6 @@ jobs:
       # Pre-flight: bail early if PROD_DATABASE_URL not configured.
       # Without this guard, the workflow fails 24×/day producing email
       # spam. With it, missing-secret → graceful skip with warning.
-      # Pattern: Stripe / Linear nightly checks use identical guard.
       # ─────────────────────────────────────────────────────────────
       - name: Pre-flight — verify required secrets
         id: preflight
@@ -65,7 +65,7 @@ jobs:
 
       # CRITICAL: prisma generate must run before any code that imports
       # @prisma/client. Without it, the client has no engines/types and
-      # the drift CLI crashes at import time with a confusing error.
+      # the drift CLI crashes at import time.
       - name: Generate Prisma client
         if: steps.preflight.outputs.skip != 'true'
         run: pnpm --filter @repo/db db:generate

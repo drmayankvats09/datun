@@ -15,5 +15,3 @@ export type {
   PublishResult,
   DatunEventType,
 } from './outbox.types';
-// ─── CLI program (for re-export to wave10.ts barrel) ───
-export { program as outboxCliProgram } from './outbox-cli';
