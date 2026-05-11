@@ -1,3 +1,4 @@
+# .github/workflows/seed-nightly-regression.yml
 name: Seed Nightly Regression
 
 on:
@@ -34,6 +35,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://datun_test_user:datun_test_pass@localhost:5432/datun_test
+      # FAANG: pin TEST_DATABASE_URL so test-helpers reuse the workflow's postgres
+      # instead of trying to spin up testcontainers (Docker rate-limit prone in CI).
+      TEST_DATABASE_URL: postgresql://datun_test_user:datun_test_pass@localhost:5432/datun_test
+      SKIP_TESTCONTAINERS: '1'
       SEED_ANONYMIZATION_SALT: ci-test-salt-not-for-production
       NODE_ENV: test
 

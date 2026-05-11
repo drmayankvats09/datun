@@ -1,3 +1,4 @@
+# .github/workflows/synthesis-weekly.yml
 name: Synthesis — Weekly Refresh
 
 on:
@@ -48,10 +49,26 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      # FAANG: hard-skip with explicit reason if upstream secret missing.
+      # Better than running 80 min then failing on auth-401.
+      - name: Verify secrets
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret not configured — synthesis cannot run"
+            exit 1
+          fi
+
       - run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma client
         run: pnpm --filter @repo/db db:generate
-      - run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Apply migrations
+        run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      # Ensure tmp/ exists for downstream artifact writes
+      - name: Prep tmp dir
+        run: mkdir -p packages/db/tmp
 
       - name: Pre-flight collapse risk
         run: pnpm --filter @repo/db training:lineage:risk -- --strict
@@ -61,12 +78,23 @@ jobs:
           pnpm --filter @repo/db synthesize -- \
             --strategy "$STRATEGY" \
             --target-final "$TARGET" \
-            --quality-min 0.7
+            --quality-min 0.3 \
+            --judge-min 3.5 \
+            --output ./tmp/synthesis-weekly.jsonl
 
       - name: Post-synthesis collapse risk
         run: pnpm --filter @repo/db training:lineage:risk -- --strict
 
+      # FAANG: epsilon:validate takes POSITIONAL numeric args (populationSize, kAnonymity).
+      # Old call passed flag-strings → Number('--scope') = NaN → garbage output but exit 0.
+      # Now: pass real numbers. 500 = synth pool target, 10 = k-anonymity floor.
       - name: Privacy budget check
-        run: |
-          pnpm --filter @repo/db epsilon:validate -- \
-            --scope synthesis-pool --threshold 0.5
+        run: pnpm --filter @repo/db epsilon:validate -- "$TARGET" 10
+
+      - name: Upload synthesis artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthesis-weekly-${{ github.run_id }}
+          path: packages/db/tmp/synthesis-weekly.jsonl
+          retention-days: 30

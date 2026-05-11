@@ -1,3 +1,4 @@
+# .github/workflows/seed-mutation-test.yml
 # ═══════════════════════════════════════════════════════════════
 # WEEKLY MUTATION TESTING — Stryker proves tests actually catch bugs
 # ═══════════════════════════════════════════════════════════════
@@ -8,7 +9,9 @@ on:
     - cron: '0 4 * * 1' # Monday 04:00 UTC
   workflow_dispatch:
 
-concurrency: { group: mutation, cancel-in-progress: false }
+concurrency:
+  group: mutation
+  cancel-in-progress: false
 
 jobs:
   stryker:
@@ -17,24 +20,49 @@ jobs:
     services:
       postgres:
         image: postgres:18-alpine
-        env: { POSTGRES_PASSWORD: test, POSTGRES_USER: test, POSTGRES_DB: datun_test }
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: datun_test
         ports: ['5432:5432']
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/datun_test
+      TEST_DATABASE_URL: postgresql://test:test@localhost:5432/datun_test
       SKIP_TESTCONTAINERS: '1'
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @repo/db exec prisma db push
+
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/db db:generate
+
+      - name: Apply migrations (mutation tests need full schema)
+        run: pnpm --filter @repo/db exec prisma migrate deploy
+
+      - name: Prep tmp dir
+        run: mkdir -p packages/db/tmp
+
       - name: Run Stryker mutation testing
         run: pnpm --filter @repo/db exec stryker run
+
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mutation-report-${{ github.run_id }}
-          path: packages/db/tmp/mutation-report.*
+          path: |
+            packages/db/tmp/mutation-report.*
+            packages/db/reports/mutation/
+          retention-days: 30
