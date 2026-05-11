@@ -47,7 +47,7 @@ jobs:
           name: sbom-${{ github.sha }}
           path: ./sbom
       - name: Attest build provenance (SLSA L3)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: ./sbom/sbom.cyclonedx.json
       - name: Attest SBOM
