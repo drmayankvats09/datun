@@ -14,6 +14,7 @@ import { registerManifestCommand } from './commands/manifest.command';
 import { registerAnonymizeCommand } from './commands/anonymize.command';
 import { registerBenchCommand } from './commands/bench.command';
 import { registerWave6Commands } from './wave6-commands';
+import { registerWave7Commands } from './wave7-commands';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -38,6 +39,7 @@ export function buildProgram(): Command {
   registerAnonymizeCommand(program);
   registerBenchCommand(program);
   registerWave6Commands(program);
+  registerWave7Commands(program);
 
   // ─── EXIT OVERRIDE: propagate to ALL subcommands (commander.js v9+ canonical) ───
   // Without this, only root has override; subcommands fall back to default exit().

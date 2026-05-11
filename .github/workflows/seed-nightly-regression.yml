@@ -70,8 +70,12 @@ jobs:
 
       - name: Vitest smoke + contract tests
         run: |
+          # Vitest v3 takes positional path patterns, NOT --include flag.
+          # E2E harness tests live outside default config include
+          # (intentional — they need real DB, skip in unit tests).
           pnpm --filter @repo/db exec vitest run \
-            --include='prisma/seeds/e2e-harness/*-tests.ts'
+            prisma/seeds/e2e-harness/smoke-tests.ts \
+            prisma/seeds/e2e-harness/contract-tests.ts
 
       - name: Upload artifacts on failure
         if: failure()

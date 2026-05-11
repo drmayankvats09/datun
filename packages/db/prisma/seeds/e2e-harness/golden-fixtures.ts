@@ -7,7 +7,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
 
-const GOLDEN_DIR = path.resolve(process.cwd(), 'packages/db/prisma/seeds/e2e-harness/golden');
+// __dirname-relative: works regardless of process.cwd().
+// Previous cwd-relative path doubled "packages/db" when CI ran from package root.
+const GOLDEN_DIR = path.resolve(__dirname, 'golden');
 
 export interface GoldenFixture {
   readonly name: string;

@@ -52,10 +52,15 @@ jobs:
           name: sbom-${{ github.sha }}
           path: ./sbom
       - name: Attest build provenance (SLSA L3)
+        # GitHub's attestation feature requires public repos for personal accounts.
+        # Datun is private — keep step but allow graceful skip. Will auto-enable
+        # when repo flips public or org-owned.
+        continue-on-error: true
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: ./sbom/sbom.cyclonedx.json
       - name: Attest SBOM
+        continue-on-error: true
         uses: actions/attest-sbom@v2
         with:
           subject-path: ./sbom/sbom.cyclonedx.json
