@@ -1,14 +1,12 @@
+// ═══════════════════════════════════════════════════════════════
 // VITEST TEST CONTEXT FIXTURES — single fixture, no dependency chain
-//
-// WHY THIS PATTERN:
-//   Previous version used testDb → seededPrisma fixture chain.
-//   Vitest's fixture resolution with [fn] array syntax caused
-//   testDb.prisma to be undefined in the seededPrisma consumer.
-//   Fix: single seededPrisma fixture, no intermediate testDb.
 //
 // DUAL MODE:
 //   CI:    SKIP_TESTCONTAINERS=1 → use workflow's Postgres directly
 //   Local: Docker available → start testcontainer (lazy import)
+//
+// TRUNCATE: dynamic — queries pg_tables, never hardcoded.
+//   Schema changes can never break this fixture.
 // ═══════════════════════════════════════════════════════════════
 
 import { test as baseTest } from 'vitest';
@@ -17,28 +15,24 @@ import { runMainOrchestrator } from '../modules/orchestrator/main-orchestrator.j
 
 const USE_CI_POSTGRES = process.env.SKIP_TESTCONTAINERS === '1' && !!process.env.DATABASE_URL;
 
-// ── All 59 tables — CASCADE handles FK order ──
-const TRUNCATE_ALL = `TRUNCATE TABLE
-  "User", "Patient", "UserPatientAccess", "UserRole", "UserAuthIdentity",
-  "Clinic", "ClinicMember", "ClinicInvitation", "Doctor", "DoctorClinic",
-  "Consultation", "ConsultationMessage", "TrainingLabel",
-  "Appointment", "Prescription", "PrescriptionLineItem",
-  "Review", "Lead", "LeadActivity",
-  "Subscription", "Invoice", "InvoiceLineItem", "PaymentTransaction",
-  "AuditLog", "Notification", "NotificationPreference",
-  "WhatsAppMessage", "ConsentLog", "MediaAsset", "EmailLog",
-  "WhatsAppProviderHealth", "JobLog",
-  "MigrationAudit", "SchemaSnapshot", "SeedAuditLog", "SeedAnonymizationAudit",
-  "TrainingExample", "FineTuneRun", "PreferencePair",
-  "PrivacyBudget", "PrivacyBudgetSpend",
-  "QuarantinedRow", "DataQualityAnomaly", "SloBreach",
-  "OutboxEvent", "OutboxDeadLetter",
-  "DriftAlert", "GuardrailViolation",
-  "PromptVersion", "PromptRolloutPlan", "ShadowComparison",
-  "MedicationSalt", "MedicationInteraction",
-  "DentalCondition", "PatientArchetype", "SystemPrompt",
-  "ProcessingLog", "DeletionRequest", "ExperimentAssignment"
-CASCADE`;
+/**
+ * Truncate ALL tables in public schema except _prisma_migrations.
+ * Dynamic — no hardcoded table names, never goes out of sync.
+ */
+async function truncateAll(prisma: PrismaClient): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    DO $$ DECLARE r RECORD;
+    BEGIN
+      FOR r IN (
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public'
+          AND tablename != '_prisma_migrations'
+      ) LOOP
+        EXECUTE 'TRUNCATE TABLE "' || r.tablename || '" CASCADE';
+      END LOOP;
+    END $$;
+  `);
+}
 
 interface SeedFixtures {
   readonly seededPrisma: PrismaClient;
@@ -63,9 +57,9 @@ export const test = baseTest.extend<SeedFixtures>({
     }
 
     // Clean slate — workflow's seed step may have left data
-    await prisma.$executeRawUnsafe(TRUNCATE_ALL);
+    await truncateAll(prisma);
 
-    // Seed with minimal strategy (5 consultations, ~200 records)
+    // Seed with minimal strategy
     await runMainOrchestrator({
       prisma,
       env: 'test',
@@ -76,7 +70,7 @@ export const test = baseTest.extend<SeedFixtures>({
     await use(prisma);
 
     // Cleanup after test
-    await prisma.$executeRawUnsafe(TRUNCATE_ALL);
+    await truncateAll(prisma);
     await prisma.$disconnect();
   },
 });
