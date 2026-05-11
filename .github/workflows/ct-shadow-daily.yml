@@ -19,12 +19,31 @@ jobs:
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Pre-flight — verify required secrets
+        id: preflight
+        run: |
+          MISSING=()
+          [ -z "$ANTHROPIC_API_KEY" ] && MISSING+=("ANTHROPIC_API_KEY")
+          [ -z "$DATABASE_URL" ] && MISSING+=("PROD_DATABASE_URL")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Skipping shadow test — missing secrets: ${MISSING[*]}."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: pnpm/action-setup@v4
+        if: steps.preflight.outputs.skip != 'true'
       - uses: actions/setup-node@v4
+        if: steps.preflight.outputs.skip != 'true'
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
+        if: steps.preflight.outputs.skip != 'true'
       - run: pnpm --filter @repo/db exec prisma generate
-      - env:
+        if: steps.preflight.outputs.skip != 'true'
+      - if: steps.preflight.outputs.skip != 'true'
+        env:
           CANDIDATE_MODEL: ${{ github.event.inputs.candidate_model || 'claude-haiku-4-5-20251001' }}
         run: |
           pnpm --filter @repo/db exec tsx -e "

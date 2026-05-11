@@ -34,7 +34,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts', 'prisma/seeds/**/*.test.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/*.archived'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/*.archived', '**/e2e-harness/**'],
     testTimeout: 120_000,
     retry: 2, // FAANG: handle transient flakes (Docker cold-start, container init races)
     hookTimeout: 180_000,

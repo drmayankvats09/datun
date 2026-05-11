@@ -1,3 +1,4 @@
+# .github/workflows/eval-nightly.yml
 name: Eval — Nightly Regression
 
 on:
@@ -8,9 +9,9 @@ on:
       model:
         description: 'Model to evaluate'
         required: true
-        default: 'claude-sonnet-4'
+        default: 'claude-sonnet-4-6'
       suite:
-        description: 'Eval suite'
+        description: 'Eval suite (golden | extended | all)'
         required: true
         default: 'golden'
 
@@ -41,7 +42,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/datun_eval
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      EVAL_MODEL: ${{ github.event.inputs.model || 'claude-sonnet-4' }}
+      EVAL_MODEL: ${{ github.event.inputs.model || 'claude-sonnet-4-6' }}
       EVAL_SUITE: ${{ github.event.inputs.suite || 'golden' }}
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +53,13 @@ jobs:
           node-version: '22'
           cache: 'pnpm'
 
+      - name: Verify secrets
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret not configured — eval cannot run"
+            exit 1
+          fi
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
@@ -61,25 +69,30 @@ jobs:
       - name: Migrate
         run: pnpm --filter @repo/db exec prisma migrate deploy
 
+      - name: Prep tmp dir
+        run: mkdir -p packages/db/tmp
+
       - name: Run eval
         run: |
-          pnpm --filter @repo/db eval:run -- \
+          pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts eval run \
             --model "$EVAL_MODEL" \
             --suite "$EVAL_SUITE" \
             --compare-baseline \
-            --output eval-result.json
+            --output ./tmp/eval-result.json
 
       - name: Upload result
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: eval-result-${{ github.run_id }}
-          path: eval-result.json
+          path: packages/db/tmp/eval-result.json
           retention-days: 30
 
       - name: Alert on regression
-        if: failure()
+        if: failure() && env.SLACK_ALERTS_WEBHOOK != ''
+        env:
+          SLACK_ALERTS_WEBHOOK: ${{ secrets.SLACK_ALERTS_WEBHOOK }}
         run: |
-          curl -X POST "${{ secrets.SLACK_ALERTS_WEBHOOK }}" \
+          curl -X POST "$SLACK_ALERTS_WEBHOOK" \
             -H 'Content-Type: application/json' \
-            -d '{"text":"🔴 Eval regression detected on ${{ env.EVAL_MODEL }} / ${{ env.EVAL_SUITE }}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+            -d "{\"text\":\"🔴 Eval regression on ${EVAL_MODEL} / ${EVAL_SUITE}. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"

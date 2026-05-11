@@ -1,11 +1,6 @@
-#!/usr/bin/env tsx
+// packages/db/prisma/seeds/cli/scripts/lineage-risk-cli.ts
 /**
  * Lineage collapse-risk CLI
- *
- * Replaces the broken inline `tsx -e` npm script that referenced an
- * undefined global `prisma` variable (causing ReferenceError on every
- * Synthesis run). Provides proper PrismaClient lifecycle, --strict
- * flag, and three-state exit codes.
  *
  * Used by:
  *   - npm: `pnpm training:lineage:risk`
@@ -22,15 +17,23 @@ import { LineageStore } from '../../ai-training/lineage';
 const STRICT = process.argv.includes('--strict');
 
 interface RiskReport {
+  // Canonical field returned by lineage-store.ts → modelCollapseRiskReport()
+  risk?: 'low' | 'medium' | 'high';
+  // Legacy / future-compat aliases (kept so shape evolutions don't silently break --strict)
   status?: 'red' | 'amber' | 'green';
-  overallRisk?: 'high' | 'medium' | 'low';
+  overallRisk?: 'low' | 'medium' | 'high';
   atRisk?: unknown[];
+  totalExamples?: number;
+  syntheticFraction?: number;
+  multiGenerationCount?: number;
   [key: string]: unknown;
 }
 
 function hasRiskSignals(r: RiskReport): boolean {
-  if (r.status === 'red') return true;
+  // FAANG: check ALL canonical + legacy fields. Defense-in-depth.
+  if (r.risk === 'high') return true;
   if (r.overallRisk === 'high') return true;
+  if (r.status === 'red') return true;
   if (Array.isArray(r.atRisk) && r.atRisk.length > 0) return true;
   return false;
 }

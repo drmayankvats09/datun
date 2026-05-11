@@ -1,3 +1,4 @@
+# .github/workflows/seed-eval-nightly.yml
 name: seed-eval-nightly
 
 on:
@@ -5,7 +6,9 @@ on:
     - cron: '0 4 * * *' # 04:00 UTC daily
   workflow_dispatch:
 
-concurrency: { group: eval-nightly, cancel-in-progress: false }
+concurrency:
+  group: seed-eval-nightly
+  cancel-in-progress: false
 
 jobs:
   eval:
@@ -13,23 +16,51 @@ jobs:
     timeout-minutes: 30
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DATABASE_URL: postgresql://noop:noop@localhost:5432/noop
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Verify secrets
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret not configured"
+            exit 1
+          fi
+
       - run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma client
         run: pnpm --filter @repo/db db:generate
-      - name: Run eval suite
-        run: pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts eval run --model claude-sonnet-4-6 --output ./tmp/eval-nightly.json
+
+      - name: Prep tmp dir
+        run: mkdir -p packages/db/tmp
+
+      - name: Run eval suite (lightweight, no baseline compare)
+        run: |
+          pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts eval run \
+            --model claude-sonnet-4-6 \
+            --suite golden \
+            --output ./tmp/eval-nightly.json
+
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: eval-results-${{ github.run_id }}
           path: packages/db/tmp/eval-nightly.json
+          retention-days: 30
+
+      # FAANG: only attempt notify when webhook configured. Never let notify-step break workflow.
       - name: Notify on regression
-        if: failure()
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+          curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
             -d '{"text":"🚨 Datun nightly eval REGRESSED — investigate before next deploy"}'
+        continue-on-error: true

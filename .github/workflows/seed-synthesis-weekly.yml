@@ -1,3 +1,4 @@
+# .github/workflows/seed-synthesis-weekly.yml
 name: seed-synthesis-weekly
 
 on:
@@ -10,7 +11,10 @@ on:
         type: string
         default: '500'
 
-concurrency: { group: synthesis-weekly, cancel-in-progress: false }
+# FAANG: distinct group from synthesis-weekly so both can run if scheduled near same window
+concurrency:
+  group: seed-synthesis-weekly
+  cancel-in-progress: false
 
 jobs:
   synthesize:
@@ -18,14 +22,31 @@ jobs:
     timeout-minutes: 60
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # Prisma generate needs SOMETHING here even though we don't connect
+      DATABASE_URL: postgresql://noop:noop@localhost:5432/noop
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'pnpm' }
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Verify secrets
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret not configured"
+            exit 1
+          fi
+
       - run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma client
         run: pnpm --filter @repo/db db:generate
+
+      - name: Prep tmp dir
+        run: mkdir -p packages/db/tmp
+
       - name: Generate synthetic training set
         env:
           INPUT_TARGET_COUNT: ${{ github.event.inputs.target_count || '500' }}
@@ -33,8 +54,12 @@ jobs:
           pnpm --filter @repo/db exec tsx prisma/seeds/cli/index.ts synthesize \
             --strategy persona-vary \
             --target-final "$INPUT_TARGET_COUNT" \
+            --quality-min 0.3 \
+            --judge-min 3.5 \
             --output ./tmp/synthetic-training.jsonl
+
       - uses: actions/upload-artifact@v4
         with:
           name: synthetic-training-${{ github.run_id }}
           path: packages/db/tmp/synthetic-training.jsonl
+          retention-days: 30
