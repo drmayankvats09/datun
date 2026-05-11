@@ -52,7 +52,7 @@
     "eslint": "^9.39.1",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.10",
-    "tailwindcss": "^4.2.2",
+    "tailwindcss": "^4.3.0",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "5.9.2",
     "vitest": "^4.1.5"
