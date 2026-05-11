@@ -1,123 +1,82 @@
-// ═══════════════════════════════════════════════════════════════
-// VITEST TEST CONTEXT FIXTURES — file-scoped DB, per-test reset
+// VITEST TEST CONTEXT FIXTURES — single fixture, no dependency chain
 //
-// DUAL MODE (FAANG pattern — Stripe, Linear, Vercel all do this):
-//   CI:    SKIP_TESTCONTAINERS=1 → use workflow's Postgres service
-//   Local: Docker available → start testcontainer per file
+// WHY THIS PATTERN:
+//   Previous version used testDb → seededPrisma fixture chain.
+//   Vitest's fixture resolution with [fn] array syntax caused
+//   testDb.prisma to be undefined in the seededPrisma consumer.
+//   Fix: single seededPrisma fixture, no intermediate testDb.
 //
-// Source: vitest.dev/guide/test-context — test.extend builder pattern
+// DUAL MODE:
+//   CI:    SKIP_TESTCONTAINERS=1 → use workflow's Postgres directly
+//   Local: Docker available → start testcontainer (lazy import)
 // ═══════════════════════════════════════════════════════════════
 
 import { test as baseTest } from 'vitest';
 import { PrismaClient } from '@prisma/client';
-import { runMainOrchestrator } from '../modules/orchestrator/main-orchestrator';
+import { runMainOrchestrator } from '../modules/orchestrator/main-orchestrator.js';
 
 const USE_CI_POSTGRES = process.env.SKIP_TESTCONTAINERS === '1' && !!process.env.DATABASE_URL;
 
-interface TestDbHandle {
-  connectionString: string;
-  prisma: PrismaClient;
-  stop(): Promise<void>;
-}
+// ── All 59 tables — CASCADE handles FK order ──
+const TRUNCATE_ALL = `TRUNCATE TABLE
+  "User", "Patient", "UserPatientAccess", "UserRole", "UserAuthIdentity",
+  "Clinic", "ClinicMember", "ClinicInvitation", "Doctor", "DoctorClinic",
+  "Consultation", "ConsultationMessage", "TrainingLabel",
+  "Appointment", "Prescription", "PrescriptionLineItem",
+  "Review", "Lead", "LeadActivity",
+  "Subscription", "Invoice", "InvoiceLineItem", "PaymentTransaction",
+  "AuditLog", "Notification", "NotificationPreference",
+  "WhatsAppMessage", "ConsentLog", "MediaAsset", "EmailLog",
+  "WhatsAppProviderHealth", "JobLog",
+  "MigrationAudit", "SchemaSnapshot", "SeedAuditLog", "SeedAnonymizationAudit",
+  "TrainingExample", "FineTuneRun", "PreferencePair",
+  "PrivacyBudget", "PrivacyBudgetSpend",
+  "QuarantinedRow", "DataQualityAnomaly", "SloBreach",
+  "OutboxEvent", "OutboxDeadLetter",
+  "DriftAlert", "GuardrailViolation",
+  "PromptVersion", "PromptRolloutPlan", "ShadowComparison",
+  "MedicationSalt", "MedicationInteraction",
+  "DentalCondition", "PatientArchetype", "SystemPrompt",
+  "ProcessingLog", "DeletionRequest", "ExperimentAssignment"
+CASCADE`;
 
 interface SeedFixtures {
-  readonly testDb: TestDbHandle;
   readonly seededPrisma: PrismaClient;
 }
 
-/**
- * CI mode: connect to workflow-provided Postgres (already migrated).
- * No testcontainers, no Docker dependency, no rate-limit risk.
- */
-async function createCiHandle(): Promise<TestDbHandle> {
-  const connectionString = process.env.DATABASE_URL!;
-  const prisma = new PrismaClient({ datasources: { db: { url: connectionString } } });
-  await prisma.$connect();
-  return {
-    connectionString,
-    prisma,
-    async stop() {
-      await prisma.$disconnect();
-    },
-  };
-}
-
-/**
- * Local mode: spin up testcontainer with snapshot/restore.
- * Requires Docker Desktop running on dev machine.
- */
-async function createLocalHandle(): Promise<TestDbHandle> {
-  const { startTestPostgres } = await import('./postgres-snapshot.js');
-  const { runMigrations } = await import('./hermetic-env.js');
-  const handle = await startTestPostgres();
-  await runMigrations(handle.connectionString);
-  const prisma = new PrismaClient({ datasources: { db: { url: handle.connectionString } } });
-  await prisma.$connect();
-  await handle.snapshot();
-  return {
-    connectionString: handle.connectionString,
-    prisma,
-    async stop() {
-      await prisma.$disconnect();
-      await handle.stop();
-    },
-  };
-}
-
-// ── All tables to truncate between tests (order doesn't matter — CASCADE handles FKs) ──
-const TRUNCATE_SQL = `
-  TRUNCATE TABLE
-    "User", "Patient", "Consultation", "ConsultationMessage",
-    "Clinic", "Doctor", "DoctorClinic", "ClinicMember",
-    "Appointment", "Prescription", "PrescriptionLineItem",
-    "Review", "Lead", "LeadActivity",
-    "Subscription", "Invoice", "InvoiceLineItem", "PaymentTransaction",
-    "AuditLog", "ConsentLog", "Notification",
-    "WhatsAppMessage", "EmailLog", "JobLog",
-    "TrainingExample", "TrainingLabel",
-    "MedicationSalt", "DentalCondition", "PatientArchetype", "SystemPrompt",
-    "MediaAsset", "UserRole", "UserAuthIdentity", "UserPatientAccess",
-    "NotificationPreference", "WhatsAppProviderHealth",
-    "MigrationAudit", "SchemaSnapshot", "SeedAuditLog", "SeedAnonymizationAudit",
-    "FineTuneRun", "PreferencePair", "PrivacyBudget", "PrivacyBudgetSpend",
-    "QuarantinedRow", "DataQualityAnomaly", "SloBreach",
-    "OutboxEvent", "OutboxDeadLetter",
-    "DriftAlert", "GuardrailViolation",
-    "PromptVersion", "PromptRolloutPlan", "ShadowComparison",
-    "MedicationInteraction", "ProcessingLog", "DeletionRequest",
-    "ExperimentAssignment", "ClinicInvitation"
-  CASCADE
-`.replace(/\n/g, ' ');
-
-/**
- * Vitest extended test with file-scoped DB and per-test reset.
- * - testDb: file-scoped — CI postgres or testcontainer (once per file)
- * - seededPrisma: per-test — seeds data, truncates after each test
- *
- * Usage:
- *   import { test } from './vitest-fixtures';
- *   test('my test', async ({ seededPrisma }) => { ... });
- */
 export const test = baseTest.extend<SeedFixtures>({
-  testDb: [
-    async (_ctx: object, use: (db: TestDbHandle) => Promise<void>) => {
-      const handle = USE_CI_POSTGRES ? await createCiHandle() : await createLocalHandle();
-      await use(handle);
-      await handle.stop();
-    },
-  ],
-  seededPrisma: async (
-    { testDb }: { testDb: TestDbHandle },
-    use: (p: PrismaClient) => Promise<void>,
-  ) => {
+  seededPrisma: async ({}, use) => {
+    let prisma: PrismaClient;
+
+    if (USE_CI_POSTGRES) {
+      // CI mode: workflow already started Postgres + ran migrations
+      prisma = new PrismaClient();
+      await prisma.$connect();
+    } else {
+      // Local mode: start testcontainer + run migrations
+      const { startTestPostgres } = await import('./postgres-snapshot.js');
+      const { runMigrations } = await import('./hermetic-env.js');
+      const handle = await startTestPostgres();
+      await runMigrations(handle.connectionString);
+      prisma = new PrismaClient({ datasources: { db: { url: handle.connectionString } } });
+      await prisma.$connect();
+    }
+
+    // Clean slate — workflow's seed step may have left data
+    await prisma.$executeRawUnsafe(TRUNCATE_ALL);
+
+    // Seed with minimal strategy (5 consultations, ~200 records)
     await runMainOrchestrator({
-      prisma: testDb.prisma,
+      prisma,
       env: 'test',
       scenario: 'minimal' as const,
       masterSeed: 42,
     });
-    await use(testDb.prisma);
-    // Reset all tables between tests
-    await testDb.prisma.$executeRawUnsafe(TRUNCATE_SQL);
+
+    await use(prisma);
+
+    // Cleanup after test
+    await prisma.$executeRawUnsafe(TRUNCATE_ALL);
+    await prisma.$disconnect();
   },
 });
