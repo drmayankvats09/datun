@@ -104,7 +104,7 @@ jobs:
         run: pnpm --filter @repo/db exec tsx src/scripts/lint-migration-cli.ts "${{ steps.detect.outputs.changed }}"
 
       - name: Apply forward migration to shadow DB
-        run: pnpm --filter @repo/db prisma migrate deploy
+        run: pnpm --filter @repo/db exec prisma migrate deploy
 
       - name: Simulate rollback
         if: steps.detect.outputs.changed != ''
