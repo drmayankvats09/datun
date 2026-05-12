@@ -14,6 +14,7 @@ CREATE TYPE "JudgeRunStatus" AS ENUM ('PENDING', 'RUNNING', 'SUCCESS', 'FAILED',
 CREATE TYPE "DataAssetKind" AS ENUM ('TRAINING_EXAMPLES', 'PREFERENCE_PAIRS', 'EVAL_SET', 'FINE_TUNE_INPUT', 'RAG_INDEX');
 
 -- AlterTable
+-- lint-ignore: no-drop-column Task #44 — replacing single `aiTokensUsed` Int with structured aiTokensInput + aiTokensOutput. Column is nullable, zero production rows have non-null values per pre-migration audit (consultation_messages was added empty in v2 rebuild). Expand-contract not needed — no rolling-deploy risk because column has never been read by any deployed code.
 ALTER TABLE "consultation_messages" DROP COLUMN "aiTokensUsed",
 ADD COLUMN     "aiCostUsd" DECIMAL(10,6),
 ADD COLUMN     "aiModel" TEXT,
