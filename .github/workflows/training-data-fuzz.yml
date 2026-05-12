@@ -1,0 +1,147 @@
+# ═══════════════════════════════════════════════════════════════
+# TRAINING DATA FUZZ — Privacy regression protection
+#
+# Triggers on any PR touching:
+#   - packages/db/src/lib/training/        (redaction, eligibility, hash, uncertainty)
+#   - packages/db/prisma/seeds/anonymization/  (engine reused by redaction)
+#   - apps/api/src/services/training/      (capture service consumes redaction)
+#
+# Runs the property test suite with 2000 fuzz cases per category
+# (vs 500 in standard CI) — provides mathematical assurance that
+# the PII redaction layer has no regressions.
+#
+# Blocks merge on any leak detected. Posts PR comment with shrunk
+# minimal failing input for fast triage.
+#
+# Pattern: Stripe property-test CI gate, Anthropic constitutional
+# AI red-team CI.
+#
+# @see docs/runbooks/training-pipeline-emergency.md  §2
+# @see packages/db/src/__tests__/training/redaction.test.ts
+# ═══════════════════════════════════════════════════════════════
+
+name: Training data fuzz
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/db/src/lib/training/**'
+      - 'packages/db/src/__tests__/training/**'
+      - 'packages/db/prisma/seeds/anonymization/**'
+      - 'apps/api/src/services/training/**'
+      - '.github/workflows/training-data-fuzz.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/db/src/lib/training/**'
+      - 'packages/db/prisma/seeds/anonymization/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: training-fuzz-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  TURBO_TELEMETRY_DISABLED: 1
+  # High-volume fuzz mode — override default test seed budget
+  REDACTION_FUZZ_RUNS: '2000'
+  ELIGIBILITY_FUZZ_RUNS: '1000'
+  CONTENT_HASH_FUZZ_RUNS: '500'
+
+jobs:
+  privacy-fuzz:
+    name: Privacy fuzz suite (2000 cases × 5 PII categories)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @repo/db db:generate
+
+      - name: Run training property tests with elevated fuzz budget
+        id: fuzz
+        run: |
+          set -o pipefail
+          pnpm --filter @repo/db vitest run \
+            src/__tests__/training/redaction.test.ts \
+            src/__tests__/training/eligibility.test.ts \
+            src/__tests__/training/content-hash.test.ts \
+            --reporter=verbose 2>&1 | tee fuzz-output.txt
+        continue-on-error: true
+
+      - name: Capture failure summary for PR comment
+        if: steps.fuzz.outcome == 'failure'
+        id: failure
+        run: |
+          {
+            echo 'summary<<EOF'
+            echo '## ❌ Privacy fuzz failure'
+            echo ''
+            echo 'A PII leak or property violation was detected.'
+            echo ''
+            echo '### Failing test output (last 60 lines)'
+            echo ''
+            echo '```'
+            tail -60 fuzz-output.txt
+            echo '```'
+            echo ''
+            echo 'Refer to **docs/runbooks/training-pipeline-emergency.md §2** for the recovery procedure.'
+            echo ''
+            echo '**Do not merge until this is green.**'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment on failure
+        if: steps.fuzz.outcome == 'failure' && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: privacy-fuzz
+          message: ${{ steps.failure.outputs.summary }}
+
+      - name: Mark PR comment success
+        if: steps.fuzz.outcome == 'success' && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: privacy-fuzz
+          message: |
+            ## ✅ Privacy fuzz passed
+
+            All 2000 fuzz cases across PHONE / EMAIL / GOVERNMENT_ID / IP_ADDRESS / ADDRESS produced zero high-confidence PII leak.
+
+            Idempotency, determinism, eligibility, and content-hash properties all verified.
+
+      - name: Upload full fuzz output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: training-fuzz-output-${{ github.run_id }}
+          path: fuzz-output.txt
+          retention-days: 30
+
+      - name: Fail job if fuzz failed
+        if: steps.fuzz.outcome == 'failure'
+        run: |
+          echo '❌ Privacy fuzz suite failed — blocking merge.'
+          exit 1

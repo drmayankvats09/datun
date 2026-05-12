@@ -21,6 +21,8 @@ export const QUEUE_NAMES = {
   // Wave 12 — Continuous training (Task #43 wiring)
   DRIFT_CHECK: 'drift-check',
   SHADOW_COMPARE: 'shadow-compare',
+  // Task #44 — LLM-as-judge auto-grading
+  JUDGE_GRADING: 'judge-grading',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -118,6 +120,8 @@ export const SCHEDULED_JOB_NAMES = {
   DATA_QUALITY_DAILY: 'data-quality-daily',
   DRIFT_CHECK_HOURLY: 'drift-check-hourly',
   SHADOW_COMPARE_DAILY: 'shadow-compare-daily',
+  // Task #44 — Daily judge auto-grading
+  JUDGE_GRADING_DAILY: 'judge-grading-daily',
 } as const;
 
 export type ScheduledJobName = (typeof SCHEDULED_JOB_NAMES)[keyof typeof SCHEDULED_JOB_NAMES];
@@ -191,6 +195,12 @@ export const QUEUE_DEFAULTS = {
     removeOnComplete: { count: 30 },
     removeOnFail: { count: 60 },
   },
+  [QUEUE_NAMES.JUDGE_GRADING]: {
+    attempts: 2,
+    backoff: { type: 'exponential' as const, delay: 60_000 },
+    removeOnComplete: { count: 30 }, // 30 days history
+    removeOnFail: { count: 60 },
+  },
 } as const;
 
 /**
@@ -218,6 +228,8 @@ export const WORKER_LIMITERS = {
   'data-quality': { max: 1, duration: 1000 }, // single concurrent run
   'drift-check': { max: 1, duration: 1000 },
   'shadow-compare': { max: 1, duration: 1000 },
+  // Task #44 — LLM-as-judge auto-grading
+  'judge-grading': { max: 1, duration: 1000 }, // serialized — protects Anthropic API rate limit
 } as const;
 // Worker concurrency per queue (Phase G additions)
 export const WORKER_CONCURRENCY: Record<string, number> = {
@@ -230,4 +242,5 @@ export const WORKER_CONCURRENCY: Record<string, number> = {
   [QUEUE_NAMES.DATA_QUALITY]: 1,
   [QUEUE_NAMES.DRIFT_CHECK]: 1,
   [QUEUE_NAMES.SHADOW_COMPARE]: 1,
+  [QUEUE_NAMES.JUDGE_GRADING]: 1, // serialized — protects API rate limit
 };

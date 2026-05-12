@@ -1,0 +1,93 @@
+{
+  "labeling": {
+    "page": {
+      "title": "Training Data Labeling",
+      "subtitle": "Rate AI responses 1-5. Help Datun's model learn from your expertise.",
+      "todayProgress": "{labeled} / {target} labeled today",
+      "streak": "{days}-day streak",
+      "noItems": "Queue is empty for this strategy. Try a different one or check back later.",
+      "loadingItems": "Loading next batch…",
+      "refresh": "Refresh queue"
+    },
+    "strategy": {
+      "label": "Strategy",
+      "typi_clust": "Diverse (Typi-Clust)",
+      "typi_clust_desc": "Spread across all score buckets",
+      "margin": "Uncertain (Margin)",
+      "margin_desc": "Judge score near 3 — highest ambiguity",
+      "conflicts": "Conflicts",
+      "conflicts_desc": "Where you and the judge disagree",
+      "random": "Random",
+      "random_desc": "Unbiased control"
+    },
+    "card": {
+      "judgeScore": "Judge: {score}",
+      "judgeReasoning": "Judge reasoning",
+      "noJudgeYet": "Not yet graded",
+      "scoreLabel": "Your score",
+      "isCorrect": "Mark as clinically correct",
+      "correctionPlaceholder": "What should the AI have said? (required if score ≤ 2)",
+      "clinicalNotesPlaceholder": "Optional clinical notes",
+      "categoryPlaceholder": "Tag (e.g., toothache, pediatric, emergency)",
+      "submit": "Save label",
+      "skip": "Skip",
+      "submitting": "Saving…",
+      "previousLabel": "You previously rated this {score}/5"
+    },
+    "quality": {
+      "1": "Wrong / unsafe",
+      "2": "Misleading",
+      "3": "Okay",
+      "4": "Good",
+      "5": "Excellent",
+      "shortcut": "Press {key} for {label}"
+    },
+    "stats": {
+      "today": "Today",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "allTime": "All time",
+      "judgeAgreement": "Judge agreement: {percent}%",
+      "conflictsPending": "{count} conflicts pending review",
+      "avgQuality": "Avg quality: {score}",
+      "viewConflicts": "Review conflicts →"
+    },
+    "errors": {
+      "loadFailed": "Failed to load labeling queue",
+      "submitFailed": "Couldn't save label",
+      "forbidden": "Admin access required",
+      "retry": "Try again"
+    }
+  },
+  "consent": {
+    "training": {
+      "title": "Help improve Datun AI",
+      "body": "We'd like to use your anonymized consultation data to improve our AI for everyone. Your name, phone, and personal details are removed before any training use.",
+      "whatWeUse": "What we use",
+      "whatWeUseItems": [
+        "The questions you ask and the AI's responses",
+        "Your age range, gender (no personal identifiers)",
+        "Whether the advice helped (your feedback)"
+      ],
+      "whatWeNeverUse": "What we never use",
+      "whatWeNeverUseItems": [
+        "Your name, phone number, or email",
+        "Photos that show you or your face",
+        "Any information that could identify you"
+      ],
+      "yourRights": "Your rights",
+      "rightsBody": "You can withdraw this consent any time from Settings → Privacy. Past anonymized data already used may persist in older model versions.",
+      "agree": "I agree — help improve Datun",
+      "decline": "No thanks, continue with consultation",
+      "agreedToast": "Thank you — your contribution makes Datun better for everyone",
+      "declinedToast": "No problem. Your consultation continues as usual.",
+      "version": "Consent version v1.0.0"
+    },
+    "banner": {
+      "active": "Helping improve Datun AI",
+      "manage": "Manage",
+      "withdraw": "Stop contributing",
+      "withdrawn": "Stopped — your future messages will not be used for training"
+    }
+  }
+}

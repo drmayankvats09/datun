@@ -187,6 +187,35 @@ enum MessageContentType {
   SYSTEM_EVENT
 }
 
+// ═══════════════════════════════════════════════════════════════
+// TRAINING DATA ENUMS — Task #44 (LLM training pipeline)
+// LabelerTier: who produced this label (human, AI judge, or crowd)
+// JudgeRunStatus: lifecycle of an LLM-as-judge grading attempt
+// DataAssetKind: what kind of training asset this version represents
+// ═══════════════════════════════════════════════════════════════
+
+enum LabelerTier {
+  HUMAN_EXPERT // Mayank / future BDS doctors — ground truth
+  LLM_JUDGE // Claude Haiku auto-grading — scale tier
+  CROWD // Future: paid annotators (Scale AI / internal) — Month 12+
+}
+
+enum JudgeRunStatus {
+  PENDING // Queued, not yet run
+  RUNNING // Currently in flight (worker holding lock)
+  SUCCESS // Completed, score persisted
+  FAILED // Errored — see errorMessage
+  SKIPPED // Eligibility gate rejected (e.g., no consent)
+}
+
+enum DataAssetKind {
+  TRAINING_EXAMPLES // Supervised fine-tune dataset (JSONL)
+  PREFERENCE_PAIRS // DPO/RLHF preference pairs
+  EVAL_SET // Held-out evaluation suite (never trained on)
+  FINE_TUNE_INPUT // Combined SFT+DPO bundle for a specific run
+  RAG_INDEX // Vector chunks for retrieval (Month 5 RAG)
+}
+
 enum AppointmentStatus {
   SCHEDULED
   CONFIRMED
@@ -615,29 +644,31 @@ model User {
   deletedAt          DateTime?
 
   // ── Relations ──
-  patient              Patient?
-  roles                UserRole[]
-  authIdentities       UserAuthIdentity[]
-  clinicsOwned         Clinic[]
-  clinicMemberships    ClinicMember[]
-  clinicInvitesSent    ClinicInvitation[]       @relation("InvitedByUser")
-  doctor               Doctor?
-  consultations        Consultation[]           @relation("UserConsultations")
-  consultationsStarted Consultation[]           @relation("InitiatedByUser")
-  appointments         Appointment[]            @relation("PatientAppointments")
-  prescriptions        Prescription[]           @relation("UserPrescriptions")
-  reviewsGiven         Review[]
-  leadsAsPatient       Lead[]                   @relation("PatientLeads")
-  notifications        Notification[]
-  notificationPrefs    NotificationPreference[]
-  whatsappMessages     WhatsAppMessage[]
-  auditLogs            AuditLog[]
-  consentLogs          ConsentLog[]
-  emailLogs            EmailLog[]
-  mediaUploads         MediaAsset[]             @relation("UploadedByUser")
-  trainingLabels       TrainingLabel[]
-  patientAccesses      UserPatientAccess[]      @relation("UserAccesses")
-  jobLogs              JobLog[]
+  patient                  Patient?
+  roles                    UserRole[]
+  authIdentities           UserAuthIdentity[]
+  clinicsOwned             Clinic[]
+  clinicMemberships        ClinicMember[]
+  clinicInvitesSent        ClinicInvitation[]       @relation("InvitedByUser")
+  doctor                   Doctor?
+  consultations            Consultation[]           @relation("UserConsultations")
+  consultationsStarted     Consultation[]           @relation("InitiatedByUser")
+  appointments             Appointment[]            @relation("PatientAppointments")
+  prescriptions            Prescription[]           @relation("UserPrescriptions")
+  reviewsGiven             Review[]
+  leadsAsPatient           Lead[]                   @relation("PatientLeads")
+  notifications            Notification[]
+  notificationPrefs        NotificationPreference[]
+  whatsappMessages         WhatsAppMessage[]
+  auditLogs                AuditLog[]
+  consentLogs              ConsentLog[]
+  emailLogs                EmailLog[]
+  mediaUploads             MediaAsset[]             @relation("UploadedByUser")
+  trainingLabels           TrainingLabel[]
+  patientAccesses          UserPatientAccess[]      @relation("UserAccesses")
+  jobLogs                  JobLog[]
+  dataAssetVersions        DataAssetVersion[]
+  dataAssetVersionsCreated DataAssetVersion[]       @relation("DataAssetVersionCreator")
 
   @@index([email])
   @@index([phone])
@@ -1035,63 +1066,66 @@ model DoctorClinic {
 // ═══════════════════════════════════════════════════════════════
 
 model Consultation {
-  id                     String             @id @default(uuid()) @db.Uuid
-  patientId              String             @db.Uuid
-  patient                Patient            @relation(fields: [patientId], references: [id])
-  initiatedByUserId      String             @db.Uuid
-  initiatedByUser        User               @relation("InitiatedByUser", fields: [initiatedByUserId], references: [id])
-  userId                 String             @db.Uuid
-  user                   User               @relation("UserConsultations", fields: [userId], references: [id])
-  clientUuid             String?            @unique
-  status                 ConsultationStatus @default(IN_PROGRESS)
-  language               String             @default("en")
-  chiefComplaint         String?            @db.Text
-  diagnosis              String?            @db.Text
-  urgency                UrgencyLevel?
-  treatmentPlan          String?            @db.Text
-  homeRemedies           String?            @db.Text
-  dosList                Json?
-  dontsList              Json?
-  redFlags               Json?
-  medications            Json?
-  investigationsNeeded   Json?
-  visualFindings         String?            @db.Text
-  photoUrls              Json?
-  followUpDays           Int?
+  id                         String             @id @default(uuid()) @db.Uuid
+  patientId                  String             @db.Uuid
+  patient                    Patient            @relation(fields: [patientId], references: [id])
+  initiatedByUserId          String             @db.Uuid
+  initiatedByUser            User               @relation("InitiatedByUser", fields: [initiatedByUserId], references: [id])
+  userId                     String             @db.Uuid
+  user                       User               @relation("UserConsultations", fields: [userId], references: [id])
+  clientUuid                 String?            @unique
+  status                     ConsultationStatus @default(IN_PROGRESS)
+  language                   String             @default("en")
+  chiefComplaint             String?            @db.Text
+  diagnosis                  String?            @db.Text
+  urgency                    UrgencyLevel?
+  treatmentPlan              String?            @db.Text
+  homeRemedies               String?            @db.Text
+  dosList                    Json?
+  dontsList                  Json?
+  redFlags                   Json?
+  medications                Json?
+  investigationsNeeded       Json?
+  visualFindings             String?            @db.Text
+  photoUrls                  Json?
+  followUpDays               Int?
   // ── AI tracking ──
-  aiProvider             String             @default("claude")
-  aiModel                String?
-  aiLatencyMs            Int?
-  aiTokensUsed           Int?
-  aiCostUsd              Decimal?           @db.Decimal(10, 6)
-  promptVersion          String?
-  workflowVersion        String?
-  safetyFlags            Json?
+  aiProvider                 String             @default("claude")
+  aiModel                    String?
+  aiLatencyMs                Int?
+  aiTokensUsed               Int?
+  aiCostUsd                  Decimal?           @db.Decimal(10, 6)
+  promptVersion              String?
+  workflowVersion            String?
+  safetyFlags                Json?
   // ── Human review (proprietary AI path) ──
-  needsHumanReview       Boolean            @default(false)
-  reviewStatus           ReviewStatusEnum?
-  reviewedByDoctorId     String?            @db.Uuid
-  reviewedByDoctor       Doctor?            @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
-  reviewedAt             DateTime?
-  reviewNotes            String?            @db.Text
+  needsHumanReview           Boolean            @default(false)
+  reviewStatus               ReviewStatusEnum?
+  reviewedByDoctorId         String?            @db.Uuid
+  reviewedByDoctor           Doctor?            @relation("ReviewedByDoctor", fields: [reviewedByDoctorId], references: [id])
+  reviewedAt                 DateTime?
+  reviewNotes                String?            @db.Text
   // ── Stats ──
-  totalMessages          Int                @default(0)
-  durationSeconds        Int?
+  totalMessages              Int                @default(0)
+  durationSeconds            Int?
   // ── PDF ──
-  pdfUrl                 String?
-  pdfGeneratedAt         DateTime?
-  shareableSlug          String?            @unique
-  shareableLinkExpiresAt DateTime?
+  pdfUrl                     String?
+  pdfGeneratedAt             DateTime?
+  shareableSlug              String?            @unique
+  shareableLinkExpiresAt     DateTime?
   // ── Compliance ──
-  consentGiven           Boolean            @default(false)
-  consentAt              DateTime?
+  consentGiven               Boolean            @default(false)
+  consentAt                  DateTime?
+  // ── Task #44: DATA_TRAINING consent (separate from treatment consent — DPDP requirement) ──
+  dataTrainingConsentAt      DateTime?
+  dataTrainingConsentVersion String? // semver of the consent notice text the patient agreed to
   // ── Source ──
-  sourceChannel          SourceChannel      @default(WEB)
-  leadId                 String?            @db.Uuid
-  lead                   Lead?              @relation(fields: [leadId], references: [id])
+  sourceChannel              SourceChannel      @default(WEB)
+  leadId                     String?            @db.Uuid
+  lead                       Lead?              @relation(fields: [leadId], references: [id])
   // ── B-1 v2: Doctor assignment (separate from review) ──
-  doctorId               String?            @db.Uuid
-  doctor                 Doctor?            @relation("ConsultationDoctor", fields: [doctorId], references: [id])
+  doctorId                   String?            @db.Uuid
+  doctor                     Doctor?            @relation("ConsultationDoctor", fields: [doctorId], references: [id])
 
   // ── B-1.6: Final diagnosis ICD-10 (separate from chief-complaint icd10Code) ──
   primaryDiagnosisIcd10 String?
@@ -1149,6 +1183,13 @@ model Consultation {
 // Training data ka backbone. 10k labeled = LoRA fine-tune ready.
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// TABLE 12: ConsultationMessage — Task #44 expanded
+// Every single message — patient said what, AI replied what.
+// Training data backbone. 10k labeled = LoRA fine-tune ready.
+// Per-message AI metadata for granular cost + lineage tracking.
+// ═══════════════════════════════════════════════════════════════
+
 model ConsultationMessage {
   id             String             @id @default(uuid()) @db.Uuid
   consultationId String             @db.Uuid
@@ -1159,15 +1200,46 @@ model ConsultationMessage {
   imageUrl       String?
   chips          Json?
   selectedChip   String?
-  aiLatencyMs    Int?
-  aiTokensUsed   Int?
   sequenceNumber Int
-  createdAt      DateTime           @default(now())
+
+  // ── Task #44: Per-message AI metadata (granular cost + lineage) ──
+  aiProvider     String? // "claude" | "openai" | "gemini" — which provider answered
+  aiModel        String? // "claude-opus-4-7" | "gpt-5.5" | "gemini-2.5-pro"
+  aiLatencyMs    Int?
+  aiTokensInput  Int? // tokens consumed in prompt
+  aiTokensOutput Int? // tokens generated in response
+  aiCostUsd      Decimal? @db.Decimal(10, 6)
+  promptVersion  String? // links to versioned prompt registry
+
+  // ── Task #44: Privacy + lineage ──
+  redactedContent     Json? // { text, piiCategories[], maskCount, redactionVersion }
+  piiRedactionVersion String? // semver of redaction ruleset applied
+  correlationId       String? // request-id middleware nanoid — Sentry + Winston + DB trace
+
+  // ── Task #44: LLM-as-judge tier ──
+  judgeScore     Float? // 1.0-5.0 from Claude Haiku auto-grader
+  judgeReasoning String?    @db.Text
+  judgeRunId     String? // FK to JudgeRun (the run that produced this score)
+  judgeRun       JudgeRun?  @relation(fields: [judgeRunId], references: [id])
+  judgeRuns      JudgeRun[] @relation("AllJudgeRunsForMessage")
+
+  // ── Task #44: Future RAG (Task #132 — Month 5 reserved column) ──
+  embeddingId String? // pgvector embedding ID — populated by Task #132
+
+  // ── Task #44: Export lineage (Month 6 export pipeline — reserved) ──
+  exportedToTrainingAt DateTime?
+  exportBatchId        String?
+
+  createdAt DateTime @default(now())
 
   // ── Relations ──
   trainingLabels TrainingLabel[]
 
   @@index([consultationId, sequenceNumber])
+  @@index([role, judgeScore]) // active learning queue lookup
+  @@index([exportedToTrainingAt]) // export pipeline scan
+  @@index([correlationId]) // debugging trace lookup
+  @@index([judgeScore, createdAt(sort: Desc)]) // margin-strategy active learning
   @@map("consultation_messages")
 }
 
@@ -1175,6 +1247,13 @@ model ConsultationMessage {
 // TABLE 13: TrainingLabel
 // Mayank rates AI responses 1-5, writes corrections.
 // 10,000 quality-labeled records = proprietary AI moat.
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 13: TrainingLabel — Task #44 expanded
+// Mayank (or LLM judge, or future crowd) rates AI responses 1-5.
+// Multi-tier label system: HUMAN_EXPERT > LLM_JUDGE > CROWD.
+// Inter-rater agreement tracked for quality assurance.
 // ═══════════════════════════════════════════════════════════════
 
 model TrainingLabel {
@@ -1185,16 +1264,24 @@ model TrainingLabel {
   message        ConsultationMessage? @relation(fields: [messageId], references: [id])
   labeledById    String               @db.Uuid
   labeledBy      User                 @relation(fields: [labeledById], references: [id])
-  qualityScore   Int
+  qualityScore   Int // 1-5 (CHECK constraint via migration)
   isCorrect      Boolean
   correctionText String?              @db.Text
   clinicalNotes  String?              @db.Text
   category       String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+
+  // ── Task #44: Multi-tier labeling ──
+  tier                LabelerTier @default(HUMAN_EXPERT)
+  agreementScore      Float? // Cohen's Kappa or simple agreement (0-1) when 2+ labelers exist
+  disputedWithLabelId String?     @db.Uuid // UUID of the opposing label if disagreement detected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([consultationId])
   @@index([labeledById])
+  @@index([tier, qualityScore]) // tier-stratified analytics
+  @@index([messageId, tier]) // judge-vs-human comparison lookup
   @@map("training_labels")
 }
 
@@ -2673,4 +2760,78 @@ model ExperimentAssignment {
   @@index([experimentKey, variantKey])
   @@index([userId])
   @@map("experiment_assignments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE: JudgeRun — Task #44
+// One row per LLM-as-judge grading attempt.
+// Tracks judge model, cost, latency, score, reasoning, status.
+// Foundation for: judge calibration drift detection (Month 6+),
+// cost attribution (Month 18+), and audit trail.
+// ═══════════════════════════════════════════════════════════════
+
+model JudgeRun {
+  id                    String              @id @default(cuid())
+  consultationMessageId String              @db.Uuid
+  consultationMessage   ConsultationMessage @relation("AllJudgeRunsForMessage", fields: [consultationMessageId], references: [id], onDelete: Cascade)
+
+  judgeModel         String // "claude-haiku-4-5-20251001" — exact model string used
+  judgePromptVersion String // semver of judge prompt template
+  rubricVersion      String // semver of the 1-5 scoring rubric
+  parsedScore        Int // 1-5 integer score (final)
+  rawScore           Float? // raw model output before clamping
+  reasoning          String @db.Text
+  flags              Json? // { disagrees_with_human: true, low_confidence: false, ... }
+
+  inputTokens  Int?
+  outputTokens Int?
+  costUsd      Decimal? @db.Decimal(10, 6)
+  latencyMs    Int?
+
+  status       JudgeRunStatus @default(PENDING)
+  errorMessage String?        @db.Text
+  startedAt    DateTime       @default(now())
+  completedAt  DateTime?
+
+  // Inverse relation back from ConsultationMessage.judgeRun (latest pointer)
+  primaryForMessages ConsultationMessage[]
+
+  @@index([consultationMessageId, startedAt(sort: Desc)])
+  @@index([status, startedAt(sort: Desc)])
+  @@index([parsedScore, status])
+  @@map("judge_runs")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE: DataAssetVersion — Task #44
+// Content-addressed dataset versioning (DVC-equivalent, Postgres-native).
+// Each training dataset export gets SHA-256 content hash + semver.
+// Parent-child lineage enables reproducibility — critical for DPDP audit.
+// ═══════════════════════════════════════════════════════════════
+
+model DataAssetVersion {
+  id          String        @id @default(cuid())
+  assetKind   DataAssetKind
+  semver      String // e.g., "v1.0.0" — manually bumped per export batch
+  contentHash String // SHA-256 over canonical-JSON of all records
+  recordCount Int
+  manifestUrl String? // S3/R2 URL — null until Month 6 export pipeline ships
+  metadata    Json? // arbitrary annotations (training config, ε-budget, etc.)
+
+  // Lineage — track derivations (e.g., v2.0 derived from v1.0 + new labels)
+  parentVersionId String?
+  parentVersion   DataAssetVersion?  @relation("AssetLineage", fields: [parentVersionId], references: [id])
+  derivedVersions DataAssetVersion[] @relation("AssetLineage")
+
+  createdById String?  @db.Uuid
+  createdBy   User?    @relation("DataAssetVersionCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      String?  @db.Uuid
+
+  @@unique([assetKind, semver]) // can't double-version same asset
+  @@unique([assetKind, contentHash]) // identical content = same version (dedup)
+  @@index([assetKind, createdAt(sort: Desc)])
+  @@index([parentVersionId])
+  @@map("data_asset_versions")
 }

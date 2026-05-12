@@ -31,6 +31,7 @@ import { processOutboxDlqReplayJob } from './processors/outbox-dlq-replay.proces
 import { processDataQualityJob } from './processors/data-quality-daily.processor.js';
 import { processDriftCheckJob } from './processors/drift-check-hourly.processor.js';
 import { processShadowComparisonJob } from './processors/shadow-comparison-daily.processor.js';
+import { processJudgeGradingJob } from './processors/judge-grading.processor.js';
 
 const workers: Worker[] = [];
 
@@ -139,6 +140,8 @@ async function main(): Promise<void> {
     buildWorker(QUEUE_NAMES.OUTBOX_RELAY, 5, processOutboxRelayJob as Processor),
     buildWorker(QUEUE_NAMES.OUTBOX_DLQ_REPLAY, 1, processOutboxDlqReplayJob as Processor),
     buildWorker(QUEUE_NAMES.DATA_QUALITY, 1, processDataQualityJob as Processor),
+    // Task #44 — Judge grading daily cron
+    buildWorker(QUEUE_NAMES.JUDGE_GRADING, 1, processJudgeGradingJob as Processor),
     buildWorker(QUEUE_NAMES.DRIFT_CHECK, 1, processDriftCheckJob as Processor),
     buildWorker(QUEUE_NAMES.SHADOW_COMPARE, 1, processShadowComparisonJob as Processor),
   );

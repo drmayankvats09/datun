@@ -9,7 +9,16 @@ import { routing } from './routing';
 import type { Locale } from './config';
 
 // P3-F21: Namespace list — add here to auto-load + merge
-const NAMESPACES = ['common', 'auth', 'legal', 'consultation', 'errors', 'glossary'] as const;
+// P3-F21: Namespace list — add here to auto-load + merge
+const NAMESPACES = [
+  'common',
+  'auth',
+  'legal',
+  'consultation',
+  'errors',
+  'glossary',
+  'admin',
+] as const;
 
 async function loadNamespace(ns: string, loc: string): Promise<Record<string, unknown>> {
   try {

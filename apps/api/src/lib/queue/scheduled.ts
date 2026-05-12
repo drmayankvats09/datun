@@ -65,6 +65,11 @@ const SCHEDULES: ScheduleConfig[] = [
     pattern: '0 3 * * *', // 03:00 IST
     description: 'Daily shadow prompt comparison',
   },
+  {
+    jobName: SCHEDULED_JOB_NAMES.JUDGE_GRADING_DAILY,
+    pattern: '0 4 * * *', // 04:00 IST every day
+    description: 'LLM-as-judge daily grading of last 24h messages',
+  },
 ];
 
 // Map scheduled job → target queue (some jobs run on dedicated queues)
@@ -73,6 +78,7 @@ const JOB_TO_QUEUE: Partial<Record<ScheduledJobName, QueueName>> = {
   [SCHEDULED_JOB_NAMES.DATA_QUALITY_DAILY]: QUEUE_NAMES.DATA_QUALITY,
   [SCHEDULED_JOB_NAMES.DRIFT_CHECK_HOURLY]: QUEUE_NAMES.DRIFT_CHECK,
   [SCHEDULED_JOB_NAMES.SHADOW_COMPARE_DAILY]: QUEUE_NAMES.SHADOW_COMPARE,
+  [SCHEDULED_JOB_NAMES.JUDGE_GRADING_DAILY]: QUEUE_NAMES.JUDGE_GRADING,
 };
 
 /**

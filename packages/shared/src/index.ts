@@ -41,3 +41,7 @@ export { emailWrapper, emailFooter } from './emails';
 export * from './validators/index';
 
 export * from './trace';
+
+// ── Task #44: Training pipeline types ──
+export * from './types/training';
+export * from './types/judge';

@@ -6,6 +6,7 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./lib": "./src/lib/index.ts",
     "./prisma/seeds/wave7": "./prisma/seeds/wave7.ts",
     "./prisma/seeds/wave8": "./prisma/seeds/wave8.ts",
     "./prisma/seeds/wave10": "./prisma/seeds/wave10.ts",

@@ -1,0 +1,93 @@
+{
+  "labeling": {
+    "page": {
+      "title": "AI ट्रेनिंग लेबलिंग",
+      "subtitle": "AI के उत्तरों को 1-5 के बीच रेट करें। Datun को आपकी विशेषज्ञता से सीखने में मदद करें।",
+      "todayProgress": "आज {labeled} / {target} लेबल हो गए",
+      "streak": "{days} दिन की लगातार streak",
+      "noItems": "इस strategy में कोई item नहीं। कोई और चुनें या बाद में देखें।",
+      "loadingItems": "अगला batch लोड हो रहा है…",
+      "refresh": "Queue रिफ्रेश करें"
+    },
+    "strategy": {
+      "label": "Strategy",
+      "typi_clust": "विविध (Typi-Clust)",
+      "typi_clust_desc": "हर score bucket से spread",
+      "margin": "अनिश्चित (Margin)",
+      "margin_desc": "Judge का score 3 के करीब — सबसे ज़्यादा confusion",
+      "conflicts": "Conflicts",
+      "conflicts_desc": "जहाँ आप और judge की राय अलग है",
+      "random": "Random",
+      "random_desc": "Unbiased control"
+    },
+    "card": {
+      "judgeScore": "Judge: {score}",
+      "judgeReasoning": "Judge की राय",
+      "noJudgeYet": "अभी grade नहीं हुआ",
+      "scoreLabel": "आपका score",
+      "isCorrect": "Clinically सही mark करें",
+      "correctionPlaceholder": "AI को क्या कहना चाहिए था? (score ≤ 2 पर ज़रूरी)",
+      "clinicalNotesPlaceholder": "Optional clinical notes",
+      "categoryPlaceholder": "Tag (जैसे toothache, pediatric, emergency)",
+      "submit": "Label save करें",
+      "skip": "Skip",
+      "submitting": "Save हो रहा है…",
+      "previousLabel": "आपने पहले {score}/5 दिया था"
+    },
+    "quality": {
+      "1": "गलत / असुरक्षित",
+      "2": "Misleading",
+      "3": "ठीक",
+      "4": "अच्छा",
+      "5": "बहुत बढ़िया",
+      "shortcut": "{key} दबाएं {label} के लिए"
+    },
+    "stats": {
+      "today": "आज",
+      "thisWeek": "इस हफ्ते",
+      "thisMonth": "इस महीने",
+      "allTime": "अब तक",
+      "judgeAgreement": "Judge से सहमति: {percent}%",
+      "conflictsPending": "{count} conflicts review pending",
+      "avgQuality": "औसत quality: {score}",
+      "viewConflicts": "Conflicts देखें →"
+    },
+    "errors": {
+      "loadFailed": "Queue load नहीं हुआ",
+      "submitFailed": "Label save नहीं हुआ",
+      "forbidden": "Admin access चाहिए",
+      "retry": "फिर से करें"
+    }
+  },
+  "consent": {
+    "training": {
+      "title": "Datun AI को बेहतर बनाने में मदद करें",
+      "body": "हम आपके consultation के anonymous डेटा से अपना AI सबके लिए बेहतर बनाना चाहते हैं। आपका नाम, फ़ोन, और पर्सनल जानकारी ट्रेनिंग से पहले हटा दी जाती है।",
+      "whatWeUse": "हम क्या इस्तेमाल करते हैं",
+      "whatWeUseItems": [
+        "आपके सवाल और AI के जवाब",
+        "आपकी उम्र, gender (कोई पर्सनल identifier नहीं)",
+        "क्या advice काम आई (आपका feedback)"
+      ],
+      "whatWeNeverUse": "हम कभी इस्तेमाल नहीं करते",
+      "whatWeNeverUseItems": [
+        "आपका नाम, phone number, या email",
+        "आपका चेहरा दिखाती फ़ोटो",
+        "कोई भी जानकारी जिससे आप पहचाने जाएँ"
+      ],
+      "yourRights": "आपके अधिकार",
+      "rightsBody": "आप कभी भी Settings → Privacy से consent वापस ले सकते हैं। पुराने anonymous डेटा से बने पुराने model versions में कुछ रह सकता है।",
+      "agree": "मैं सहमत हूँ — Datun को बेहतर बनाने में मदद करें",
+      "decline": "अभी नहीं, सिर्फ़ consultation करें",
+      "agreedToast": "धन्यवाद — आपकी मदद से Datun सबके लिए बेहतर बनेगा",
+      "declinedToast": "कोई बात नहीं। आपका consultation जारी है।",
+      "version": "Consent version v1.0.0"
+    },
+    "banner": {
+      "active": "Datun AI को बेहतर बनाने में योगदान कर रहे हैं",
+      "manage": "Manage करें",
+      "withdraw": "योगदान बंद करें",
+      "withdrawn": "बंद हो गया — आपके अगले messages training में नहीं जाएँगे"
+    }
+  }
+}
