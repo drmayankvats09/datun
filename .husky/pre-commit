@@ -89,5 +89,40 @@ fi
 
 echo "  ✓ gitleaks clean"
 echo ""
+# ─── Step 7: Capture invariant (Task #44) ───────────────────
+# Enforces: no file outside training/capture.service.ts may directly
+# call prisma.consultationMessage.create / createMany. This guarantees
+# the single-entry-point property of the training data pipeline.
+#
+# @see docs/adr/0003-training-data-architecture.md Decision 1
+# @see apps/api/src/services/training/capture.service.ts
+echo "→ Capture invariant check (Task #44)..."
+
+violations=$(grep -rn \
+  -E "prisma\.consultationMessage\.(create|createMany)\s*\(" \
+  apps/ packages/ \
+  --include="*.ts" \
+  --include="*.tsx" \
+  2>/dev/null \
+  | grep -v "apps/api/src/services/training/capture.service.ts" \
+  | grep -v "/__tests__/" \
+  | grep -v "/\*\*" \
+  | grep -v "^\s*//" \
+  || true)
+
+if [ -n "$violations" ]; then
+  echo ""
+  echo "❌ Capture invariant violation: direct prisma.consultationMessage.create call detected."
+  echo "   All ConsultationMessage writes MUST route through captureMessage()."
+  echo ""
+  echo "   Offending lines:"
+  echo "$violations" | sed 's/^/     /'
+  echo ""
+  echo "   Fix: import { captureMessage } from '@/services/training' and call that instead."
+  echo "   See docs/adr/0003-training-data-architecture.md Decision 1."
+  exit 1
+fi
+
+echo "  ✓ Capture invariant intact"
 echo "✅ FAANG-grade pre-commit passed — types + lint + secrets verified across full monorepo."
 echo ""

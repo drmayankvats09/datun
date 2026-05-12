@@ -56,13 +56,21 @@ const ruleNoDropColumn: Rule = (_sql, lines) => {
   const violations: LintViolation[] = [];
   lines.forEach((line, idx) => {
     if (/ALTER\s+TABLE.*DROP\s+COLUMN/i.test(line)) {
+      // FAANG-pattern: pragma exemption. The migration author can opt out of a
+      // specific rule by adding an inline `-- lint-ignore: <rule-name> reason` comment
+      // on the line BEFORE the offending statement. Mirrors Atlas/ESLint conventions.
+      const prevLine = idx > 0 ? (lines[idx - 1] ?? '') : '';
+      const pragma = /--\s*lint-ignore:\s*no-drop-column\b/i;
+      if (pragma.test(prevLine) || pragma.test(line)) {
+        return; // exempted by author with justification
+      }
       violations.push({
         rule: 'no-drop-column',
         severity: 'error',
         line: idx + 1,
         message: 'DROP COLUMN detected — breaks rolling deploys.',
         remediation:
-          'Use the expand-contract pattern: (1) deploy code that no longer reads the column, (2) wait one full deploy cycle, (3) drop in a separate migration.',
+          'Use the expand-contract pattern: (1) deploy code that no longer reads the column, (2) wait one full deploy cycle, (3) drop in a separate migration. Or add a `-- lint-ignore: no-drop-column <reason>` comment on the line BEFORE the statement to opt out (requires PR review justification).',
       });
     }
   });

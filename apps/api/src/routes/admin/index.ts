@@ -24,6 +24,7 @@ import { dataQualityAdminRouter } from './data-quality.router.js';
 import { promptsRouter } from './prompts.router.js';
 import { experimentsRouter } from './experiments.router.js';
 import { outboxAdminRouter } from './outbox.router.js';
+import { labelingRouter } from './labeling.router.js';
 
 export const adminRouter = Router();
 
@@ -36,6 +37,7 @@ if (featureFlags.adminRoutesEnabled) {
   adminRouter.use('/prompts', promptsRouter);
   adminRouter.use('/experiments', experimentsRouter);
   adminRouter.use('/outbox', outboxAdminRouter);
+  adminRouter.use('/labeling', labelingRouter);
 
   logger.info('Admin routes mounted at /api/admin/*');
 } else {
