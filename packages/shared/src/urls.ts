@@ -1,3 +1,4 @@
+// packages/shared/src/urls.ts
 // ═══════════════════════════════════════════════════════════════
 // URLS — All external URLs centralized
 // ═══════════════════════════════════════════════════════════════
@@ -31,5 +32,16 @@ export const URLS = {
   social: {
     instagram: 'https://instagram.com/datun.ai',
     linkedin: 'https://linkedin.com/company/datunai',
+  },
+
+  /**
+   * Security — CSP violation reporting endpoint (Task #45).
+   * Single source of truth. Referenced by:
+   *   - apps/web/lib/csp/allowed-origins.ts (REPORT_ENDPOINT_URL).
+   *   - apps/web/lib/csp/violation-reporter.ts (client-side fallback POST).
+   *   - docs/security/csp-policy.md (engineer reference).
+   */
+  security: {
+    cspReportEndpoint: 'https://api.datunai.com/api/security/csp-report',
   },
 } as const;

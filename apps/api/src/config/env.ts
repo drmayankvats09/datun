@@ -30,8 +30,6 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 
   // ── Queue Redis (Railway TCP — for BullMQ) ──
-  // Separate from Upstash REST cache. BullMQ requires TCP + blocking commands.
-  // Optional in dev (queues disabled gracefully); REQUIRED in production.
   QUEUE_REDIS_URL: z.string().url().optional(),
 
   // ── Bull-board dashboard auth ──
@@ -39,9 +37,6 @@ const envSchema = z.object({
   BULL_BOARD_PASSWORD: z.string().min(8).optional(),
 
   // ── Feature flag: cron migration ──
-  // When 'bullmq': BullMQ Repeatable Jobs run, node-cron stays dormant
-  // When 'node-cron' (default): existing node-cron runs, BullMQ scheduled idle
-  // Used for soft cutover. Set 'bullmq' in production AFTER 7-day soak.
   CRON_BACKEND: z.enum(['node-cron', 'bullmq']).default('node-cron'),
 
   // ── AI ──
@@ -95,6 +90,17 @@ const envSchema = z.object({
   HEALTHCHECK_7DAY_URL: z.string().optional(),
   HEALTHCHECK_WHATSAPP_URL: z.string().optional(),
   HEALTHCHECK_DAILY_REPORT_URL: z.string().optional(),
+
+  // ── CSP — Task #45 ──
+  // Salt for SHA-256 hashing of IP addresses before persisting CSP violations.
+  // DPDP compliance: raw IPs MUST NOT be stored. Hash(ip || salt) is stored instead.
+  // Minimum 32 chars (64 recommended). Generate with:
+  //   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  // Rotate quarterly. Production: REQUIRED. Dev/test: optional (falls back to dev default).
+  CSP_IP_HASH_SALT: z
+    .string()
+    .min(32, 'CSP_IP_HASH_SALT must be at least 32 characters')
+    .optional(),
 });
 
 const refinedSchema = envSchema.superRefine((data, ctx) => {
@@ -122,7 +128,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       });
     }
   }
-  // Google OAuth: both ID + secret required together
   if (data.GOOGLE_CLIENT_ID && !data.GOOGLE_CLIENT_SECRET) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -130,7 +135,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['GOOGLE_CLIENT_SECRET'],
     });
   }
-  // MSG91: both key + template required together
   if (data.MSG91_AUTH_KEY && !data.MSG91_TEMPLATE_ID) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -138,7 +142,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['MSG91_TEMPLATE_ID'],
     });
   }
-  // Redis: both URL and token required together
   if (data.UPSTASH_REDIS_REST_URL && !data.UPSTASH_REDIS_REST_TOKEN) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -146,7 +149,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['UPSTASH_REDIS_REST_TOKEN'],
     });
   }
-  // P1-F18: Resend API key required if custom alert email
   if (data.ALERT_EMAIL_TO !== 'hello@datunai.com' && !data.RESEND_API_KEY) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -154,7 +156,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['RESEND_API_KEY'],
     });
   }
-  // Meta App: secret required if app ID set
   if (data.META_APP_ID && !data.META_APP_SECRET) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -162,7 +163,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['META_APP_SECRET'],
     });
   }
-  // Production REQUIRES queue Redis (BullMQ won't work without it)
   if (data.NODE_ENV === 'production' && !data.QUEUE_REDIS_URL) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -170,7 +170,6 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['QUEUE_REDIS_URL'],
     });
   }
-  // Bull-board password required if dashboard accessible (production)
   if (data.NODE_ENV === 'production' && !data.BULL_BOARD_PASSWORD) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -178,7 +177,15 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       path: ['BULL_BOARD_PASSWORD'],
     });
   }
-  // Production warning: JWT_REFRESH_SECRET should be set
+  // Task #45: Production REQUIRES a proper CSP IP hash salt (DPDP compliance).
+  if (data.NODE_ENV === 'production' && !data.CSP_IP_HASH_SALT) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'CSP_IP_HASH_SALT required in production for DPDP-compliant IP hashing. Generate with: node -e "console.log(require(`crypto`).randomBytes(32).toString(`hex`))"',
+      path: ['CSP_IP_HASH_SALT'],
+    });
+  }
   if (data.NODE_ENV === 'production' && !data.JWT_REFRESH_SECRET) {
     console.warn(
       '⚠️ JWT_REFRESH_SECRET not set — falling back to JWT_SECRET for refresh tokens. Set a separate secret in production.',

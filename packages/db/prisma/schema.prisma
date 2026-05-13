@@ -2835,3 +2835,46 @@ model DataAssetVersion {
   @@index([parentVersionId])
   @@map("data_asset_versions")
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TABLE 62: CspViolation — Task #45 (CSP)
+// Stores browser-reported CSP violations for security analytics.
+// IP is HASHED (SHA-256 + salt) — never store raw IP per DPDP Act.
+// ═══════════════════════════════════════════════════════════════
+model CspViolation {
+  id String @id @default(cuid())
+
+  // ── Violation details ──
+  blockedUri         String  @db.VarChar(2048)
+  documentUri        String  @db.VarChar(2048)
+  violatedDirective  String  @db.VarChar(256)
+  effectiveDirective String  @db.VarChar(256)
+  originalPolicy     String  @db.Text
+  disposition        String  @db.VarChar(16) // 'enforce' | 'report'
+  statusCode         Int?
+  scriptSample       String? @db.VarChar(2048)
+  sourceFile         String? @db.VarChar(2048)
+  lineNumber         Int?
+  columnNumber       Int?
+
+  // ── Source attribution (privacy-safe) ──
+  userAgent String? @db.VarChar(1024)
+  ipHash    String  @db.Char(64) // SHA-256 hex of (ip + secret_salt)
+  requestId String? @db.VarChar(64)
+
+  // ── Classification + dedup ──
+  severity      String  @db.VarChar(16) // 'critical'|'high'|'medium'|'low'
+  dedupCount    Int     @default(1)
+  sentryEventId String? @db.VarChar(64)
+
+  // ── Timestamps ──
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ── Indexes (admin dashboard queries) ──
+  @@index([createdAt(sort: Desc)])
+  @@index([effectiveDirective, createdAt(sort: Desc)])
+  @@index([severity, createdAt(sort: Desc)])
+  @@index([ipHash, createdAt(sort: Desc)])
+  @@map("csp_violations")
+}

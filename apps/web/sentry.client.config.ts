@@ -1,46 +1,38 @@
+// apps/web/sentry.client.config.ts
 // ═══════════════════════════════════════════════════════════════
-// SENTRY CLIENT — Browser-side error tracking
-// Catches: unhandled exceptions, promise rejections, console.errors
-// Session Replay: records what user did before crash (10% errors)
-// Performance: tracks Web Vitals (LCP, CLS, INP)
+// SENTRY CLIENT — Browser-side error tracking + CSP integration
 //
-// Pattern: Vercel, Linear, Notion — all use @sentry/nextjs.
-// Source maps uploaded at build time — stack traces readable.
+// Task #45 additions:
+//   - Initialize CSP violation reporter (backup channel to Reporting API).
+//   - Enrich CSP violation Sentry events with severity tags.
+//   - Filter browser-extension noise out of CSP events.
 // ═══════════════════════════════════════════════════════════════
 
 import * as Sentry from '@sentry/nextjs';
+import { initViolationReporter } from '@/lib/csp/violation-reporter';
+import { enrichCspEvent } from '@/lib/csp/sentry-integration';
 
-// Skip Sentry init in dev mode — matches server-side gate, prevents
-// Session Replay + Tracing overhead from interfering with Turbopack HMR.
-// Pattern: sentry.server.config.ts already does this via `enabled` flag.
 if (process.env.NODE_ENV !== 'production') {
-  // Stub init — no DSN, no replay, no tracing
   Sentry.init({ dsn: '', enabled: false });
 } else {
   Sentry.init({
     dsn: process.env['NEXT_PUBLIC_SENTRY_DSN'] || '',
-
     environment: process.env['NODE_ENV'] ?? 'production',
 
-    // Performance: sample 10% of transactions in production
     tracesSampleRate: process.env['NODE_ENV'] === 'production' ? 0.1 : 1.0,
-
-    // Session Replay: 5% normal sessions, 100% error sessions
     replaysSessionSampleRate: 0.05,
     replaysOnErrorSampleRate: 1.0,
 
     integrations: [
       Sentry.replayIntegration({
-        // DPDP compliance — mask all PII in replays
         maskAllText: true,
         blockAllMedia: true,
       }),
     ],
 
-    // Filter noise — don't send non-actionable errors
     beforeSend(event, hint) {
+      // ── Standard noise filter ──
       const msg = (hint?.originalException as Error)?.message ?? event.message ?? '';
-
       if (typeof msg === 'string') {
         if (
           msg.includes('ResizeObserver loop') ||
@@ -53,10 +45,18 @@ if (process.env.NODE_ENV !== 'production') {
         }
       }
 
-      return event;
+      // ── CSP enrichment (Task #45) ──
+      // Returns null for extension-noise CSP events; tags real ones.
+      const enriched = enrichCspEvent(event, hint);
+      if (enriched === null) return null;
+
+      return enriched;
     },
 
-    // Only enable in production (save quota in dev)
     enabled: process.env['NODE_ENV'] === 'production',
   });
+
+  // ── CSP violation reporter (backup channel) ──
+  // Idempotent — safe across HMR / fast-refresh re-renders.
+  initViolationReporter();
 }

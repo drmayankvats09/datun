@@ -1,7 +1,17 @@
+// apps/web/app/[locale]/layout.tsx
 // ═══════════════════════════════════════════════════════════════
-// LOCALE LAYOUT — Main layout with i18n + all providers
-// This is the REAL layout — root layout is just a passthrough.
-// next-intl sets <html lang={locale}> here.
+// LOCALE LAYOUT — Main layout with i18n + all providers + CSP nonce
+//
+// CSP nonce flow (Task #45):
+//   1. proxy.ts generates a per-request nonce and sets `x-nonce` header.
+//   2. This layout reads it via getNonce().
+//   3. Nonce is forwarded to:
+//        - ThemeProvider (next-themes v0.4.6+ supports `nonce` prop).
+//        - LocaleFont (uses nonce when injecting dynamic <link> stylesheet).
+//
+// For static routes (landing, legal), getNonce() returns ''. ThemeProvider
+// receives '' which is safe — the static-route CSP allows inline scripts
+// by hash, not nonce, so absence of nonce attribute is correct.
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';
@@ -17,6 +27,7 @@ import { LOCALES } from '@/i18n/config';
 import type { Metadata } from 'next';
 import { LocaleFont } from '@/components/locale-font';
 import { TranslationBanner } from '@/components/translation-banner';
+import { getNonce } from '@/lib/csp/get-nonce';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,7 +35,6 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-// Generate static params for all locales (SSG)
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -60,27 +70,29 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
 
-  // Validate locale
   if (!routing.locales.includes(locale as Locale)) {
     notFound();
   }
 
-  // Enable static rendering for this locale
   setRequestLocale(locale);
 
-  // Load messages for this locale
   const messages = await getMessages();
+
+  // ── Read per-request CSP nonce (set by proxy.ts) ──
+  // Empty string on static routes (hash-based CSP) — that's fine.
+  const nonce = await getNonce();
 
   return (
     <html lang={locale} className={locale === 'en' ? inter.variable : ''} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <LocaleFont />
+          <LocaleFont nonce={nonce || undefined} />
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
             enableSystem
             disableTransitionOnChange
+            nonce={nonce || undefined}
           >
             <TranslationBanner />
             <AppProvider>{children}</AppProvider>

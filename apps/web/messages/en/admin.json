@@ -89,5 +89,68 @@
       "withdraw": "Stop contributing",
       "withdrawn": "Stopped — your future messages will not be used for training"
     }
+  },
+  "security": {
+    "title": "Security Dashboard",
+    "subtitle": "CSP violations from production traffic — last 24 hours",
+    "errorTitle": "Failed to load",
+    "trendTitle": "7-Day Trend",
+    "recentTitle": "Recent Violations",
+    "viewAll": "View all ({total})",
+    "violationsTitle": "CSP Violations",
+    "totalResults": "{total} total results",
+    "filtersLabel": "Filters",
+    "filterSeverityAll": "All severities",
+    "filterDirectivePlaceholder": "Filter by directive (e.g. script-src)",
+    "filterDirectiveLabel": "Directive filter",
+    "paginationLabel": "Pagination",
+    "prev": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}",
+    "emptyState": "No CSP violations detected.",
+    "colSeverity": "Severity",
+    "colDirective": "Directive",
+    "colBlockedUri": "Blocked URI",
+    "colDocumentUri": "Document URI",
+    "colCount": "Count",
+    "colTime": "Time",
+    "stats": {
+      "label": "Statistics",
+      "today": "Today",
+      "yesterdayLine": "{count} yesterday",
+      "criticalToday": "Critical Today",
+      "criticalHint": "Likely XSS attempts",
+      "topDirective": "Top Directive",
+      "topDirectiveHint": "{count} violations",
+      "noData": "No data",
+      "windowLabel": "Window",
+      "windowHint": "Rolling 24 hours"
+    },
+    "chart": {
+      "alt": "7-day violation count time series",
+      "totalSeries": "Total",
+      "criticalSeries": "Critical"
+    },
+    "detail": {
+      "title": "Violation Detail",
+      "subtitle": "Full payload from browser report",
+      "id": "ID",
+      "createdAt": "Timestamp",
+      "dispositionLabel": "Disposition",
+      "blockedUri": "Blocked URI",
+      "documentUri": "Document URI",
+      "violatedDirective": "Violated",
+      "effectiveDirective": "Effective",
+      "dedupCount": "Dedup Count",
+      "statusCode": "Status Code",
+      "sourceFile": "Source File",
+      "lineColumn": "Line:Col",
+      "scriptSample": "Script Sample",
+      "userAgent": "User Agent",
+      "ipHash": "IP Hash",
+      "requestId": "Request ID",
+      "sentryEventId": "Sentry Event ID",
+      "originalPolicy": "Original Policy"
+    }
   }
 }

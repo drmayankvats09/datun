@@ -124,6 +124,23 @@ vi.mock('@repo/db', () => ({
     consultationMessage: mockPrismaModel(),
     whatsAppMessage: mockPrismaModel(),
     clinicOwner: mockPrismaModel(),
+    // Task #45 — CSP Violations
+    cspViolation: {
+      findUnique: vi.fn().mockResolvedValue(null),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockImplementation((args: { data: unknown }) =>
+        Promise.resolve({
+          id: 'mock-csp-id',
+          ...((args?.data as Record<string, unknown>) ?? {}),
+        }),
+      ),
+      update: vi.fn().mockResolvedValue({}),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      delete: vi.fn().mockResolvedValue({}),
+      count: vi.fn().mockResolvedValue(0),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
   },
   UserPrimaryRole: {
     PATIENT: 'PATIENT',

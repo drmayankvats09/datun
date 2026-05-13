@@ -1,6 +1,13 @@
+// apps/web/app/[locale]/page.tsx
 // ═══════════════════════════════════════════════════════════════
 // COMING SOON PAGE — Datun pre-launch single-viewport hero
 // Replaces v1 on datunai.com (v1 deleted).
+//
+// Task #45 (CSP):
+//   Inline JSON-LD script uses stableJson() — deterministic serialization
+//   with sorted object keys — so the SHA-256 hash computed at build time
+//   in scripts/build-inline-hashes.ts matches the script's textContent at
+//   runtime. Hash whitelisted in apps/web/lib/csp/inline-hashes.ts.
 // ═══════════════════════════════════════════════════════════════
 
 import type { Metadata } from 'next';
@@ -15,6 +22,26 @@ import { PrimaryActions } from '@/components/coming-soon/primary-actions';
 import { StatusFooter } from '@/components/coming-soon/status-footer';
 
 type Props = { params: Promise<{ locale: string }> };
+
+/**
+ * Stable JSON.stringify — sorted object keys ensure deterministic output.
+ *
+ * MUST be byte-identical to scripts/build-inline-hashes.ts's stableJson().
+ * If these diverge, build-time hash will not match runtime → strict-CSP
+ * blocks the script.
+ */
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, val) => {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const sorted: Record<string, unknown> = {};
+      for (const k of Object.keys(val as Record<string, unknown>).sort()) {
+        sorted[k] = (val as Record<string, unknown>)[k];
+      }
+      return sorted;
+    }
+    return val;
+  });
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -110,7 +137,7 @@ export default async function HomePage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: stableJson({
             '@context': 'https://schema.org',
             '@type': 'Organization',
             name: BRAND.name,

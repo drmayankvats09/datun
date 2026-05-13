@@ -1,0 +1,107 @@
+name: Security Headers
+
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/lib/csp/**'
+      - 'apps/web/proxy.ts'
+      - 'apps/web/next.config.ts'
+      - '.github/workflows/security-headers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: security-headers-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    name: Scan Production Headers
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Wait for deploy to propagate
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: Fetch live response headers
+        id: headers
+        run: |
+          set -euo pipefail
+          HEADERS_FILE=$(mktemp)
+          curl -sI -L https://datunai.com/ -o "$HEADERS_FILE"
+          echo "headers_file=$HEADERS_FILE" >> "$GITHUB_OUTPUT"
+          cat "$HEADERS_FILE"
+
+      - name: Verify CSP header present
+        run: |
+          set -euo pipefail
+          if ! grep -qiE '^content-security-policy(-report-only)?:' "${{ steps.headers.outputs.headers_file }}"; then
+            echo "::error::No Content-Security-Policy header on https://datunai.com/"
+            exit 1
+          fi
+
+      - name: Verify no unsafe directives in script-src
+        run: |
+          set -euo pipefail
+          CSP=$(grep -iE '^content-security-policy(-report-only)?:' "${{ steps.headers.outputs.headers_file }}" || true)
+          SCRIPT_SRC=$(echo "$CSP" | sed -nE "s/.*script-src([^;]*);.*/\1/Ip" || true)
+          if echo "$SCRIPT_SRC" | grep -qF "'unsafe-inline'"; then
+            echo "::error::script-src contains unsafe-inline"
+            exit 1
+          fi
+          if echo "$SCRIPT_SRC" | grep -qF "'unsafe-eval'"; then
+            echo "::error::script-src contains unsafe-eval"
+            exit 1
+          fi
+
+      - name: Verify HSTS header
+        run: |
+          set -euo pipefail
+          if ! grep -qiE '^strict-transport-security:' "${{ steps.headers.outputs.headers_file }}"; then
+            echo "::error::No Strict-Transport-Security header"
+            exit 1
+          fi
+
+      - name: Verify other security headers
+        run: |
+          set -euo pipefail
+          REQUIRED=(
+            "x-content-type-options"
+            "x-frame-options"
+            "referrer-policy"
+            "permissions-policy"
+          )
+          for header in "${REQUIRED[@]}"; do
+            if ! grep -qiE "^${header}:" "${{ steps.headers.outputs.headers_file }}"; then
+              echo "::error::Missing security header: $header"
+              exit 1
+            fi
+          done
+
+      - name: Mozilla Observatory v2 grade check
+        id: observatory
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -s -X POST 'https://observatory-api.mdn.mozilla.net/api/v2/scan?host=datunai.com')
+          GRADE=$(echo "$RESPONSE" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('grade','?'))" || echo "ERROR")
+          echo "grade=$GRADE" >> "$GITHUB_OUTPUT"
+          case "$GRADE" in
+            A+|A|A-) echo "Grade $GRADE meets the A threshold." ;;
+            *) echo "::warning::Mozilla Observatory grade is $GRADE" ;;
+          esac
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Security Headers Scan" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: https://datunai.com/" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mozilla Observatory: ${{ steps.observatory.outputs.grade || 'n/a' }}" >> "$GITHUB_STEP_SUMMARY"
