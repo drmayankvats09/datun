@@ -1,3 +1,9 @@
+// apps/web/app/[locale]/(legal)/cookies/page.tsx
+// ═══════════════════════════════════════════════════════════════
+// COOKIE POLICY — Datun cookie usage and consent
+// Task #45 (CSP): stableJson() for deterministic JSON-LD output.
+// ═══════════════════════════════════════════════════════════════
+
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
@@ -7,6 +13,23 @@ import {
   HumanSummary,
   SummaryItem,
 } from '@/components/legal/legal-components';
+
+/**
+ * Stable JSON.stringify with sorted keys.
+ * MUST be byte-identical to scripts/build-inline-hashes.ts's stableJson().
+ */
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, val) => {
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const sorted: Record<string, unknown> = {};
+      for (const k of Object.keys(val as Record<string, unknown>).sort()) {
+        sorted[k] = (val as Record<string, unknown>)[k];
+      }
+      return sorted;
+    }
+    return val;
+  });
+}
 
 export const metadata: Metadata = {
   title: 'Cookie Policy',
@@ -32,10 +55,8 @@ export default function CookiesPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: stableJson(jsonLd) }} />
+
       <article>
         <LegalHeader
           title="Cookie Policy"

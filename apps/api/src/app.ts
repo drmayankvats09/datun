@@ -1,6 +1,14 @@
+// apps/api/src/app.ts
 // ═══════════════════════════════════════════════════════════════
 // EXPRESS APP FACTORY — Middleware + Routes assembly
 // Separated from server.ts for testability.
+//
+// Task #45 additions:
+//   - Mount /api/security/csp-report router DIRECTLY on `app` (bypasses
+//     the general /api/* rate limiter; uses its own stricter limiter
+//     internally). Placed AFTER mountRoutes() so it doesn't conflict
+//     with any other /api mount, BEFORE setupErrorHandlers() so errors
+//     are caught by the global handler.
 // ═══════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -13,6 +21,7 @@ import { setupErrorHandlers } from './middleware/error-handler.js';
 import { mountBullBoard } from './lib/queue/dashboard.js';
 import { migrationStatusRouter } from './routes/migration-status.router.js';
 import { metricsRouter } from './routes/metrics.router.js';
+import { cspReportRouter } from './routes/security/csp-report.router.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -94,6 +103,14 @@ export function createApp(): express.Express {
 
   // ── All routes ──
   mountRoutes(app);
+
+  // ── CSP violation report endpoint (Task #45) ──
+  // Mounted OUTSIDE mountRoutes so the general /api/* limiter (500/15min)
+  // does NOT apply. The CSP report router has its own dedicated limiter
+  // (100/min/IP) tuned for browser report bursts. The router also uses
+  // its own express.json() body parser that accepts both legacy
+  // `application/csp-report` and modern `application/reports+json` MIME types.
+  app.use('/api/security', cspReportRouter);
 
   // Mount bull-board dashboard at /internal/queues (basic auth)
   mountBullBoard(app);

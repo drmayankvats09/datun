@@ -1,3 +1,4 @@
+// apps/api/src/routes/admin/index.ts
 // ═══════════════════════════════════════════════════════════════
 // ADMIN ROUTES — Mount point for all /api/admin/* sub-routers
 //
@@ -11,6 +12,8 @@
 //   /api/admin/prompts        — Prompt version management
 //   /api/admin/experiments    — A/B experiment management
 //   /api/admin/outbox         — Outbox ops (DLQ replay, status)
+//   /api/admin/labeling       — Task #44 training-label workflows
+//   /api/admin/security       — Task #45 CSP violation dashboard
 //
 // Pattern: Stripe internal admin routes (gated by both flag + RBAC).
 // ═══════════════════════════════════════════════════════════════
@@ -25,11 +28,11 @@ import { promptsRouter } from './prompts.router.js';
 import { experimentsRouter } from './experiments.router.js';
 import { outboxAdminRouter } from './outbox.router.js';
 import { labelingRouter } from './labeling.router.js';
+import { adminSecurityRouter } from './security.router.js';
 
 export const adminRouter = Router();
 
 if (featureFlags.adminRoutesEnabled) {
-  // Every admin route requires JWT + ADMIN role
   adminRouter.use(requireAuth, requireRole('ADMIN'));
 
   adminRouter.use('/anonymization', anonymizationRouter);
@@ -38,6 +41,7 @@ if (featureFlags.adminRoutesEnabled) {
   adminRouter.use('/experiments', experimentsRouter);
   adminRouter.use('/outbox', outboxAdminRouter);
   adminRouter.use('/labeling', labelingRouter);
+  adminRouter.use('/security', adminSecurityRouter);
 
   logger.info('Admin routes mounted at /api/admin/*');
 } else {

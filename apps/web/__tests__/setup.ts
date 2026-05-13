@@ -1,3 +1,4 @@
+// apps/web/__tests__/setup.ts
 // ═══════════════════════════════════════════════════════════════
 // FRONTEND TEST SETUP — FAANG-grade browser API mocks for jsdom
 // ═══════════════════════════════════════════════════════════════
@@ -58,6 +59,24 @@ const mockSetTheme: Mock = vi.fn();
 vi.mock('next-themes', () => ({
   useTheme: () => ({ theme: 'light', setTheme: mockSetTheme }),
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// ── Mock: next/headers (Task #45 — CSP nonce in server components) ──
+// getNonce() in apps/web/lib/csp/get-nonce.ts reads `x-nonce` via the
+// `headers()` helper from next/headers. Tests that exercise pages or
+// layouts must see a deterministic nonce value. Returning a fixed string
+// here lets snapshot tests stay stable.
+vi.mock('next/headers', () => ({
+  headers: () =>
+    Promise.resolve({
+      get: (name: string) => (name === 'x-nonce' ? 'TEST_NONCE_FIXED_FOR_UNIT_TESTS' : null),
+    }),
+  cookies: () =>
+    Promise.resolve({
+      get: () => undefined,
+      set: vi.fn(),
+      delete: vi.fn(),
+    }),
 }));
 
 // ── Mock: @sentry/nextjs ──

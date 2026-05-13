@@ -12,8 +12,13 @@
 // Validation: every body/query validated via @repo/api/validators.
 // Errors: thrown AppError subclass → caught by global error handler.
 //
+// Express 5 compat: query params read from req.validatedQuery (set by
+// middleware/validate.ts). Express 5 made req.query read-only so direct
+// mutation by validateQuery's `req.query = result.data` is silently rejected.
+//
 // @see apps/api/src/routes/admin/index.ts — parent gate
 // @see apps/api/src/services/training/* — business logic
+// @see apps/api/src/middleware/validate.ts — validation middleware contract
 // ═══════════════════════════════════════════════════════════════
 
 import { Router, type Request, type Response, type NextFunction } from 'express';
@@ -36,7 +41,22 @@ import { makeQualityScore, type LabelingQueueStrategy } from '@repo/shared';
 
 export const labelingRouter = Router();
 
-// ─── Helper: extract labelerId from authenticated request ──────
+// ─── Type helper for validated request attachments ────────────
+
+interface ValidatedRequest<Q = unknown> extends Request {
+  validatedQuery?: Q;
+}
+
+interface QueueQuery {
+  strategy: LabelingQueueStrategy;
+  limit: number;
+}
+
+interface ConflictsQuery {
+  limit: number;
+}
+
+// ─── Helper: extract labelerId from authenticated request ─────
 
 function getLabelerId(req: Request): string {
   if (!req.auth?.sub) {
@@ -45,7 +65,7 @@ function getLabelerId(req: Request): string {
   return req.auth.sub;
 }
 
-// ─── GET /api/admin/labeling/queue ─────────────────────────────
+// ─── GET /api/admin/labeling/queue ────────────────────────────
 
 labelingRouter.get(
   '/queue',
@@ -53,10 +73,7 @@ labelingRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const labelerId = getLabelerId(req);
-      const query = req.query as unknown as {
-        strategy: LabelingQueueStrategy;
-        limit: number;
-      };
+      const query = (req as ValidatedRequest<QueueQuery>).validatedQuery as QueueQuery;
 
       const items = await getLabelingQueue({
         labelerId,
@@ -78,7 +95,7 @@ labelingRouter.get(
   },
 );
 
-// ─── POST /api/admin/labeling/submit ───────────────────────────
+// ─── POST /api/admin/labeling/submit ──────────────────────────
 
 labelingRouter.post(
   '/submit',
@@ -116,7 +133,7 @@ labelingRouter.post(
   },
 );
 
-// ─── GET /api/admin/labeling/stats ─────────────────────────────
+// ─── GET /api/admin/labeling/stats ────────────────────────────
 
 labelingRouter.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -131,7 +148,7 @@ labelingRouter.get('/stats', async (req: Request, res: Response, next: NextFunct
   }
 });
 
-// ─── GET /api/admin/labeling/conflicts ─────────────────────────
+// ─── GET /api/admin/labeling/conflicts ────────────────────────
 
 labelingRouter.get(
   '/conflicts',
@@ -139,7 +156,7 @@ labelingRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const labelerId = getLabelerId(req);
-      const query = req.query as unknown as { limit: number };
+      const query = (req as ValidatedRequest<ConflictsQuery>).validatedQuery as ConflictsQuery;
       const conflicts = await getConflicts(labelerId, query.limit);
       res.json({
         success: true,
@@ -154,7 +171,7 @@ labelingRouter.get(
   },
 );
 
-// ─── POST /api/admin/labeling/judge/grade ──────────────────────
+// ─── POST /api/admin/labeling/judge/grade ─────────────────────
 
 labelingRouter.post(
   '/judge/grade',

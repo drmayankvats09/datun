@@ -1,8 +1,18 @@
+// apps/web/components/locale-font.tsx
 // ═══════════════════════════════════════════════════════════════
-// LOCALE FONT — Script-specific Google Font loading
-// Tamil, Telugu, Bengali etc. need their own font.
-// Loads ONLY current locale's font — not all 10.
-// Pattern: Google Noto Sans family.
+// LOCALE FONT — Script-specific Google Font loading with CSP nonce
+//
+// Loads a Noto Sans variant per locale (Hindi, Tamil, Telugu, etc.) by
+// dynamically inserting a <link rel="stylesheet"> into <head>.
+//
+// CSP integration (Task #45):
+//   The injected <link> tag is a "style-src" subject under CSP. Although
+//   Google Fonts is in our allowed-origins list, dynamic insertion through
+//   JavaScript means CSP also considers the script's authority — having
+//   the script run under a nonce-allowed context (or hash-allowed context
+//   on static pages) is what authorizes the insertion. We also set the
+//   `nonce` attribute on the injected link itself for stricter policies
+//   that match link tags against script-src-elem (CSP Level 3 extensions).
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -32,15 +42,12 @@ const FONT_URLS: Partial<Record<string, string>> = {
     'https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap',
 };
 
-/**
- * Dynamically loads script-specific font for current locale.
- * English = no extra font (Inter already loaded).
- * Hindi/Marathi = Noto Sans Devanagari.
- * Tamil = Noto Sans Tamil. Etc.
- *
- * Place in locale layout or AppProvider.
- */
-export function LocaleFont() {
+interface Props {
+  /** Per-request CSP nonce (forwarded by layout.tsx). Optional for static routes. */
+  nonce?: string;
+}
+
+export function LocaleFont({ nonce }: Props) {
   const locale = useLocale() as Locale;
   const meta = LOCALE_META[locale];
 
@@ -50,7 +57,6 @@ export function LocaleFont() {
     const url = FONT_URLS[meta.fontFamily];
     if (!url) return;
 
-    // Check if already loaded
     const existing = document.querySelector(`link[data-locale-font="${locale}"]`);
     if (existing) return;
 
@@ -58,12 +64,13 @@ export function LocaleFont() {
     link.rel = 'stylesheet';
     link.href = url;
     link.setAttribute('data-locale-font', locale);
+    if (nonce) link.setAttribute('nonce', nonce);
     document.head.appendChild(link);
 
     return () => {
       link.remove();
     };
-  }, [locale, meta]);
+  }, [locale, meta, nonce]);
 
   return null;
 }

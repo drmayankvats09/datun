@@ -1,3 +1,17 @@
+// apps/web/next.config.ts
+// ═══════════════════════════════════════════════════════════════
+// NEXT.JS CONFIG — Web app build configuration
+//
+// SECURITY HEADERS:
+//   CSP and related cross-origin headers are NOW set per-request by
+//   apps/web/proxy.ts. We no longer set them here, because next.config.ts
+//   headers are static (no per-request nonce access). This file retains
+//   only asset-cache headers and image-domain configuration.
+//
+// SENTRY:
+//   Production builds are wrapped by @sentry/nextjs for source-map upload.
+// ═══════════════════════════════════════════════════════════════
+
 import createNextIntlPlugin from 'next-intl/plugin';
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
@@ -17,48 +31,10 @@ const nextConfig: NextConfig = {
 
   async headers() {
     return [
-      {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-          // X-XSS-Protection removed (deprecated, replaced by CSP)
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          {
-            key: 'Permissions-Policy',
-            value: [
-              'camera=(self)',
-              'microphone=()',
-              'geolocation=(self)',
-              'interest-cohort=()',
-              'payment=()',
-              'usb=()',
-              'magnetometer=()',
-              'gyroscope=()',
-              'accelerometer=()',
-            ].join(', '),
-          },
-          {
-            key: 'Content-Security-Policy',
-            // TODO: Replace unsafe-inline/unsafe-eval with nonce-based CSP (P1-F15)
-            // Requires: nonce generation in proxy.ts + layout injection
-            // Tracked as separate security hardening task
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://static.cloudflareinsights.com https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudflare.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'} https://static.cloudflareinsights.com https://cloudflareinsights.com https://va.vercel-scripts.com https://*.sentry.io https://*.ingest.sentry.io`,
-              "frame-ancestors 'self'",
-              "base-uri 'self'",
-              "worker-src 'self' blob:",
-              "form-action 'self'",
-              'upgrade-insecure-requests',
-            ].join('; '),
-          },
-        ],
-      },
+      // ── Long-cache headers for static assets ──
+      // The CSP + cross-origin headers are now applied by proxy.ts on a
+      // per-request basis (so the nonce is correct). We only keep
+      // cache-control here for static asset URLs.
       {
         source: '/(.*)\\.(ico|png|jpg|jpeg|svg|webp|gif|woff|woff2)',
         headers: [

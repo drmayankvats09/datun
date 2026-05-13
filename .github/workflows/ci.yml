@@ -3,7 +3,8 @@
 # Runs on every push and PR. Blocks merge if anything fails.
 #
 # Steps: Install → Generate → Lint → Format → Typecheck →
-#        Build → Test → Translation Check → Coverage → Audit
+#        Build → Test → Translation Check → Coverage →
+#        CSP Regression Guard (Task #45) → Audit
 #
 # Pattern: Vercel, Cal.com, Linear — all have 15+ step CI.
 # ═══════════════════════════════════════════════════════════════
@@ -129,6 +130,35 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run check-types
 
+      # ─────────────────────────────────────────────────────────────────
+      # Task #45 — CSP Regression Guard
+      # ─────────────────────────────────────────────────────────────────
+      # Cheap, deterministic, no network. Fails the PR if anyone introduces
+      # 'unsafe-inline' or 'unsafe-eval' into CSP code paths (script context).
+      # Runs BEFORE build/test so a failed guard short-circuits the slow
+      # downstream steps.
+      - name: CSP regression guard — no unsafe-inline / unsafe-eval in script CSP code
+        run: |
+          set -euo pipefail
+          PATHS=(
+            "apps/web/lib/csp"
+            "apps/web/proxy.ts"
+            "apps/web/next.config.ts"
+          )
+          # Look for 'unsafe-inline' or 'unsafe-eval' but EXCLUDE lines that
+          # also reference style-src (style-src 'unsafe-inline' is permitted
+          # by design — see ADR-0004). This is conservative: a future addition
+          # of 'unsafe-inline' to script-src would be on a different line.
+          FOUND=$(grep -rnEH "'unsafe-(inline|eval)'" "${PATHS[@]}" 2>/dev/null \
+            | grep -vE "style-src|stylesheets|inline styles|allowed for styles|is ABSENT|recommend 'unsafe-inline'|styleSrcParts" \
+            || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::CSP regression: 'unsafe-inline' or 'unsafe-eval' found in script-context CSP code"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "✓ No CSP regressions detected in script directives"
+
       - name: Build
         run: pnpm turbo run build
         env:
@@ -143,6 +173,7 @@ jobs:
           JWT_REFRESH_SECRET: 'ci-refresh-secret-minimum-32-characters-different'
           ANTHROPIC_API_KEY: 'sk-ant-ci-test-key'
           DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/datun_shadow_ci'
+          CSP_IP_HASH_SALT: 'ci-csp-ip-hash-salt-fixed-for-deterministic-tests'
 
       # Phase 9: Translation completeness — blocks merge if Hindi keys missing
       - name: Translation Check (i18n)

@@ -3,17 +3,17 @@
 // Phase 1: validate(schema) — req.body
 // Task #38: validateQuery(schema) — req.query
 //           validateParams(schema) — req.params
+//
+// EXPRESS 5 COMPAT:
+//   In Express 5, `req.query` is a read-only getter (cannot be reassigned).
+//   We store parsed data on req.validatedQuery and req.validatedParams,
+//   AND try the legacy assignment for backwards-compat (Express 4 paths).
 // ═══════════════════════════════════════════════════════════════
 
 import type { Request, Response, NextFunction } from 'express';
 import type { ZodSchema, ZodError } from 'zod';
 import { ValidationError } from '../errors/index.js';
 
-/**
- * Validates req.body against a Zod schema.
- * On success: req.body replaced with parsed (stripped) data.
- * On failure: throws ValidationError with field-level details.
- */
 export function validate(schema: ZodSchema) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
@@ -26,11 +26,6 @@ export function validate(schema: ZodSchema) {
   };
 }
 
-/**
- * Validates req.query against a Zod schema.
- * Prevents array injection (e.g., ?key[]=evil&key[]=legit).
- * Coerces string values to correct types (z.coerce.number()).
- */
 export function validateQuery(schema: ZodSchema) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.query);
@@ -38,16 +33,19 @@ export function validateQuery(schema: ZodSchema) {
       const details = formatZodErrors(result.error);
       throw new ValidationError('Query parameter validation failed', details);
     }
-    // Replace req.query with parsed data (coerced + stripped)
-    (req as unknown as Record<string, unknown>).query = result.data;
+    // Express 5: req.query is a read-only getter. Try assignment for Express 4
+    // fallback, swallow TypeError silently.
+    try {
+      (req as unknown as Record<string, unknown>).query = result.data;
+    } catch {
+      // Express 5 — getter-only, assignment silently rejected.
+    }
+    // Canonical storage — handlers should read from here.
+    (req as unknown as Record<string, unknown>).validatedQuery = result.data;
     next();
   };
 }
 
-/**
- * Validates req.params against a Zod schema.
- * Prevents path traversal and SQL injection in URL params.
- */
 export function validateParams(schema: ZodSchema) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.params);
@@ -55,7 +53,12 @@ export function validateParams(schema: ZodSchema) {
       const details = formatZodErrors(result.error);
       throw new ValidationError('URL parameter validation failed', details);
     }
-    (req as unknown as Record<string, unknown>).params = result.data;
+    try {
+      (req as unknown as Record<string, unknown>).params = result.data;
+    } catch {
+      // Express 5 fallback.
+    }
+    (req as unknown as Record<string, unknown>).validatedParams = result.data;
     next();
   };
 }
