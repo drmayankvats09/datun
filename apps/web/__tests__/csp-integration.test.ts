@@ -47,9 +47,7 @@ describe('CSP integration — nonce-based route flow', () => {
 
     // Same header name, same directive structure.
     expect(landing.name).toBe(consult.name);
-    expect(landing.value.replace(landingNonce, 'N')).toBe(
-      consult.value.replace(consultNonce, 'N'),
-    );
+    expect(landing.value.replace(landingNonce, 'N')).toBe(consult.value.replace(consultNonce, 'N'));
   });
 });
 

@@ -70,9 +70,7 @@ describe('CSP — buildCspHeader (enforce mode)', () => {
   it('throws if nonce is missing', () => {
     // Simulate a JS caller that omits the required `nonce` field.
     // @ts-expect-error — `nonce` is intentionally omitted to exercise the runtime guard.
-    expect(() => buildCspHeader({ mode: 'enforce' })).toThrow(
-      /a per-request nonce is required/,
-    );
+    expect(() => buildCspHeader({ mode: 'enforce' })).toThrow(/a per-request nonce is required/);
   });
 
   it('throws if nonce is an empty string', () => {

@@ -114,11 +114,7 @@ export function buildCspHeader(opts: BuildCspOptions): CspHeader {
   // 'unsafe-inline' is ABSENT — that's the whole point.
   // 'unsafe-eval' is ABSENT — no eval() in production code.
   // ─────────────────────────────────────────────────────────────
-  const scriptSrcParts: string[] = [
-    "'self'",
-    "'strict-dynamic'",
-    `'nonce-${opts.nonce}'`,
-  ];
+  const scriptSrcParts: string[] = ["'self'", "'strict-dynamic'", `'nonce-${opts.nonce}'`];
 
   // Legacy host allowlist — IGNORED by modern browsers when strict-dynamic is
   // present. Kept for CSP Level 1 fallback (Safari < 15.4, very old Chrome).
