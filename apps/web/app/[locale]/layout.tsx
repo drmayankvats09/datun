@@ -2,16 +2,16 @@
 // ═══════════════════════════════════════════════════════════════
 // LOCALE LAYOUT — Main layout with i18n + all providers + CSP nonce
 //
-// CSP nonce flow (Task #45):
-//   1. proxy.ts generates a per-request nonce and sets `x-nonce` header.
-//   2. This layout reads it via getNonce().
-//   3. Nonce is forwarded to:
+// CSP nonce flow (Task #45 — nonce-only architecture):
+//   1. proxy.ts generates a per-request nonce for EVERY HTML route.
+//   2. Next.js applies that nonce to every framework <script> it renders.
+//   3. This layout also reads the nonce via getNonce() and forwards it to:
 //        - ThemeProvider (next-themes v0.4.6+ supports `nonce` prop).
 //        - LocaleFont (uses nonce when injecting dynamic <link> stylesheet).
 //
-// For static routes (landing, legal), getNonce() returns ''. ThemeProvider
-// receives '' which is safe — the static-route CSP allows inline scripts
-// by hash, not nonce, so absence of nonce attribute is correct.
+// If getNonce() returns '' (e.g. in unit tests with no proxy in front),
+// ThemeProvider receives `undefined` — harmless, since Next.js still
+// nonces the rendered <script> from the CSP header.
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';

@@ -3,8 +3,10 @@
 // NEXT.JS PROXY — i18n + Cloudflare + Strict CSP (Task #45)
 //
 // Adds per-request CSP machinery to the existing i18n proxy:
-//   - Per-request nonce (Web Crypto, edge-compatible).
-//   - Hybrid CSP: nonce-based for dynamic routes, hash-based for static.
+//   - Per-request nonce (Web Crypto, edge-compatible) — generated for EVERY
+//     HTML route.
+//   - Nonce-based CSP for every route (no hybrid hash branch — see
+//     lib/csp/policy.ts header for the rationale).
 //   - Reporting-Endpoints header (modern Reporting API).
 //   - COOP / CORP cross-origin headers.
 //   - Header size guard with Sentry-grade error logging (via console).
@@ -27,8 +29,6 @@ import { routing } from './i18n/routing';
 import { generateNonce } from './lib/csp/nonce';
 import { buildCspHeader, type CspMode } from './lib/csp/policy';
 import { buildReportingEndpointsHeader } from './lib/csp/reporting-endpoints';
-import { classifyRoute } from './lib/csp/route-classification';
-import { INLINE_SCRIPT_HASHES } from './lib/csp/inline-hashes';
 
 const intlProxy = createMiddleware(routing);
 
@@ -60,31 +60,16 @@ function detectUILocale(request: NextRequest): 'en' | 'hi' {
 /**
  * Apply the suite of CSP-related response headers.
  *
- * For DYNAMIC routes: emits nonce-based CSP. Caller must pass `nonce`.
- * For STATIC routes:  emits hash-based CSP using `INLINE_SCRIPT_HASHES`.
+ * Emits a nonce-based CSP for every route. The caller MUST pass the
+ * per-request nonce generated at the top of `proxy()`.
  *
- * Always sets Reporting-Endpoints, COOP, CORP, Permissions-Policy.
+ * Always sets Reporting-Endpoints, COOP, Permissions-Policy, Referrer-Policy,
+ * X-Content-Type-Options, X-Frame-Options.
  */
-function applyCspHeaders(response: NextResponse, pathname: string, nonce?: string): void {
+function applyCspHeaders(response: NextResponse, pathname: string, nonce: string): void {
   const mode = getCspMode();
-  const routeType = classifyRoute(pathname);
 
-  let csp;
-  if (routeType === 'dynamic') {
-    // Nonce-based — caller must have provided one.
-    if (!nonce) {
-      // Should never happen; defensive.
-      console.error('[proxy] CSP build skipped — dynamic route with no nonce', { pathname });
-      return;
-    }
-    csp = buildCspHeader({ mode, routeType: 'dynamic', nonce });
-  } else {
-    csp = buildCspHeader({
-      mode,
-      routeType: 'static',
-      hashes: INLINE_SCRIPT_HASHES,
-    });
-  }
+  const csp = buildCspHeader({ mode, nonce });
 
   if (csp.sizeLevel === 'error') {
     // Vercel header limit is 8 KB. We hit the warn-error threshold; log loudly.
@@ -155,6 +140,11 @@ export function proxy(request: NextRequest) {
     return response;
   }
 
+  // ── Per-request CSP nonce — generated once for EVERY HTML route ──
+  // Used by: the redirect response, the direct-IP-block response, and the
+  // normal i18n response below.
+  const nonce = generateNonce();
+
   // ── Custom UI-locale detection on root path ──
   if (pathname === '/') {
     const detected = detectUILocale(request);
@@ -169,20 +159,16 @@ export function proxy(request: NextRequest) {
       });
       // Apply CSP to the redirect response too — redirect itself shouldn't
       // need scripts, but defense in depth keeps headers consistent.
-      applyCspHeaders(response, '/');
+      applyCspHeaders(response, '/', nonce);
       return response;
     }
   }
-
-  // ── Determine if route gets a nonce (dynamic) or hashes (static) ──
-  const routeType = classifyRoute(pathname);
-  const nonce = routeType === 'dynamic' ? generateNonce() : undefined;
 
   // ── Forward nonce to server components via x-nonce REQUEST header ──
   // The intl proxy receives this enriched request; downstream `headers()`
   // calls (in layouts/pages) will see x-nonce.
   const requestHeaders = new Headers(request.headers);
-  if (nonce) requestHeaders.set(NONCE_HEADER, nonce);
+  requestHeaders.set(NONCE_HEADER, nonce);
 
   // Build a new request with the augmented headers, then hand off to next-intl.
   const enrichedRequest = new Request(request.url, {
@@ -200,7 +186,7 @@ export function proxy(request: NextRequest) {
 
   // Propagate the nonce on the response headers too (also into the request
   // chain Next.js builds internally — see next-intl proxy behavior).
-  if (nonce) response.headers.set(NONCE_HEADER, nonce);
+  response.headers.set(NONCE_HEADER, nonce);
 
   // ── Cloudflare Real IP forwarding ──
   const cfIp = request.headers.get('cf-connecting-ip');

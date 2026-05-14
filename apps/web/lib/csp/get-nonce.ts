@@ -3,8 +3,8 @@
 // SERVER COMPONENT NONCE HELPER
 //
 // In Next.js 16's App Router, server components can read request headers
-// via `next/headers`. Our proxy.ts sets `x-nonce` on the request, and this
-// helper pulls it out for use in inline `<script nonce>` tags.
+// via `next/headers`. proxy.ts forwards the per-request nonce as `x-nonce`,
+// and this helper pulls it out for use in inline `<script nonce>` tags.
 //
 // WHY a helper instead of inline `(await headers()).get('x-nonce')`?
 //   - Centralized error handling (clear message if proxy didn't set nonce)
@@ -16,11 +16,10 @@
 // will fail at build time (Next.js detects `next/headers` usage).
 //
 // FALLBACK BEHAVIOR:
-//   If `x-nonce` is missing (e.g., static route accidentally calls this,
-//   or test environment), we return an empty string and log a warning.
-//   The script will then be rejected by CSP, which is correct fail-safe
-//   behavior — better to break visibly than silently allow scripts without
-//   nonce verification.
+//   If `x-nonce` is missing (e.g., a unit-test environment with no proxy in
+//   front), we return an empty string. Callers pass `nonce || undefined` to
+//   their consumers, so a missing nonce simply omits the attribute — and
+//   Next.js still nonces the rendered <script> from the CSP header itself.
 //
 // Pattern: Next.js official strict-CSP example (App Router variant).
 // ═══════════════════════════════════════════════════════════════
@@ -55,12 +54,9 @@ export async function getNonce(): Promise<string> {
   const nonce = headersList.get(NONCE_HEADER);
 
   if (!nonce) {
-    // Why a warning, not an error: the layout calls this even on static routes
-    // (where there is no nonce). Returning empty string lets the script tag
-    // render — and CSP will block it correctly if needed.
-    // In production we want this to be silent on static routes (expected).
-    // Detection of "should have had nonce but didn't" happens at the CSP
-    // violation reporting layer.
+    // Returning '' (rather than throwing) keeps the helper safe to call from
+    // unit tests and any context with no proxy in front. In production the
+    // proxy always forwards x-nonce, so this branch is not hit.
     return '';
   }
 

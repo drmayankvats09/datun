@@ -4,8 +4,6 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build:hashes": "tsx scripts/build-inline-hashes.ts",
-    "prebuild": "tsx scripts/build-inline-hashes.ts",
     "dev": "next dev --port 3000",
     "build": "next build",
     "postbuild": "next-sitemap",

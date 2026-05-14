@@ -2,6 +2,8 @@
 
 **Purpose:** Step-by-step procedure for deploying the strict Content Security Policy to production. Use this document during Phase 2 (report-only) and Phase 3 (enforce) deployments.
 
+> **Architecture note (ADR-0005, May 14, 2026):** CSP is now nonce-only — every route receives a per-request nonce. The earlier hybrid hash/nonce model was removed. Steps below that mention "static" vs "dynamic" routes no longer apply; all routes behave identically. The `report-only` → `enforce` flip is still a single `NEXT_PUBLIC_CSP_MODE` env-var change.
+
 **Owner:** CTO.
 **Last reviewed:** May 13, 2026.
 
@@ -11,7 +13,7 @@ Before beginning Phase 2, confirm the following:
 
 - [ ] All Phase 1 files (M1: 31 files; M2: 30 files) merged to `main`.
 - [ ] `pnpm test` green on `main` for both `apps/web` and `apps/api`.
-- [ ] `pnpm --filter web run build` succeeds and `apps/web/lib/csp/inline-hashes.ts` is regenerated with the correct hashes for all five JSON-LD pages.
+- [ ] `pnpm --filter web run build` succeeds. (Note: the hash registry was removed in ADR-0005 — CSP is nonce-only; there is no longer a hash-generation build step.)
 - [ ] Migration `add_csp_violation` applied to Railway production database. Verify with:
 
 ```bash
@@ -119,4 +121,4 @@ After 7 days of stable enforce-mode operation:
 
 - [ ] Submit `datunai.com` to the HSTS preload list at https://hstspreload.org/.
 - [ ] Schedule a quarterly review of `allowed-origins.ts` to remove unused entries.
-- [ ] Update `docs/adr/0004-strict-csp-hybrid-nonce-hash.md` with the deployment date and any lessons learned.
+- [ ] Update `docs/adr/0005-csp-nonce-only.md` with the deployment date and any lessons learned.
