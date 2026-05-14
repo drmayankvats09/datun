@@ -18,16 +18,26 @@ CSP, when configured strictly, blocks the script execution that these attack cha
 
 ## Architecture Overview
 
-Datun uses a **hybrid CSP**:
+Datun uses a **nonce-only CSP**. Every HTML route receives the same
+policy shape: `apps/web/proxy.ts` generates a cryptographically secure
+128-bit nonce per request, and `apps/web/lib/csp/policy.ts` emits
+`script-src 'self' 'strict-dynamic' 'nonce-...'`. Next.js automatically
+applies that nonce to every framework `<script>` it renders.
 
-| Route Class                                                           | CSP Mechanism               | Rendering Mode      |
-| --------------------------------------------------------------------- | --------------------------- | ------------------- |
-| Static pages (`/`, locale roots, legal pages)                         | Hash-based (`'sha256-...'`) | SSG, edge-cacheable |
-| Dynamic pages (`/(auth)/*`, `/consult/*`, `/admin/*`, OAuth callback) | Nonce-based (`'nonce-...'`) | SSR per request     |
+There is no static/dynamic split. The earlier hybrid hash/nonce model
+(ADR-0004) was removed because Next.js App Router emits its own inline
+bootstrap scripts on every page; a hash registry could not cover them
+maintainably, and `'strict-dynamic'` makes the host allowlist moot for
+modern browsers. See `docs/adr/0005-csp-nonce-only.md` for the full
+rationale.
 
-The decision of which mechanism applies to a given route is made by `apps/web/lib/csp/route-classification.ts`. New routes default to **dynamic** (the safer choice).
+Inline `<script type="application/ld+json">` blocks (structured data on the
+landing and legal pages) are **non-executable** — browsers never run them,
+so `script-src` never evaluates them. They need neither a nonce nor a hash.
 
-Both mechanisms share a common builder (`apps/web/lib/csp/policy.ts`) and a single source of truth for allowed origins (`apps/web/lib/csp/allowed-origins.ts`).
+The policy builder (`apps/web/lib/csp/policy.ts`) and the single source of
+truth for allowed origins (`apps/web/lib/csp/allowed-origins.ts`) are shared
+by every route.
 
 ## Header Composition
 
@@ -39,7 +49,7 @@ Every response carries:
 4. `Cross-Origin-Resource-Policy: same-origin` (API responses only).
 5. `Strict-Transport-Security` (configured via Helmet on the API and via Vercel on the web).
 
-Refer to `apps/web/proxy.ts` for the precise set-up of dynamic-route headers and `apps/web/next.config.ts` for static-route headers.
+Refer to `apps/web/proxy.ts` for the precise per-request header set-up. `apps/web/next.config.ts` no longer sets CSP — it retains only static-asset cache headers.
 
 ## How to Add a New Third-Party Origin
 
@@ -66,7 +76,7 @@ The invariant tests will fail if any new entry uses `http://`, a bare wildcard, 
 
 ## Strict-Dynamic and Host Allowlists
 
-The script-src directive uses `'strict-dynamic'`. Per the CSP Level 3 specification, modern browsers (Chrome 73+, Firefox 68+, Safari 15.4+, Edge 79+) ignore explicit hostnames in `script-src` when `'strict-dynamic'` is present. They rely on the nonce or hash alone to authorize the initial script, then transitively trust scripts loaded from that script.
+The script-src directive uses `'strict-dynamic'`. Per the CSP Level 3 specification, modern browsers (Chrome 73+, Firefox 68+, Safari 15.4+, Edge 79+) ignore explicit hostnames in `script-src` when `'strict-dynamic'` is present. They rely on the per-request nonce alone to authorize the initial script, then transitively trust scripts loaded from that script.
 
 Legacy host entries are retained for browsers that do not implement Level 3. These act as a graceful-degradation fallback and impose no risk on modern clients.
 
@@ -99,13 +109,14 @@ The IP address is never stored in plain form. It is hashed with `SHA-256(ip || e
 
 ## Related Files
 
-- `apps/web/lib/csp/` — all client-side CSP machinery.
-- `apps/web/proxy.ts` — per-request CSP injection.
-- `apps/web/next.config.ts` — static-page CSP and other security headers.
+- `apps/web/lib/csp/` — all client-side CSP machinery (policy builder, nonce generator, allowed-origins, reporting-endpoints, header-size guard).
+- `apps/web/proxy.ts` — per-request nonce generation and CSP injection.
+- `apps/web/next.config.ts` — static-asset cache headers only (no longer sets CSP).
 - `apps/api/src/routes/security/csp-report.router.ts` — reporting endpoint.
 - `apps/api/src/services/csp-report.service.ts` — validation and persistence.
 - `packages/db/prisma/schema.prisma` — `CspViolation` model.
 - `docs/security/csp-rollout-runbook.md` — phased deployment runbook.
 - `docs/security/csp-third-party-vendors.md` — per-vendor inventory and rationale.
 - `docs/runbooks/csp-violation-spike.md` — on-call response to violation spikes.
-- `docs/adr/0004-strict-csp-hybrid-nonce-hash.md` — architecture decision record.
+- `docs/adr/0005-csp-nonce-only.md` — current architecture decision record.
+- `docs/adr/0004-strict-csp-hybrid-nonce-hash.md` — superseded ADR (historical).

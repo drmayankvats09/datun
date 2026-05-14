@@ -1,40 +1,48 @@
 // apps/web/lib/csp/policy.ts
 // ═══════════════════════════════════════════════════════════════
-// CSP POLICY BUILDER — Hybrid nonce/hash architecture
+// CSP POLICY BUILDER — Nonce-only architecture (Task #45, Phase 3)
 //
-// HYBRID DESIGN (CTO decision Day 16, post-review with Opus 4.6):
-//   - Dynamic routes (auth, consult, admin)  → nonce-based CSP (per-request)
-//   - Static routes  (landing, legal, blog)  → hash-based CSP (build-time)
+// ARCHITECTURE (CTO decision Day 17, supersedes the hybrid nonce/hash model):
+//   EVERY HTML route receives a nonce-based CSP. A cryptographically secure
+//   128-bit nonce is generated per request in apps/web/proxy.ts and emitted
+//   in `script-src 'nonce-...'`.
 //
-// Why? Nonce-based CSP REQUIRES dynamic rendering. If we force every page
-// dynamic, we lose:
-//   - SEO-friendly SSG for marketing pages
-//   - CDN edge caching at Vercel/Cloudflare
-//   - Sub-200ms TTFB on landing page
+// WHY NONCE-ONLY (and not the previous hybrid hash/nonce split)?
+//   The hybrid model classified marketing/legal pages as "static" and gave
+//   them a hash-based CSP whose hash registry covered only the inline
+//   JSON-LD blocks. But Next.js App Router emits its OWN inline bootstrap
+//   scripts (`self.__next_f.push(...)` streaming-RSC chunks) on EVERY page,
+//   static or not. Those framework scripts are not JSON-LD, their content
+//   changes per build, and `'strict-dynamic'` makes the browser ignore the
+//   host allowlist — so on a hash-only route they were all blocked.
 //
-// Hash-based CSP works at build time: we SHA-256 the inline JSON-LD blocks,
-// add `'sha256-...'` to script-src. Pages stay SSG. Tradeoff: hash registry
-// must regenerate when JSON-LD content changes (handled by build script).
+//   The fix is the path Next.js officially supports: a per-request nonce.
+//   When the CSP header carries `'nonce-...'`, Next.js automatically applies
+//   that nonce to every framework `<script>` it renders. One mechanism,
+//   one mental model, no build-time hash registry to keep in sync.
+//
+//   Note: inline `<script type="application/ld+json">` blocks are DATA, not
+//   executable script — browsers never run them, so `script-src` never
+//   evaluates them and they need neither a hash nor a nonce.
 //
 // STRICT-DYNAMIC RATIONALE:
-//   `'strict-dynamic'` tells modern browsers: "If a script has my nonce/hash,
-//    treat its dynamically-inserted child scripts as trusted." This lets
-//    nonced bootstrap scripts (e.g., Next.js __NEXT_DATA__) load real code
-//    without needing each individual URL in script-src.
+//   `'strict-dynamic'` tells modern browsers: "if a script carries my nonce,
+//    treat the scripts IT inserts as trusted too." This lets a nonced
+//    bootstrap script (e.g. Next.js's loader) pull in `/_next/static/...`
+//    chunks without each chunk URL needing to be in `script-src`.
 //
-//   IMPORTANT: When `'strict-dynamic'` is present, modern browsers IGNORE
-//   allowlisted hosts in script-src (treats them as if absent). The host
-//   allowlist is kept ONLY for CSP Level 1 / legacy browsers (Safari < 15.4,
-//   IE Edge Legacy). Modern browsers use nonce + strict-dynamic exclusively.
-//   This is INTENTIONAL — opus 4.6 review surfaced this as a clarity gap.
+//   IMPORTANT: when `'strict-dynamic'` is present, modern browsers IGNORE
+//   the host allowlist in `script-src`. The allowlist is retained ONLY for
+//   CSP Level 1 / legacy browsers (Safari < 15.4). Modern browsers rely on
+//   nonce + strict-dynamic exclusively. This is INTENTIONAL.
 //
-// MODE FLIP (Phase 3):
+// MODE FLIP (Phase 2 → Phase 3):
 //   `mode: 'report-only'` → emits Content-Security-Policy-Report-Only header
 //   `mode: 'enforce'`     → emits Content-Security-Policy header
 //   Same policy content — only the header name differs.
 //
-// Pattern: Stripe strict-CSP, Google web.dev/strict-csp,
-//          MDN CSP best practices (2026).
+// Pattern: Next.js official strict-CSP guide, Stripe strict-CSP,
+//          Google web.dev/strict-csp, MDN CSP best practices (2026).
 // ═══════════════════════════════════════════════════════════════
 
 import {
@@ -51,22 +59,13 @@ import { assertHeaderSize, HeaderSizeLevel } from './header-size-guard';
 /** CSP enforcement mode. */
 export type CspMode = 'enforce' | 'report-only';
 
-/** Route classification — determines whether to use nonce or hash. */
-export type CspRouteType = 'static' | 'dynamic';
-
 /** Input options to build a CSP header. */
 export interface BuildCspOptions {
   /** Policy mode — controls which response header to use. */
   mode: CspMode;
 
-  /** Route type — controls nonce vs hash strategy. */
-  routeType: CspRouteType;
-
-  /** Per-request nonce (required for dynamic routes, ignored for static). */
-  nonce?: string;
-
-  /** Inline-script hashes (required for static routes, ignored for dynamic). */
-  hashes?: readonly string[];
+  /** Per-request nonce — required. Generated by proxy.ts via generateNonce(). */
+  nonce: string;
 
   /**
    * Override report endpoint for tests.
@@ -93,52 +92,36 @@ export interface CspHeader {
 /**
  * Build a complete CSP header from policy inputs.
  *
- * @throws Error if `routeType === 'dynamic'` but `nonce` is missing.
- * @throws Error if `routeType === 'static'` but `hashes` is missing.
+ * @throws Error if `nonce` is missing or empty.
  *
  * @example
  *   const { name, value } = buildCspHeader({
  *     mode: 'enforce',
- *     routeType: 'dynamic',
  *     nonce: generateNonce(),
  *   });
  *   response.headers.set(name, value);
  */
 export function buildCspHeader(opts: BuildCspOptions): CspHeader {
-  if (opts.routeType === 'dynamic' && !opts.nonce) {
-    throw new Error('CSP build: dynamic route requires a nonce');
-  }
-  if (opts.routeType === 'static' && (!opts.hashes || opts.hashes.length === 0)) {
-    // Static pages with no inline scripts are still valid — emit empty hashes.
-    // We only throw if `hashes` is explicitly undefined (caller forgot).
-    if (opts.hashes === undefined) {
-      throw new Error('CSP build: static route requires a hashes array (can be empty)');
-    }
+  if (!opts.nonce) {
+    throw new Error('CSP build: a per-request nonce is required');
   }
 
   const reportUri = opts.reportEndpoint ?? REPORT_ENDPOINT_URL;
 
   // ── script-src ─────────────────────────────────────────────────
-  // Strategy:
-  //   - dynamic: 'self' + 'strict-dynamic' + 'nonce-...' + hosts (legacy fallback)
-  //   - static : 'self' + 'strict-dynamic' + 'sha256-...' + hosts (legacy fallback)
+  // Strategy: 'self' + 'strict-dynamic' + 'nonce-...' + hosts (legacy fallback)
   //
-  // 'unsafe-inline' is ABSENT from both — that's the whole point.
+  // 'unsafe-inline' is ABSENT — that's the whole point.
   // 'unsafe-eval' is ABSENT — no eval() in production code.
   // ─────────────────────────────────────────────────────────────
-  const scriptSrcParts: string[] = ["'self'", "'strict-dynamic'"];
+  const scriptSrcParts: string[] = [
+    "'self'",
+    "'strict-dynamic'",
+    `'nonce-${opts.nonce}'`,
+  ];
 
-  if (opts.routeType === 'dynamic') {
-    scriptSrcParts.push(`'nonce-${opts.nonce}'`);
-  } else {
-    // Add each hash (already prefixed `sha256-`, `sha384-`, or `sha512-`)
-    for (const hash of opts.hashes ?? []) {
-      scriptSrcParts.push(`'${hash}'`);
-    }
-  }
-
-  // Legacy host allowlist — IGNORED by modern browsers when strict-dynamic is present.
-  // Kept for CSP Level 1 fallback (Safari < 15.4, very old Chrome).
+  // Legacy host allowlist — IGNORED by modern browsers when strict-dynamic is
+  // present. Kept for CSP Level 1 fallback (Safari < 15.4, very old Chrome).
   for (const origin of SCRIPT_SRC_ORIGINS) scriptSrcParts.push(origin);
 
   // 'https:' fallback for absolute legacy browsers — they ignore the rest.
