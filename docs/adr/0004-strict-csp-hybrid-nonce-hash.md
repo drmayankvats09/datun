@@ -1,10 +1,12 @@
 # ADR-0004: Strict Content Security Policy with Hybrid Nonce/Hash Architecture
 
-**Status:** Accepted.
+> **Superseded by [ADR-0005](./0005-csp-nonce-only.md) on May 14, 2026.** The hybrid hash/nonce split described below was found to be incompatible with Next.js App Router's inline streaming scripts. The hash branch has been removed; all HTML routes now use a per-request nonce. This document is retained for historical context.
+
+**Status:** Superseded by ADR-0005.
 **Date:** May 13, 2026.
 **Deciders:** CTO (Mayank Vats).
 **Supersedes:** None.
-**Superseded by:** None.
+**Superseded by:** ADR-0005 (CSP Nonce-Only Architecture).
 
 ## Context
 
