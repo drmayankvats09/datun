@@ -18,6 +18,8 @@ const NAMESPACES = [
   'errors',
   'glossary',
   'admin',
+  // Task #46 — media upload UI + errors
+  'media',
 ] as const;
 
 async function loadNamespace(ns: string, loc: string): Promise<Record<string, unknown>> {

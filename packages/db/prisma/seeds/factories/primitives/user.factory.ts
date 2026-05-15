@@ -93,6 +93,7 @@ export const userFactory = defineFactory<User, UserTransient>({
       passwordHash,
       name: fullName,
       avatarUrl: null,
+      avatarMediaId: null,
 
       firstName,
       lastName,
@@ -138,6 +139,7 @@ export const userFactory = defineFactory<User, UserTransient>({
         passwordHash: (u.passwordHash as string | null | undefined) ?? null,
         name: (u.name as string | undefined) ?? '',
         avatarUrl: (u.avatarUrl as string | null | undefined) ?? null,
+        avatarMediaId: (u.avatarMediaId as string | null | undefined) ?? null,
 
         firstName: (u.firstName as string | null | undefined) ?? null,
         lastName: (u.lastName as string | null | undefined) ?? null,

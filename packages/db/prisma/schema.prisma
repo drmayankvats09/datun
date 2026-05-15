@@ -449,6 +449,50 @@ enum SeedErrorCode {
   E_SCHEMA_MISMATCH
 }
 
+// ─── Task #46: Media pipeline enums ────────────────────────────
+
+enum MediaKind {
+  // Private — clinical PHI under DPDP
+  CONSULTATION_PHOTO
+  PRESCRIPTION_DOC
+  USER_AVATAR
+  // Public — marketing & content
+  CLINIC_COVER
+  CLINIC_GALLERY
+  DOCTOR_AVATAR
+  BLOG_IMAGE
+  OG_IMAGE
+  BRAND_ASSET
+}
+
+enum MediaProvider {
+  R2
+  CLOUDFLARE_IMAGES
+  CLOUDINARY
+}
+
+enum MediaModerationStatus {
+  PENDING
+  APPROVED
+  FLAGGED
+  REJECTED
+}
+
+enum MediaScanStatus {
+  PENDING
+  CLEAN
+  INFECTED
+}
+
+enum MediaLifecycleStatus {
+  INITIATED
+  UPLOADED
+  PROCESSING
+  READY
+  REJECTED
+  FAILED
+}
+
 /// Pharmacology category (WHO ATC classification first letter)
 /// Source: WHO ATC/DDD Index 2024
 enum MedicationCategory {
@@ -664,11 +708,16 @@ model User {
   consentLogs              ConsentLog[]
   emailLogs                EmailLog[]
   mediaUploads             MediaAsset[]             @relation("UploadedByUser")
+  // ── Task #46: avatar via MediaAsset (replaces deprecated avatarUrl string) ──
+  avatarMediaId            String?                  @db.Uuid
+  avatarMedia              MediaAsset?              @relation("UserAvatarMedia", fields: [avatarMediaId], references: [id])
   trainingLabels           TrainingLabel[]
   patientAccesses          UserPatientAccess[]      @relation("UserAccesses")
   jobLogs                  JobLog[]
   dataAssetVersions        DataAssetVersion[]
   dataAssetVersionsCreated DataAssetVersion[]       @relation("DataAssetVersionCreator")
+  mediaAsset               MediaAsset?              @relation(fields: [mediaAssetId], references: [id])
+  mediaAssetId             String?                  @db.Uuid
 
   @@index([email])
   @@index([phone])
@@ -838,12 +887,12 @@ model UserAuthIdentity {
 // ═══════════════════════════════════════════════════════════════
 
 model Clinic {
-  id                  String     @id @default(uuid()) @db.Uuid
-  ownerId             String     @db.Uuid
-  owner               User       @relation(fields: [ownerId], references: [id])
+  id                  String      @id @default(uuid()) @db.Uuid
+  ownerId             String      @db.Uuid
+  owner               User        @relation(fields: [ownerId], references: [id])
   name                String
-  slug                String     @unique
-  description         String?    @db.Text
+  slug                String      @unique
+  description         String?     @db.Text
   phone               String
   email               String
   website             String?
@@ -856,28 +905,31 @@ model Clinic {
   longitude           Float
   registrationNumber  String?
   registrationCertUrl String?
-  isVerified          Boolean    @default(false)
-  tier                ClinicTier @default(LITE) // Derived from Subscription — Subscription is source of truth
+  isVerified          Boolean     @default(false)
+  tier                ClinicTier  @default(LITE) // Derived from Subscription — Subscription is source of truth
   trialEndsAt         DateTime?
   logoUrl             String?
   coverImageUrl       String?
+  // ── Task #46: cover via MediaAsset (coverImageUrl deprecated, kept for backfill) ──
+  coverImageMediaId   String?     @db.Uuid
+  coverImageMedia     MediaAsset? @relation("ClinicCoverMedia", fields: [coverImageMediaId], references: [id])
   photos              Json?
   services            Json?
   specialties         Json?
   languages           Json?
   openingHours        Json?
-  averageRating       Float      @default(0)
-  totalReviews        Int        @default(0)
-  totalLeads          Int        @default(0)
-  totalAppointments   Int        @default(0)
-  isActive            Boolean    @default(true)
-  onboardingStep      Int        @default(0)
+  averageRating       Float       @default(0)
+  totalReviews        Int         @default(0)
+  totalLeads          Int         @default(0)
+  totalAppointments   Int         @default(0)
+  isActive            Boolean     @default(true)
+  onboardingStep      Int         @default(0)
   // ── B-1 v2: Service capabilities ──
-  acceptsEmergencies  Boolean    @default(false)
-  acceptsInsurance    Boolean    @default(false)
-  acceptsTelemedicine Boolean    @default(true)
-  timezone            String     @default("Asia/Kolkata")
-  primaryLocale       LocaleCode @default(en)
+  acceptsEmergencies  Boolean     @default(false)
+  acceptsInsurance    Boolean     @default(false)
+  acceptsTelemedicine Boolean     @default(true)
+  timezone            String      @default("Asia/Kolkata")
+  primaryLocale       LocaleCode  @default(en)
 
   // ── B-1 v2: Subscription denormalization (mirrors Subscription source-of-truth) ──
   subscriptionTier      SubscriptionTier @default(FREE)
@@ -998,13 +1050,16 @@ model Doctor {
   yearsExperience Int?
 
   // ── Profile ──
-  bio                 String? @db.Text
+  bio                 String?     @db.Text
   avatarUrl           String?
-  isAcceptingPatients Boolean @default(true)
-  acceptsEmergencies  Boolean @default(false)
-  acceptsTelemedicine Boolean @default(true)
-  rating              Float   @default(0)
-  totalConsultations  Int     @default(0)
+  // ── Task #46: avatar via MediaAsset (avatarUrl deprecated, kept for backfill) ──
+  avatarMediaId       String?     @db.Uuid
+  avatarMedia         MediaAsset? @relation("DoctorAvatarMedia", fields: [avatarMediaId], references: [id])
+  isAcceptingPatients Boolean     @default(true)
+  acceptsEmergencies  Boolean     @default(false)
+  acceptsTelemedicine Boolean     @default(true)
+  rating              Float       @default(0)
+  totalConsultations  Int         @default(0)
 
   // ── B-1 v2: Primary clinic ──
   clinicId String? @db.Uuid
@@ -1088,6 +1143,9 @@ model Consultation {
   investigationsNeeded       Json?
   visualFindings             String?            @db.Text
   photoUrls                  Json?
+  // ── Task #46: primary cover photo via MediaAsset (photoUrls JSON deprecated for new rows) ──
+  coverPhotoMediaId          String?            @db.Uuid
+  coverPhotoMedia            MediaAsset?        @relation("ConsultationCoverMedia", fields: [coverPhotoMediaId], references: [id])
   followUpDays               Int?
   // ── AI tracking ──
   aiProvider                 String             @default("claude")
@@ -1191,16 +1249,19 @@ model Consultation {
 // ═══════════════════════════════════════════════════════════════
 
 model ConsultationMessage {
-  id             String             @id @default(uuid()) @db.Uuid
-  consultationId String             @db.Uuid
-  consultation   Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-  role           MessageRole
-  content        String             @db.Text
-  contentType    MessageContentType @default(TEXT)
-  imageUrl       String?
-  chips          Json?
-  selectedChip   String?
-  sequenceNumber Int
+  id              String             @id @default(uuid()) @db.Uuid
+  consultationId  String             @db.Uuid
+  consultation    Consultation       @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  role            MessageRole
+  content         String             @db.Text
+  contentType     MessageContentType @default(TEXT)
+  imageUrl        String?
+  // ── Task #46: attached image via MediaAsset (imageUrl deprecated, kept for backfill) ──
+  attachedMediaId String?            @db.Uuid
+  attachedMedia   MediaAsset?        @relation("MessageAttachedMedia", fields: [attachedMediaId], references: [id])
+  chips           Json?
+  selectedChip    String?
+  sequenceNumber  Int
 
   // ── Task #44: Per-message AI metadata (granular cost + lineage) ──
   aiProvider     String? // "claude" | "openai" | "gemini" — which provider answered
@@ -1859,6 +1920,9 @@ model ConsentLog {
   revokedAt DateTime?
   createdAt DateTime       @default(now())
 
+  // ── Task #46: which media uploads cite this consent as legal basis ──
+  mediaAssets MediaAsset[] @relation("MediaConsent")
+
   @@index([userId, purpose])
   @@map("consent_logs")
 }
@@ -1869,24 +1933,98 @@ model ConsentLog {
 // Provider-agnostic: Cloudinary today, S3 tomorrow, one query.
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// TABLE 28: MediaAsset — Task #46 extended
+// Centralized media registry — photos, PDFs, marketing graphics.
+// Provider-agnostic origin (R2 today, Cloudinary fallback adapter)
+// + Cloudflare Images delivery layer for variants.
+// ═══════════════════════════════════════════════════════════════
+
 model MediaAsset {
-  id           String    @id @default(uuid()) @db.Uuid
-  storageKey   String
-  publicUrl    String
-  mimeType     String
-  sizeBytes    Int?
-  checksum     String?
-  entityType   String
-  entityId     String    @db.Uuid
-  uploadedById String?   @db.Uuid
-  uploadedBy   User?     @relation("UploadedByUser", fields: [uploadedById], references: [id])
-  isSensitive  Boolean   @default(false)
-  metadata     Json?
-  createdAt    DateTime  @default(now())
-  deletedAt    DateTime?
+  id String @id @default(uuid()) @db.Uuid
+
+  // ── Task #46: classification ──
+  kind     MediaKind
+  provider MediaProvider @default(R2)
+
+  // ── Existing storage primitives (kept) ──
+  storageKey String
+  /// For private kinds: the immutable origin URL (typically R2 internal).
+  /// Clients NEVER receive this directly — they receive freshly-signed
+  /// CF Images URLs scoped to a variant. For public kinds it may be the
+  /// long-cache CDN URL.
+  publicUrl  String
+  mimeType   String
+  sizeBytes  Int?
+  checksum   String?
+
+  // ── Task #46: polymorphic anchor (kept for legacy + new FKs alongside) ──
+  entityType String
+  entityId   String @db.Uuid
+
+  // ── Uploader (kept) ──
+  uploadedById String? @db.Uuid
+  uploadedBy   User?   @relation("UploadedByUser", fields: [uploadedById], references: [id])
+
+  // ── Task #46: lifecycle ──
+  status          MediaLifecycleStatus @default(INITIATED)
+  processedAt     DateTime?
+  processingError String?              @db.Text
+
+  // ── Task #46: image-specific metadata ──
+  width            Int?
+  height           Int?
+  blurhash         String?
+  /// Variant → resolved URL map; populated by the worker after CF Images upload.
+  /// Shape: { thumbnail: string, medium: string, large: string }
+  variants         Json?
+  /// Cloudflare Images asset identifier (used to build delivery URLs).
+  cfImageId        String?
+  /// Original filename as the uploader's OS reported it. Audit only.
+  originalFilename String?
+
+  // ── Task #46: PHI hygiene ──
+  exifStripped Boolean @default(false)
+
+  // ── Task #46: moderation + scan ──
+  moderationStatus MediaModerationStatus @default(PENDING)
+  moderationScore  Float?
+  moderationFlags  Json?
+  scanStatus       MediaScanStatus       @default(PENDING)
+
+  // ── Task #46: DPDP + training hooks ──
+  /// FK to ConsentLog row that grants legal basis for this upload.
+  /// Required at the service layer for `CONSULTATION_PHOTO` and `PRESCRIPTION_DOC`.
+  consentLogId     String?     @db.Uuid
+  consentLog       ConsentLog? @relation("MediaConsent", fields: [consentLogId], references: [id])
+  /// True only when the consent purpose includes DATA_TRAINING. Used by the
+  /// future vision-model training pipeline (Task #44 + Month 14–16 roadmap).
+  trainingEligible Boolean     @default(false)
+
+  // ── Task #46: retention ──
+  /// NULL = forever; otherwise the retention cron purges on/after this date.
+  retentionExpiresAt DateTime?
+
+  // ── Existing flags (kept) ──
+  isSensitive Boolean   @default(false)
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  // ── Task #46: back-relations for explicit FK columns ──
+  userAvatars        User[]                @relation("UserAvatarMedia")
+  doctorAvatars      Doctor[]              @relation("DoctorAvatarMedia")
+  clinicCovers       Clinic[]              @relation("ClinicCoverMedia")
+  consultationCovers Consultation[]        @relation("ConsultationCoverMedia")
+  messageAttachments ConsultationMessage[] @relation("MessageAttachedMedia")
+  users              User[]
 
   @@index([entityType, entityId])
   @@index([uploadedById])
+  @@index([kind, status])
+  @@index([status, processedAt])
+  @@index([retentionExpiresAt])
+  @@index([consentLogId])
   @@map("media_assets")
 }
 

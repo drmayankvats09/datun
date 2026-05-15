@@ -224,6 +224,7 @@ exports[`factory snapshots — schema drift detection > clinic factory output ma
   "averageRating": 4.66,
   "city": "Chennai",
   "complianceProfile": "DPDP_INDIA",
+  "coverImageMediaId": null,
   "coverImageUrl": null,
   "createdAt": "<DATE>",
   "dataRetentionDays": 2555,
@@ -440,6 +441,7 @@ exports[`factory snapshots — schema drift detection > doctor factory output ma
 {
   "acceptsEmergencies": false,
   "acceptsTelemedicine": false,
+  "avatarMediaId": null,
   "avatarUrl": null,
   "bio": "MDS qualified dentist with 27 years of clinical experience. Specialized in general dentistry.",
   "clinicId": null,
@@ -1181,6 +1183,7 @@ exports[`factory snapshots — schema drift detection > trainingExample factory 
 exports[`factory snapshots — schema drift detection > user factory output matches snapshot 1`] = `
 {
   "appleId": null,
+  "avatarMediaId": null,
   "avatarUrl": null,
   "city": null,
   "createdAt": "<DATE>",

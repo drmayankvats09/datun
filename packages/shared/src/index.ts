@@ -45,3 +45,7 @@ export * from './trace';
 // ── Task #44: Training pipeline types ──
 export * from './types/training';
 export * from './types/judge';
+
+// ── Task #46: Media pipeline types + constants ──
+export * from './types/media';
+export * from './constants/media.constants';

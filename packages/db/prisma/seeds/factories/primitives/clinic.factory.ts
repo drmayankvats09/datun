@@ -145,6 +145,7 @@ export const clinicFactory = defineFactory<Clinic, ClinicTransient>({
 
       logoUrl: null,
       coverImageUrl: null,
+      coverImageMediaId: null,
 
       // ── JSON fields (schema: Json? — accept null or stringified) ──
       photos: null,

@@ -71,6 +71,31 @@ const envSchema = z.object({
   HEALTHCHECK_7DAY_URL: z.string().optional(),
   HEALTHCHECK_WHATSAPP_URL: z.string().optional(),
   HEALTHCHECK_DAILY_REPORT_URL: z.string().optional(),
+
+  // ── Task #46: Storage provider selection ──
+  STORAGE_PROVIDER_PRIMARY: z.enum(['r2', 'cloudinary']).default('r2'),
+
+  // ── Task #46: Cloudflare R2 (origin storage, S3-compatible) ──
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_PRIVATE: z.string().default('datun-media-prod-private'),
+  R2_BUCKET_PUBLIC: z.string().default('datun-media-prod-public'),
+  R2_PUBLIC_HOSTNAME: z.string().optional(),
+
+  // ── Task #46: Cloudflare Images (delivery / variants) ──
+  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_ACCOUNT_HASH: z.string().optional(),
+  CLOUDFLARE_IMAGES_API_TOKEN: z.string().optional(),
+
+  // ── Task #46: Cloudinary (fallback adapter only — usually unset) ──
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+
+  // ── Task #46: signed-URL TTLs ──
+  MEDIA_SIGNED_UPLOAD_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  MEDIA_SIGNED_READ_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 });
 
 export type Env = z.infer<typeof envSchema>;

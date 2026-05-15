@@ -1,0 +1,25 @@
+{
+  "uploader": {
+    "dropOrClick": "Drop an image here or click to choose",
+    "supportedFormats": "JPG, PNG, WebP or HEIC",
+    "dropzoneAriaLabel": "Image upload dropzone",
+    "stageProcessing": "Preparing image...",
+    "stageUploading": "Uploading...",
+    "stageConfirming": "Finishing up...",
+    "uploadComplete": "Upload complete",
+    "uploadAnother": "Upload another",
+    "cancel": "Cancel",
+    "takePhoto": "Take a photo",
+    "chooseFile": "Choose a file"
+  },
+  "errors": {
+    "cannotProcess": "Couldn't open this image. Try another?",
+    "notAnImage": "This doesn't look like a photo. Please send an image.",
+    "looksLikeVideo": "This looks like a video. Please send a photo instead.",
+    "networkError": "Connection problem. Please try again.",
+    "limitReached": "You've reached the upload limit for this item.",
+    "invalidInput": "Something about this upload isn't right.",
+    "forbidden": "You don't have permission to upload here.",
+    "generic": "Something went wrong. Please try again."
+  }
+}

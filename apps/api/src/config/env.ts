@@ -101,6 +101,48 @@ const envSchema = z.object({
     .string()
     .min(32, 'CSP_IP_HASH_SALT must be at least 32 characters')
     .optional(),
+
+  // ── Task #46: Storage provider selection ──
+  /**
+   * Which {@link StorageProvider} is the active origin.
+   * 'r2' is the day-one default. 'cloudinary' is the documented fallback
+   * adapter for sustained-outage scenarios (memory rule #27).
+   */
+  STORAGE_PROVIDER_PRIMARY: z.enum(['r2', 'cloudinary']).default('r2'),
+
+  // ── Task #46: Cloudflare R2 (origin storage, S3-compatible) ──
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_PRIVATE: z.string().default('datun-media-prod-private'),
+  R2_BUCKET_PUBLIC: z.string().default('datun-media-prod-public'),
+  /**
+   * Public R2 hostname for assets in the public bucket (configured as a
+   * custom domain like `media.datunai.com` in the Cloudflare dashboard,
+   * or the default `<account>.r2.dev`).
+   */
+  R2_PUBLIC_HOSTNAME: z.string().optional(),
+
+  // ── Task #46: Cloudflare Images (delivery / variants) ──
+  CLOUDFLARE_ACCOUNT_ID: z.string().optional(),
+  CLOUDFLARE_ACCOUNT_HASH: z.string().optional(),
+  CLOUDFLARE_IMAGES_API_TOKEN: z.string().optional(),
+  /**
+   * Optional HMAC signing key for Cloudflare Images private variant URLs
+   * (Pro tier feature). When set, the delivery provider mints signed URLs
+   * with `exp` + `sig` query params for clinical assets. When unset, the
+   * provider falls back to app-layer auth gating (documented in ADR-0006).
+   */
+  CLOUDFLARE_IMAGES_SIGNING_KEY: z.string().optional(),
+
+  // ── Task #46: Cloudinary (fallback adapter only — usually unset) ──
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+
+  // ── Task #46: signed-URL TTLs (override defaults from constants) ──
+  MEDIA_SIGNED_UPLOAD_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  MEDIA_SIGNED_READ_TTL_SECONDS: z.coerce.number().int().positive().default(300),
 });
 
 const refinedSchema = envSchema.superRefine((data, ctx) => {
@@ -190,6 +232,58 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
     console.warn(
       '⚠️ JWT_REFRESH_SECRET not set — falling back to JWT_SECRET for refresh tokens. Set a separate secret in production.',
     );
+  }
+
+  // ── Task #46: media provider validation ──
+  if (data.STORAGE_PROVIDER_PRIMARY === 'r2') {
+    const r2Required = ['R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'] as const;
+    for (const key of r2Required) {
+      if (!data[key]) {
+        // In production this is fatal; in dev/test we only warn so local
+        // backends can boot without Cloudflare credentials.
+        if (data.NODE_ENV === 'production') {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${key} required when STORAGE_PROVIDER_PRIMARY=r2 in production`,
+            path: [key],
+          });
+        }
+      }
+    }
+  }
+  if (data.STORAGE_PROVIDER_PRIMARY === 'cloudinary') {
+    const cnRequired = [
+      'CLOUDINARY_CLOUD_NAME',
+      'CLOUDINARY_API_KEY',
+      'CLOUDINARY_API_SECRET',
+    ] as const;
+    for (const key of cnRequired) {
+      if (!data[key]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${key} required when STORAGE_PROVIDER_PRIMARY=cloudinary`,
+          path: [key],
+        });
+      }
+    }
+  }
+  // Cloudflare Images is the delivery layer for both R2 and (optionally)
+  // Cloudinary. Production must have account hash + token.
+  if (data.NODE_ENV === 'production') {
+    if (!data.CLOUDFLARE_ACCOUNT_HASH) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CLOUDFLARE_ACCOUNT_HASH required in production for media delivery',
+        path: ['CLOUDFLARE_ACCOUNT_HASH'],
+      });
+    }
+    if (!data.CLOUDFLARE_IMAGES_API_TOKEN) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CLOUDFLARE_IMAGES_API_TOKEN required in production for media delivery',
+        path: ['CLOUDFLARE_IMAGES_API_TOKEN'],
+      });
+    }
   }
 });
 
