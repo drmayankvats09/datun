@@ -19,12 +19,14 @@ import {
   WHATSAPP_JOB_NAMES,
   EMAIL_JOB_NAMES,
   PDF_JOB_NAMES,
+  MEDIA_JOB_NAMES,
   generateTraceId,
   type WhatsAppTemplateJob,
   type WhatsAppTextJob,
   type EmailTemplatedJob,
   type EmailRawJob,
   type ConsultationPdfJob,
+  type MediaProcessingJob,
 } from '@repo/shared';
 import { getQueue } from './queues.js';
 import { logger } from '../logger.js';
@@ -35,6 +37,7 @@ import {
   buildEmailTemplatedJobId,
   buildEmailRawJobId,
   buildPdfConsultationJobId,
+  buildMediaProcessingJobId,
 } from './job-id.js';
 
 export interface EnqueueResult {
@@ -219,6 +222,50 @@ export async function enqueueConsultationPdf(payload: ConsultationPdfJob): Promi
     return { ok: true, jobId, traceId };
   } catch (err) {
     logger.error('[enqueue:pdf] failed', {
+      error: (err as Error).message,
+      jobId,
+      traceId,
+    });
+    return { ok: false, reason: (err as Error).message, traceId };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MEDIA PROCESSING PRODUCER — Task #46
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Enqueue the worker pipeline for a freshly-uploaded MediaAsset.
+ * Called from `media.service.confirmUpload` after the client confirms
+ * a successful R2 direct upload.
+ *
+ * Idempotent: same mediaId → same jobId → BullMQ refuses duplicates.
+ * Safe to call in the rare case the API retries the confirm step.
+ */
+export async function enqueueMediaProcessing(
+  payload: Omit<MediaProcessingJob, 'traceId'>,
+): Promise<EnqueueResult> {
+  const queue = getQueue(QUEUE_NAMES.MEDIA_PROCESSING);
+  if (!queue) {
+    logger.warn('[enqueue:media] queue not configured — media processing deferred');
+    return { ok: false, reason: 'queue not configured' };
+  }
+
+  const jobId = buildMediaProcessingJobId(payload.mediaId);
+  const traceId = resolveTraceId();
+  const enriched: MediaProcessingJob = { ...payload, traceId };
+
+  try {
+    await queue.add(MEDIA_JOB_NAMES.PROCESS_MEDIA, enriched, { jobId });
+    logger.info('[enqueue:media] processing queued', {
+      jobId,
+      traceId,
+      mediaId: payload.mediaId,
+      kind: payload.kind,
+    });
+    return { ok: true, jobId, traceId };
+  } catch (err) {
+    logger.error('[enqueue:media] failed', {
       error: (err as Error).message,
       jobId,
       traceId,

@@ -1,33 +1,43 @@
 // ═══════════════════════════════════════════════════════════════
-// RESPONSIVE IMAGE — next/image wrapper with responsive sizes
-// Automatic: blur placeholder, correct sizes, lazy loading.
-// India optimization: smaller images on slow networks.
+// RESPONSIVE IMAGE — DEPRECATED SHIM (Task #46)
+//
+// This component is retained ONLY as a backwards-compatibility wrapper
+// over the new <OptimizedImage>. New code SHOULD import OptimizedImage
+// directly from `@/components/media/optimized-image`.
+//
+// Legacy callers using `<ResponsiveImage aspect="aspect-video" ... />`
+// continue to work transparently — the prop shape and behaviour are
+// preserved via this re-export.
+//
+// Removal target: when grep shows zero `ResponsiveImage` import sites
+// (tracked in docs/migrations/MEDIA-V2.md).
 // ═══════════════════════════════════════════════════════════════
 
-import Image, { type ImageProps } from 'next/image';
-import { cn } from '@/lib/utils';
+import type { JSX } from 'react';
+import type { ImageProps } from 'next/image';
+import { OptimizedImage } from '@/components/media/optimized-image';
 
 interface ResponsiveImageProps extends Omit<ImageProps, 'sizes'> {
-  /** Aspect ratio class (e.g., 'aspect-video', 'aspect-square') */
+  /** Aspect ratio class (e.g., 'aspect-video', 'aspect-square'). */
   aspect?: string;
 }
 
+/**
+ * @deprecated Use <OptimizedImage> from `@/components/media/optimized-image`
+ *             directly. This wrapper exists only for legacy call sites.
+ */
 export function ResponsiveImage({
-  className,
   aspect = 'aspect-video',
   alt,
-  ...props
-}: ResponsiveImageProps) {
+  className,
+  ...rest
+}: ResponsiveImageProps): JSX.Element {
   return (
-    <div className={cn('relative overflow-hidden rounded-lg', aspect, className)}>
-      <Image
-        className="object-cover"
-        fill
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        alt={alt}
-        // P4-F21: Don't override loading — next/image auto-sets based on priority
-        {...props}
-      />
-    </div>
+    <OptimizedImage
+      {...rest}
+      alt={alt}
+      aspect={aspect}
+      {...(className !== undefined && { className })}
+    />
   );
 }

@@ -101,6 +101,9 @@ export const FONT_SRC_ORIGINS = flatten(FONT_ORIGINS);
 export const IMG_ORIGINS = {
   cloudinary: ['https://res.cloudinary.com'],
   cloudflare: ['https://*.cloudflare.com'],
+  // Task #46 — Cloudflare Images delivery + R2 public hostname
+  cloudflareImages: ['https://imagedelivery.net'],
+  r2Public: ['https://*.datunai.com'],
 } as const satisfies Record<string, readonly string[]>;
 
 export const IMG_SRC_ORIGINS = flatten(IMG_ORIGINS);

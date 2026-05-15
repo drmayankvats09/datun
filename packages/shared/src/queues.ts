@@ -23,6 +23,8 @@ export const QUEUE_NAMES = {
   SHADOW_COMPARE: 'shadow-compare',
   // Task #44 — LLM-as-judge auto-grading
   JUDGE_GRADING: 'judge-grading',
+  // Task #46 — Media processing pipeline (EXIF strip, moderation, variants)
+  MEDIA_PROCESSING: 'media-processing',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -201,6 +203,14 @@ export const QUEUE_DEFAULTS = {
     removeOnComplete: { count: 30 }, // 30 days history
     removeOnFail: { count: 60 },
   },
+  // Task #46 — Media processing: EXIF strip, scan, moderation, variants.
+  // Heavier than emails — keep 7-day completed history for ops debugging.
+  [QUEUE_NAMES.MEDIA_PROCESSING]: {
+    attempts: 3,
+    backoff: { type: 'exponential' as const, delay: 10_000 },
+    removeOnComplete: { count: 500, age: 7 * 24 * 60 * 60 },
+    removeOnFail: { count: 2000, age: 30 * 24 * 60 * 60 },
+  },
 } as const;
 
 /**
@@ -230,6 +240,8 @@ export const WORKER_LIMITERS = {
   'shadow-compare': { max: 1, duration: 1000 },
   // Task #44 — LLM-as-judge auto-grading
   'judge-grading': { max: 1, duration: 1000 }, // serialized — protects Anthropic API rate limit
+  // Task #46 — media processing
+  'media-processing': { max: 5, duration: 1000 }, // sharp + moderation; CPU-bound, paced
 } as const;
 // Worker concurrency per queue (Phase G additions)
 export const WORKER_CONCURRENCY: Record<string, number> = {
@@ -243,4 +255,27 @@ export const WORKER_CONCURRENCY: Record<string, number> = {
   [QUEUE_NAMES.DRIFT_CHECK]: 1,
   [QUEUE_NAMES.SHADOW_COMPARE]: 1,
   [QUEUE_NAMES.JUDGE_GRADING]: 1, // serialized — protects API rate limit
+  [QUEUE_NAMES.MEDIA_PROCESSING]: 3, // 3 concurrent processors per worker container
 };
+
+// ═══════════════════════════════════════════════════════════════
+// MEDIA PROCESSING QUEUE — Job names + payloads (Task #46)
+// ═══════════════════════════════════════════════════════════════
+
+export const MEDIA_JOB_NAMES = {
+  PROCESS_MEDIA: 'process-media',
+} as const;
+
+export type MediaJobName = (typeof MEDIA_JOB_NAMES)[keyof typeof MEDIA_JOB_NAMES];
+
+/**
+ * Payload for the media-processing pipeline. The worker resolves
+ * everything else (kind, uploader, storageKey) from the DB by mediaId.
+ * We keep the payload small so jobs serialise compactly in Redis.
+ */
+export interface MediaProcessingJob {
+  mediaId: string;
+  /** MediaKind value — string mirror of Prisma enum. */
+  kind: string;
+  traceId?: string;
+}

@@ -257,6 +257,7 @@ export const doctorFactory = defineFactory<Doctor, DoctorTransient>({
       // Profile
       bio,
       avatarUrl: null,
+      avatarMediaId: null,
       isAcceptingPatients,
       acceptsEmergencies,
       acceptsTelemedicine,
@@ -299,6 +300,7 @@ export const doctorFactory = defineFactory<Doctor, DoctorTransient>({
 
         bio: (d.bio as string | null | undefined) ?? null,
         avatarUrl: (d.avatarUrl as string | null | undefined) ?? null,
+        avatarMediaId: (d.avatarMediaId as string | null | undefined) ?? null,
         isAcceptingPatients: (d.isAcceptingPatients as boolean | undefined) ?? true,
         acceptsEmergencies: (d.acceptsEmergencies as boolean | undefined) ?? false,
         acceptsTelemedicine: (d.acceptsTelemedicine as boolean | undefined) ?? true,

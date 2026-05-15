@@ -1,0 +1,25 @@
+{
+  "uploader": {
+    "dropOrClick": "Yahan photo daaliye ya click kariye",
+    "supportedFormats": "JPG, PNG, WebP ya HEIC",
+    "dropzoneAriaLabel": "Photo upload zone",
+    "stageProcessing": "Photo taiyaar ho rahi hai...",
+    "stageUploading": "Upload ho rahi hai...",
+    "stageConfirming": "Almost done...",
+    "uploadComplete": "Photo upload ho gayi",
+    "uploadAnother": "Aur photo daaliye",
+    "cancel": "Cancel",
+    "takePhoto": "Photo lijiye",
+    "chooseFile": "File chuniye"
+  },
+  "errors": {
+    "cannotProcess": "Photo open nahi ho rahi. Doosri try kariye?",
+    "notAnImage": "Yeh photo nahi lag rahi. Kripya ek photo bhejiye.",
+    "looksLikeVideo": "Yeh ek video lag rahi hai. Kripya photo bhejiye.",
+    "networkError": "Internet problem hai. Phir try kariye.",
+    "limitReached": "Aapne upload ki limit pakad li hai.",
+    "invalidInput": "Kuch upload mein dikkat hai.",
+    "forbidden": "Aapko yahan upload ki permission nahi hai.",
+    "generic": "Kuch problem aayi. Kripya phir try kariye."
+  }
+}

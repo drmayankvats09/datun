@@ -18,6 +18,7 @@ import { consultationRouter } from './consultation.router.js';
 import { userRouter } from './user.router.js';
 import { webhookRouter } from './webhook.router.js';
 import { adminRouter } from './admin/index.js';
+import { mediaRouter } from './media.router.js';
 import { generalLimiter } from '../middleware/rate-limit.js';
 
 export function mountRoutes(app: Express): void {
@@ -29,6 +30,7 @@ export function mountRoutes(app: Express): void {
   app.use('/api', chatRouter);
   app.use('/api', consultationRouter);
   app.use('/api', userRouter);
+  app.use('/api', mediaRouter);
 
   // Admin API — JWT + ADMIN role required, gated by ADMIN_ROUTES_ENABLED flag.
   // Includes /api/admin/security/* (Task #45).

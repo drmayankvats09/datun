@@ -21,11 +21,30 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
 
   images: {
+    // Task #46 — Cloudflare Images custom loader for delivery.
+    // The loader file builds imagedelivery.net URLs per requested width.
+    // We keep `remotePatterns` for completeness (legacy <img> tags, OG
+    // image fetchers) and to allow the dev experience to work without
+    // the loader override locally.
+    loader: 'custom',
+    loaderFile: './lib/media/cloudflare-loader.ts',
+    formats: ['image/avif', 'image/webp'],
+    // Pre-defined width breakpoints — `next/image` picks the closest.
+    // Tuned for our Cloudflare variants: 200 (thumbnail), 640 (medium),
+    // 1200 (large). Extra entries support intermediate srcset sizes.
+    deviceSizes: [200, 320, 480, 640, 768, 1024, 1280, 1568],
+    imageSizes: [16, 32, 48, 64, 96, 128, 200, 256, 384],
+    // Cache the optimised images for 7 days on the Next.js cache layer.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
+      // Legacy — kept until all Cloudinary references are migrated.
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // Cloudflare Images delivery hostname.
+      { protocol: 'https', hostname: 'imagedelivery.net' },
+      // R2 public bucket hostname (configured per-environment).
+      // The wildcard subdomain covers media.datunai.com and any future
+      // subdomain we use for public R2 assets.
+      { protocol: 'https', hostname: '**.datunai.com' },
     ],
   },
 

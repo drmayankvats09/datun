@@ -13,6 +13,8 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1042.0",
+    "@aws-sdk/s3-request-presigner": "^3.1042.0",
     "@bull-board/api": "^7",
     "@bull-board/express": "^7",
     "@logtail/node": "^0.5.6",
@@ -30,12 +32,14 @@
     "@upstash/redis": "^1.37.0",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.3",
+    "blurhash": "^2.0.5",
     "bullmq": "^5",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-basic-auth": "^1",
     "express-rate-limit": "^7.5.0",
+    "file-type": "^19.6.0",
     "helmet": "^8.1.0",
     "ioredis": "^5",
     "jsonwebtoken": "^9.0.2",
@@ -43,9 +47,10 @@
     "node-cron": "^4.0.3",
     "pdfkit": "^0.16.0",
     "resend": "^4.5.1",
-    "winston": "^3.17.0",
+    "sharp": "^0.34.2",
     "tsup": "^8.5.0",
     "typescript": "5.9.2",
+    "winston": "^3.17.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

@@ -18,3 +18,8 @@ export { useNetworkQuality } from './use-network-quality';
 export { useKeyboardVisible } from './use-keyboard-visible';
 export { useWebVitals } from './use-web-vitals';
 export { useDatunFormatter } from './use-datun-formatter';
+
+// ── Task #46 — Media upload + progressive image loading ──
+export { useMediaUpload } from './use-media-upload';
+export type { UseMediaUploadState, UploadStage, UploadError } from './use-media-upload';
+export { useProgressiveImageLoad } from './use-progressive-image-load';

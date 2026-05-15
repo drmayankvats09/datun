@@ -32,6 +32,7 @@ import { processDataQualityJob } from './processors/data-quality-daily.processor
 import { processDriftCheckJob } from './processors/drift-check-hourly.processor.js';
 import { processShadowComparisonJob } from './processors/shadow-comparison-daily.processor.js';
 import { processJudgeGradingJob } from './processors/judge-grading.processor.js';
+import { processMediaJob } from './processors/media-processing.processor.js';
 
 const workers: Worker[] = [];
 
@@ -144,6 +145,8 @@ async function main(): Promise<void> {
     buildWorker(QUEUE_NAMES.JUDGE_GRADING, 1, processJudgeGradingJob as Processor),
     buildWorker(QUEUE_NAMES.DRIFT_CHECK, 1, processDriftCheckJob as Processor),
     buildWorker(QUEUE_NAMES.SHADOW_COMPARE, 1, processShadowComparisonJob as Processor),
+    // Task #46 — Media processing (EXIF strip, scan, moderation, CF Images variants)
+    buildWorker(QUEUE_NAMES.MEDIA_PROCESSING, 3, processMediaJob as Processor),
   );
 
   // Start health server (port 4001) for Railway healthcheck + metrics

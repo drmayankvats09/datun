@@ -107,3 +107,11 @@ export function buildScheduledJobId(args: {
 }): string {
   return `sched:${args.jobName}:${args.bucket}`;
 }
+
+/**
+ * Media processing job ID — one job per MediaAsset, ever. Same mediaId
+ * = same jobId = BullMQ refuses duplicate enqueue. Idempotency Day 1.
+ */
+export function buildMediaProcessingJobId(mediaId: string): string {
+  return `media-proc:${mediaId}`;
+}
