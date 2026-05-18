@@ -21,7 +21,16 @@
 // 2026): user-facing messaging never blames, never mentions size.
 // ═══════════════════════════════════════════════════════════════
 
-import { fileTypeFromBuffer } from 'file-type';
+// ── file-type lazy loader (ESM-only package, CJS bundle compatibility) ──
+// See worker/processors/media-processing.processor.ts for full rationale.
+let _fileTypeFromBuffer: typeof import('file-type').fileTypeFromBuffer | null = null;
+async function fileTypeFromBuffer(buf: Uint8Array) {
+  if (!_fileTypeFromBuffer) {
+    const mod = await import('file-type');
+    _fileTypeFromBuffer = mod.fileTypeFromBuffer;
+  }
+  return _fileTypeFromBuffer(buf);
+}
 
 import {
   INPUT_MIME_TYPES,

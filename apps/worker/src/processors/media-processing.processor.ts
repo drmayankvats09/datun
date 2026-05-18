@@ -37,8 +37,21 @@ import {
 } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 import { encode as encodeBlurhash } from 'blurhash';
-import { fileTypeFromBuffer } from 'file-type';
 import axios, { type AxiosError } from 'axios';
+
+// ── file-type lazy loader (ESM-only package, CJS bundle compatibility) ──
+// file-type v19+ is pure ESM. tsup bundles us as CJS. Static `require()`
+// fails (ERR_PACKAGE_PATH_NOT_EXPORTED). Solution: lazy dynamic `import()`
+// at first use — Node supports ESM import from CJS at runtime.
+// Module is cached after first call, so the import cost is one-time.
+let _fileTypeFromBuffer: typeof import('file-type').fileTypeFromBuffer | null = null;
+async function fileTypeFromBuffer(buf: Uint8Array) {
+  if (!_fileTypeFromBuffer) {
+    const mod = await import('file-type');
+    _fileTypeFromBuffer = mod.fileTypeFromBuffer;
+  }
+  return _fileTypeFromBuffer(buf);
+}
 
 import { prisma, Prisma } from '@repo/db';
 import {
