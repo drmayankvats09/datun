@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1042.0",
-    "@aws-sdk/s3-request-presigner": "^3.1042.0",
+    "@aws-sdk/s3-request-presigner": "^3.1048.0",
     "@bull-board/api": "^7",
     "@bull-board/express": "^7",
     "@logtail/node": "^0.5.6",
