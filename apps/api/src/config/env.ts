@@ -267,23 +267,26 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       }
     }
   }
-  // Cloudflare Images is the delivery layer for both R2 and (optionally)
-  // Cloudinary. Production must have account hash + token.
-  if (data.NODE_ENV === 'production') {
-    if (!data.CLOUDFLARE_ACCOUNT_HASH) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'CLOUDFLARE_ACCOUNT_HASH required in production for media delivery',
-        path: ['CLOUDFLARE_ACCOUNT_HASH'],
-      });
-    }
-    if (!data.CLOUDFLARE_IMAGES_API_TOKEN) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'CLOUDFLARE_IMAGES_API_TOKEN required in production for media delivery',
-        path: ['CLOUDFLARE_IMAGES_API_TOKEN'],
-      });
-    }
+  // Cloudflare Images is an OPTIONAL delivery layer for variant generation.
+  // R2 origin (datun-media-prod-public bucket via media.datunai.com) serves
+  // images directly without CF Images. CF Images can be enabled later via
+  // CLOUDFLARE_ACCOUNT_HASH + CLOUDFLARE_IMAGES_API_TOKEN env vars when
+  // volume justifies the $5/month subscription.
+  // Memory rule: Task #46 ships in R2-only mode; CF Images dormant.
+  // If account hash is set, token must also be set (defensive pair check).
+  if (data.CLOUDFLARE_ACCOUNT_HASH && !data.CLOUDFLARE_IMAGES_API_TOKEN) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'CLOUDFLARE_IMAGES_API_TOKEN required when CLOUDFLARE_ACCOUNT_HASH is set',
+      path: ['CLOUDFLARE_IMAGES_API_TOKEN'],
+    });
+  }
+  if (data.CLOUDFLARE_IMAGES_API_TOKEN && !data.CLOUDFLARE_ACCOUNT_HASH) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'CLOUDFLARE_ACCOUNT_HASH required when CLOUDFLARE_IMAGES_API_TOKEN is set',
+      path: ['CLOUDFLARE_ACCOUNT_HASH'],
+    });
   }
 });
 
