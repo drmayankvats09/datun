@@ -12,6 +12,18 @@
 // If getNonce() returns '' (e.g. in unit tests with no proxy in front),
 // ThemeProvider receives `undefined` — harmless, since Next.js still
 // nonces the rendered <script> from the CSP header.
+//
+// PHASE 3 (Task #47) UPDATE:
+//   Mounted <QueryProvider> between NextIntlClientProvider and
+//   ThemeProvider. Order chosen so that:
+//     - ThemeProvider stays outermost on <html> (next-themes adds the
+//       class attribute there).
+//     - QueryProvider sits ABOVE everything that consumes server-state
+//       hooks — AppProvider (route tracker etc.) and child pages.
+//     - Toaster sits BELOW QueryProvider so the QueryCache's global
+//       error handler can fire toasts via sonner.
+//
+//   No other markup changed. Zero impact on existing styling/behaviour.
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';
@@ -21,6 +33,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/providers/app-provider';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
@@ -86,18 +99,20 @@ export default async function LocaleLayout({
     <html lang={locale} className={locale === 'en' ? inter.variable : ''} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider messages={messages}>
-          <LocaleFont nonce={nonce || undefined} />
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem
-            disableTransitionOnChange
-            nonce={nonce || undefined}
-          >
-            <TranslationBanner />
-            <AppProvider>{children}</AppProvider>
-            <Toaster richColors position="top-right" />
-          </ThemeProvider>
+          <QueryProvider>
+            <LocaleFont nonce={nonce || undefined} />
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+              nonce={nonce || undefined}
+            >
+              <TranslationBanner />
+              <AppProvider>{children}</AppProvider>
+              <Toaster richColors position="top-right" />
+            </ThemeProvider>
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -1,5 +1,11 @@
+// apps/web/hooks/index.ts
 // ═══════════════════════════════════════════════════════════════
 // HOOKS — Centralized re-export. Import from '@/hooks' everywhere.
+//
+// PHASE 2 (Task #47) UPDATE — ADDITIVE ONLY:
+//   Added 2 wildcard re-exports at the bottom for the new
+//   ./queries and ./mutations sub-folders. No existing exports
+//   removed or renamed. Zero risk to running app.
 // ═══════════════════════════════════════════════════════════════
 
 // ── Task #34 — State Persistence ──
@@ -23,3 +29,7 @@ export { useDatunFormatter } from './use-datun-formatter';
 export { useMediaUpload } from './use-media-upload';
 export type { UseMediaUploadState, UploadStage, UploadError } from './use-media-upload';
 export { useProgressiveImageLoad } from './use-progressive-image-load';
+
+// ── Task #47 — TanStack Query hooks ──
+export * from './queries';
+export * from './mutations';

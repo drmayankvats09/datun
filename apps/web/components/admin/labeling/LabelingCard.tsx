@@ -14,6 +14,12 @@
 //   1. Validate: score ≥ 3 OR correctionText non-empty
 //   2. Call onSubmit prop (parent hook handles API)
 //   3. Clear local state on success
+//
+// PHASE 3 (Task #47) UPDATE — IMPORT MIGRATION ONLY:
+//   `SubmitLabelInput` now imports from `@/hooks/mutations` (the new
+//   TanStack Query mutation surface) instead of the legacy
+//   `@/lib/training-api`. The TYPE SHAPE IS IDENTICAL — this is a
+//   zero-risk path swap so we can retire the legacy hand-rolled client.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -31,7 +37,7 @@ import { ChevronDown, ChevronUp, Scale as ScaleIcon, SkipForward } from 'lucide-
 import { QualityChip } from './QualityChip';
 import { CorrectionEditor } from './CorrectionEditor';
 import { MessageThread } from './MessageThread';
-import type { SubmitLabelInput } from '@/lib/training-api';
+import type { SubmitLabelInput } from '@/hooks/mutations';
 
 interface LabelingCardProps {
   item: LabelingQueueItem;

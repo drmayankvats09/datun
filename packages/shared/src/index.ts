@@ -1,5 +1,13 @@
+// packages/shared/src/index.ts
 // ═══════════════════════════════════════════════════════════════
 // @repo/shared — Barrel export
+//
+// PHASE 1 (Task #47) UPDATE — ADDITIVE ONLY:
+//   Added 4 new export lines at the bottom for Phase 1 DTOs:
+//     ./types/consultation, ./types/clinic,
+//     ./types/appointment, ./types/notification
+//
+//   No existing exports removed or renamed. Zero risk to running app.
 // ═══════════════════════════════════════════════════════════════
 
 // ── Brand & Identity ──
@@ -32,6 +40,7 @@ export { COMPONENTS } from './components';
 export { SEO } from './seo';
 export { PWA } from './pwa';
 
+// ── Queues (Task #41 BullMQ) ──
 export * from './queues';
 
 // ── Email Helpers ──
@@ -40,6 +49,7 @@ export { emailWrapper, emailFooter } from './emails';
 // ── Validators (Task #38) ──
 export * from './validators/index';
 
+// ── Trace / observability ──
 export * from './trace';
 
 // ── Task #44: Training pipeline types ──
@@ -49,3 +59,9 @@ export * from './types/judge';
 // ── Task #46: Media pipeline types + constants ──
 export * from './types/media';
 export * from './constants/media.constants';
+
+// ── Task #47: Frontend DTOs (TanStack Query layer) ──
+export * from './types/consultation';
+export * from './types/clinic';
+export * from './types/appointment';
+export * from './types/notification';
