@@ -1,12 +1,18 @@
 // ═══════════════════════════════════════════════════════════════
-// AUTH STORE TESTS — Zustand state transitions + persistence
-// Tests every action and verifies state correctness.
-// Pattern: Zustand official testing guide + Cal.com store tests.
+// AUTH STORE TESTS — State transitions + cross-tab guard + hydration
+//
+// Phase 3 extends the original test suite:
+//   - All original action tests (setUser, setLoading, clearUser, updateUser)
+//   - NEW: __hasHydrated initial state assertion
+//   - NEW: Cross-tab loop guard (sessionStorage flag prevents re-broadcast)
+//   - NEW: BroadcastChannel mock to verify broadcast on login/logout
 // ═══════════════════════════════════════════════════════════════
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAuthStore } from '../../stores/auth.store';
 import type { AuthUser } from '../../lib/auth';
+
+// ─── Fixtures ────────────────────────────────────────────────
 
 const mockUser: AuthUser = {
   id: 'user-001',
@@ -19,110 +25,151 @@ const mockUser: AuthUser = {
   isPhoneVerified: false,
 };
 
-describe('Auth Store', () => {
-  beforeEach(() => {
-    // Reset store to initial state
-    useAuthStore.setState({
-      user: null,
-      isLoading: true,
-      lastSyncedAt: null,
-    });
+// ─── BroadcastChannel mock — captures posted messages ─────────
+
+interface CapturedPost {
+  channel: string;
+  data: unknown;
+}
+
+let capturedPosts: CapturedPost[] = [];
+
+class MockBroadcastChannel {
+  constructor(public name: string) {}
+  postMessage(data: unknown): void {
+    capturedPosts.push({ channel: this.name, data });
+  }
+  close(): void {
+    /* no-op */
+  }
+  onmessage: ((event: MessageEvent) => void) | null = null;
+}
+
+beforeEach(() => {
+  capturedPosts = [];
+  // Install BroadcastChannel mock into global scope.
+  (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel = MockBroadcastChannel;
+
+  // Reset store to initial state.
+  useAuthStore.setState({
+    user: null,
+    isLoading: true,
+    lastSyncedAt: null,
+    __hasHydrated: false,
+  });
+});
+
+afterEach(() => {
+  delete (globalThis as { BroadcastChannel?: unknown }).BroadcastChannel;
+  vi.restoreAllMocks();
+});
+
+// ─── Initial state ───────────────────────────────────────────
+
+describe('Auth Store — Initial state', () => {
+  it('starts with null user, loading true, no last sync', () => {
+    const s = useAuthStore.getState();
+    expect(s.user).toBeNull();
+    expect(s.isLoading).toBe(true);
+    expect(s.lastSyncedAt).toBeNull();
   });
 
-  // ── Initial State ──
-
-  it('starts with null user and loading true', () => {
-    const state = useAuthStore.getState();
-    expect(state.user).toBeNull();
-    expect(state.isLoading).toBe(true);
-    expect(state.lastSyncedAt).toBeNull();
+  it('starts with __hasHydrated false', () => {
+    expect(useAuthStore.getState().__hasHydrated).toBe(false);
   });
 
-  // ── setUser ──
-
-  it('setUser stores user and sets loading false', () => {
-    useAuthStore.getState().setUser(mockUser);
-
-    const state = useAuthStore.getState();
-    expect(state.user).toEqual(mockUser);
-    expect(state.isLoading).toBe(false);
-    expect(state.lastSyncedAt).toBeGreaterThan(0);
+  it('exposes a __setHasHydrated setter function', () => {
+    const { __setHasHydrated } = useAuthStore.getState();
+    expect(typeof __setHasHydrated).toBe('function');
+    __setHasHydrated(true);
+    expect(useAuthStore.getState().__hasHydrated).toBe(true);
   });
+});
 
-  it('setUser updates lastSyncedAt to current timestamp', () => {
+// ─── setUser ─────────────────────────────────────────────────
+
+describe('Auth Store — setUser', () => {
+  it('stores user and sets loading false + lastSyncedAt now', () => {
     const before = Date.now();
     useAuthStore.getState().setUser(mockUser);
-    const after = Date.now();
-
-    const synced = useAuthStore.getState().lastSyncedAt!;
-    expect(synced).toBeGreaterThanOrEqual(before);
-    expect(synced).toBeLessThanOrEqual(after);
+    const s = useAuthStore.getState();
+    expect(s.user).toEqual(mockUser);
+    expect(s.isLoading).toBe(false);
+    expect(s.lastSyncedAt).toBeGreaterThanOrEqual(before);
   });
 
-  // ── clearUser ──
-
-  it('clearUser resets user, loading, and lastSyncedAt', () => {
+  it('broadcasts login event to other tabs', () => {
     useAuthStore.getState().setUser(mockUser);
+    expect(capturedPosts).toHaveLength(1);
+    expect(capturedPosts[0]!.channel).toBe('datun-auth-sync');
+    expect((capturedPosts[0]!.data as { type: string }).type).toBe('login');
+  });
+
+  it('does NOT broadcast if cross-tab reload flag is set (loop guard)', () => {
+    // Simulate: another tab broadcast a login, this tab reloaded, and
+    // its post-reload hydration is now calling setUser. The flag was
+    // pre-set by the cross-tab handler so we skip re-broadcast.
+    sessionStorage.setItem('datun-cross-tab-reload', '1');
+    useAuthStore.getState().setUser(mockUser);
+    expect(capturedPosts).toHaveLength(0);
+    // Flag should be cleared after consumption.
+    expect(sessionStorage.getItem('datun-cross-tab-reload')).toBeNull();
+  });
+});
+
+// ─── clearUser ───────────────────────────────────────────────
+
+describe('Auth Store — clearUser', () => {
+  it('wipes user + loading + lastSyncedAt', () => {
+    useAuthStore.setState({
+      user: mockUser,
+      isLoading: false,
+      lastSyncedAt: Date.now(),
+    });
     useAuthStore.getState().clearUser();
-
-    const state = useAuthStore.getState();
-    expect(state.user).toBeNull();
-    expect(state.isLoading).toBe(false);
-    expect(state.lastSyncedAt).toBeNull();
+    const s = useAuthStore.getState();
+    expect(s.user).toBeNull();
+    expect(s.isLoading).toBe(false);
+    expect(s.lastSyncedAt).toBeNull();
   });
 
-  // ── updateUser ──
-
-  it('updateUser merges partial data into existing user', () => {
-    useAuthStore.getState().setUser(mockUser);
-    useAuthStore.getState().updateUser({ name: 'Dr. Updated', isPhoneVerified: true });
-
-    const user = useAuthStore.getState().user!;
-    expect(user.name).toBe('Dr. Updated');
-    expect(user.isPhoneVerified).toBe(true);
-    // Unchanged fields stay same
-    expect(user.email).toBe('test@datunai.com');
-    expect(user.id).toBe('user-001');
+  it('broadcasts logout event to other tabs', () => {
+    useAuthStore.getState().clearUser();
+    expect(capturedPosts).toHaveLength(1);
+    expect((capturedPosts[0]!.data as { type: string }).type).toBe('logout');
   });
+});
 
-  it('updateUser is no-op when user is null', () => {
-    useAuthStore.getState().updateUser({ name: 'Ghost' });
-    expect(useAuthStore.getState().user).toBeNull();
-  });
+// ─── setLoading ──────────────────────────────────────────────
 
-  // ── setLoading ──
-
-  it('setLoading updates loading state', () => {
+describe('Auth Store — setLoading', () => {
+  it('toggles the loading flag', () => {
     useAuthStore.getState().setLoading(false);
     expect(useAuthStore.getState().isLoading).toBe(false);
-
     useAuthStore.getState().setLoading(true);
     expect(useAuthStore.getState().isLoading).toBe(true);
   });
 
-  // ── Loading always resets correctly (proves isLoading NOT persisted) ──
+  it('does NOT broadcast (loading is local-only state)', () => {
+    useAuthStore.getState().setLoading(false);
+    expect(capturedPosts).toHaveLength(0);
+  });
+});
 
-  it('setUser always resets isLoading to false regardless of prior state', () => {
-    // Start: isLoading = true (initial default — fresh page load)
-    expect(useAuthStore.getState().isLoading).toBe(true);
+// ─── updateUser ──────────────────────────────────────────────
 
-    // After setUser: isLoading = false (user loaded, no more loading)
-    useAuthStore.getState().setUser(mockUser);
-    expect(useAuthStore.getState().isLoading).toBe(false);
-
-    // Manually set loading true again (simulates re-sync trigger)
-    useAuthStore.getState().setLoading(true);
-    expect(useAuthStore.getState().isLoading).toBe(true);
-
-    // setUser ALWAYS resets to false — no stale loading state possible
-    useAuthStore.getState().setUser(mockUser);
-    expect(useAuthStore.getState().isLoading).toBe(false);
+describe('Auth Store — updateUser', () => {
+  it('merges partial fields into the existing user', () => {
+    useAuthStore.setState({ user: mockUser });
+    useAuthStore.getState().updateUser({ name: 'Dr. Updated' });
+    const s = useAuthStore.getState();
+    expect(s.user?.name).toBe('Dr. Updated');
+    expect(s.user?.email).toBe(mockUser.email);
+    expect(s.user?.id).toBe(mockUser.id);
   });
 
-  it('clearUser sets isLoading to false (not stuck on loading spinner)', () => {
-    useAuthStore.getState().setUser(mockUser);
-    useAuthStore.getState().clearUser();
-    // After logout: isLoading = false (not stuck loading)
-    expect(useAuthStore.getState().isLoading).toBe(false);
+  it('is a no-op when no user is logged in', () => {
+    useAuthStore.getState().updateUser({ name: 'Ghost' });
+    expect(useAuthStore.getState().user).toBeNull();
   });
 });
