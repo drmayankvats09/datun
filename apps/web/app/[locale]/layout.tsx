@@ -24,6 +24,18 @@
 //       error handler can fire toasts via sonner.
 //
 //   No other markup changed. Zero impact on existing styling/behaviour.
+//
+// TASK #49 UPDATE — added <PostHogProvider> inside QueryProvider:
+//   Placement constraints:
+//     - INSIDE QueryProvider — the provider's auth-identify effect
+//       reads from `useAuthStore()`, which is fine without a Query
+//       wrapper, but Phase D will switch identify to a TanStack
+//       hook and that requires the QueryProvider to be above.
+//     - OUTSIDE ThemeProvider — irrelevant to ordering, but keeping
+//       it ABOVE ThemeProvider lets every flag-gated UI mount with
+//       analytics already initialised.
+//   When NEXT_PUBLIC_POSTHOG_KEY is unset the provider runs in
+//   degraded mode (no SDK load, no events, no overhead).
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';
@@ -34,6 +46,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/providers/app-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
+import { PostHogProvider } from '@/components/providers/posthog-provider';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
@@ -100,18 +113,20 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
-            <LocaleFont nonce={nonce || undefined} />
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-              nonce={nonce || undefined}
-            >
-              <TranslationBanner />
-              <AppProvider>{children}</AppProvider>
-              <Toaster richColors position="top-right" />
-            </ThemeProvider>
+            <PostHogProvider>
+              <LocaleFont nonce={nonce || undefined} />
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem
+                disableTransitionOnChange
+                nonce={nonce || undefined}
+              >
+                <TranslationBanner />
+                <AppProvider>{children}</AppProvider>
+                <Toaster richColors position="top-right" />
+              </ThemeProvider>
+            </PostHogProvider>
           </QueryProvider>
         </NextIntlClientProvider>
       </body>

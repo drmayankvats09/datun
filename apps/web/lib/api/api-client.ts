@@ -22,6 +22,10 @@
 // Pagination convention: `data: PaginatedData<T> = { items, pagination }`
 // inside the envelope. authFetch unwraps `.data`, hooks read `.items`
 // and `.pagination` directly.
+//
+// TASK #49 — added `flags` (public read) + `adminFlags` (admin CRUD)
+// namespaces. Imports from @repo/shared mirror the DTOs returned by
+// `apps/api/src/routes/admin/flags.router.ts`.
 // ═══════════════════════════════════════════════════════════════
 
 import type {
@@ -50,6 +54,15 @@ import type {
   CancelAppointmentInput,
   NotificationDTO,
   NotificationListFilters,
+  // ── Task #49 (Phase C) ───────────────────────────────
+  FlagKey,
+  FlagMap,
+  FeatureFlagDTO,
+  FeatureFlagOverrideDTO,
+  FlagOverrideEntity,
+  CreateFlagPayload,
+  UpdateFlagPayload,
+  KillSwitchPayload,
 } from '@repo/shared';
 
 import { authFetch, type AuthFetchOptions } from './auth-fetch';
@@ -446,6 +459,207 @@ const labeling = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// FLAGS — Task #49 (public read)
+// ═══════════════════════════════════════════════════════════════
+// The public flag map endpoint. Anonymous-friendly — when no token
+// is present, the backend returns the public/default set.
+// ═══════════════════════════════════════════════════════════════
+
+interface FlagsResponse {
+  readonly flags: FlagMap;
+  readonly context: {
+    readonly anonymous: boolean;
+    readonly userId: string | null;
+    readonly clinicId: string | null;
+    readonly region: string | null;
+  };
+  readonly evaluatedAt: string;
+  readonly ttlSeconds: number;
+}
+
+const flags = {
+  list(ctx?: ApiCallContext): Promise<FlagsResponse> {
+    return authFetch<FlagsResponse>(ENDPOINTS.flags.list, {
+      method: 'GET',
+      ...withCtx(ctx),
+    });
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN — FLAGS (Task #49 CRUD + kill switch + overrides)
+// ═══════════════════════════════════════════════════════════════
+// Every call is gated by the parent admin router (JWT + ADMIN role).
+// Returns shapes mirror DTOs from `apps/api/src/routes/admin/flags.router.ts`.
+// ═══════════════════════════════════════════════════════════════
+
+interface AdminFlagListResponse {
+  readonly items: readonly FeatureFlagDTO[];
+  readonly knownKeys?: readonly string[];
+  readonly pagination?: {
+    readonly page: number;
+    readonly pageSize: number;
+    readonly total: number;
+    readonly totalPages: number;
+  };
+}
+
+interface AdminFlagDetailResponse {
+  readonly flag: FeatureFlagDTO;
+  readonly overrides: readonly FeatureFlagOverrideDTO[];
+}
+
+interface AdminUpsertOverrideInput {
+  readonly entityType: FlagOverrideEntity;
+  readonly entityId: string;
+  readonly value: boolean;
+  readonly reason?: string;
+  readonly expiresAt?: string;
+}
+
+const adminFlags = {
+  list(ctx?: ApiCallContext): Promise<AdminFlagListResponse> {
+    return authFetch<AdminFlagListResponse>(ENDPOINTS.admin.flags.list, {
+      method: 'GET',
+      ...withCtx(ctx),
+    });
+  },
+
+  listArchived(ctx?: ApiCallContext): Promise<AdminFlagListResponse> {
+    return authFetch<AdminFlagListResponse>(ENDPOINTS.admin.flags.archived, {
+      method: 'GET',
+      ...withCtx(ctx),
+    });
+  },
+
+  detail(key: FlagKey | string, ctx?: ApiCallContext): Promise<AdminFlagDetailResponse> {
+    return authFetch<AdminFlagDetailResponse>(ENDPOINTS.admin.flags.detail(key), {
+      method: 'GET',
+      ...withCtx(ctx),
+    });
+  },
+
+  create(payload: CreateFlagPayload, ctx?: ApiCallContext): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.create, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...withCtx(ctx),
+    });
+  },
+
+  update(
+    key: FlagKey | string,
+    payload: UpdateFlagPayload,
+    ctx?: ApiCallContext,
+  ): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.update(key), {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+      ...withCtx(ctx),
+    });
+  },
+
+  kill(
+    key: FlagKey | string,
+    payload: KillSwitchPayload,
+    ctx?: ApiCallContext,
+  ): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.kill(key), {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      ...withCtx(ctx),
+    });
+  },
+
+  restore(key: FlagKey | string, ctx?: ApiCallContext): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.restore(key), {
+      method: 'POST',
+      ...withCtx(ctx),
+    });
+  },
+
+  archive(key: FlagKey | string, ctx?: ApiCallContext): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.archive(key), {
+      method: 'POST',
+      ...withCtx(ctx),
+    });
+  },
+
+  unarchive(key: FlagKey | string, ctx?: ApiCallContext): Promise<{ flag: FeatureFlagDTO }> {
+    return authFetch<{ flag: FeatureFlagDTO }>(ENDPOINTS.admin.flags.unarchive(key), {
+      method: 'POST',
+      ...withCtx(ctx),
+    });
+  },
+
+  listOverrides(
+    key: FlagKey | string,
+    ctx?: ApiCallContext,
+  ): Promise<{ items: readonly FeatureFlagOverrideDTO[] }> {
+    return authFetch<{ items: readonly FeatureFlagOverrideDTO[] }>(
+      ENDPOINTS.admin.flags.listOverrides(key),
+      { method: 'GET', ...withCtx(ctx) },
+    );
+  },
+
+  upsertOverride(
+    key: FlagKey | string,
+    payload: AdminUpsertOverrideInput,
+    ctx?: ApiCallContext,
+  ): Promise<{ override: FeatureFlagOverrideDTO }> {
+    return authFetch<{ override: FeatureFlagOverrideDTO }>(
+      ENDPOINTS.admin.flags.upsertOverride(key),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        ...withCtx(ctx),
+      },
+    );
+  },
+
+  deleteOverride(
+    key: FlagKey | string,
+    overrideId: string,
+    ctx?: ApiCallContext,
+  ): Promise<{ deleted: boolean }> {
+    return authFetch<{ deleted: boolean }>(ENDPOINTS.admin.flags.deleteOverride(key, overrideId), {
+      method: 'DELETE',
+      ...withCtx(ctx),
+    });
+  },
+
+  flushCache(ctx?: ApiCallContext): Promise<{ flushed: true }> {
+    return authFetch<{ flushed: true }>(ENDPOINTS.admin.flags.flushCache, {
+      method: 'POST',
+      ...withCtx(ctx),
+    });
+  },
+
+  runSync(
+    ctx?: ApiCallContext,
+  ): Promise<{ ok: boolean; flagsSynced: number; errors: number; message?: string }> {
+    return authFetch<{ ok: boolean; flagsSynced: number; errors: number; message?: string }>(
+      ENDPOINTS.admin.flags.runSync,
+      { method: 'POST', ...withCtx(ctx) },
+    );
+  },
+
+  syncStatus(ctx?: ApiCallContext): Promise<{
+    enabled: boolean;
+    intervalSeconds: number;
+    lastSuccessAt: string | null;
+    lastErrorMessage: string | null;
+  }> {
+    return authFetch<{
+      enabled: boolean;
+      intervalSeconds: number;
+      lastSuccessAt: string | null;
+      lastErrorMessage: string | null;
+    }>(ENDPOINTS.admin.flags.syncStatus, { method: 'GET', ...withCtx(ctx) });
+  },
+};
+
+// ═══════════════════════════════════════════════════════════════
 // PUBLIC SURFACE
 // ═══════════════════════════════════════════════════════════════
 
@@ -457,6 +671,8 @@ export const api = {
   notifications,
   media,
   labeling,
+  flags,
+  adminFlags,
 } as const;
 
 export type Api = typeof api;

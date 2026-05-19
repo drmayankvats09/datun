@@ -8,6 +8,11 @@
 //     ./types/appointment, ./types/notification
 //
 //   No existing exports removed or renamed. Zero risk to running app.
+//
+// TASK #49 UPDATE — ADDITIVE ONLY:
+//   Added 1 new section at the bottom for feature-flag types,
+//   key registry and context factories. No existing exports
+//   removed or renamed. Zero risk to running app.
 // ═══════════════════════════════════════════════════════════════
 
 // ── Brand & Identity ──
@@ -65,3 +70,8 @@ export * from './types/consultation';
 export * from './types/clinic';
 export * from './types/appointment';
 export * from './types/notification';
+
+// ── Task #49: Feature flag platform ──
+// Key registry, evaluation context schema, DTOs and shared enums.
+// Imported by both `apps/api` and `apps/web` — single source of truth.
+export * from './flags/index';

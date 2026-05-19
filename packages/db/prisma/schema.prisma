@@ -3016,3 +3016,192 @@ model CspViolation {
   @@index([ipHash, createdAt(sort: Desc)])
   @@map("csp_violations")
 }
+
+// ═══════════════════════════════════════════════════════════════
+// TASK #49 — FEATURE FLAG PLATFORM
+// ─────────────────────────────────────────────────────────────────
+// Three tables and four enums implementing the runtime feature-flag
+// platform. Hybrid architecture: PostHog acts as the admin console
+// + remote source; this DB is the **authoritative cache** so that
+// production never depends on PostHog being reachable.
+//
+// Pattern references:
+//   - LaunchDarkly REST API v2 → flag + override row shapes
+//   - PostHog Feature Flags v1.6 → variants JSON
+//   - Vercel Flags SDK → evaluation audit shape
+//
+// Idempotency: This block is delimited by `TASK_49_FEATURE_FLAGS`
+// start/end markers. The placement script appends ONLY if the start
+// marker is absent (re-run safe).
+//
+// > TASK_49_FEATURE_FLAGS:START
+// ═══════════════════════════════════════════════════════════════
+
+enum FeatureFlagCategory {
+  RELEASE
+  EXPERIMENT
+  OPERATIONAL
+  PERMISSION
+  KILL_SWITCH
+  BETA
+}
+
+enum FeatureFlagStatus {
+  OFF
+  ON
+  ROLLOUT_BUCKET
+  TARGETED
+}
+
+enum FeatureFlagOverrideEntityType {
+  USER
+  CLINIC
+  REGION
+  ROLE
+}
+
+enum FeatureFlagEvaluationReason {
+  DEFAULT
+  STATIC_ON
+  STATIC_OFF
+  ROLLOUT_HIT
+  ROLLOUT_MISS
+  TARGETED_HIT
+  TARGETED_MISS
+  OVERRIDE
+  KILLSWITCH
+  ARCHIVED
+  FALLBACK
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TABLE: FeatureFlag — Flag definitions (authoritative cache)
+// ─────────────────────────────────────────────────────────────────
+//
+// One row per distinct `flagKey`. The PostHog admin UI mirrors into
+// this table via the `flag-sync.service.ts` BullMQ job every 60s.
+//
+// Indexing strategy (read-heavy: ~10K evaluator reads/sec at scale):
+//   - flagKey         : unique — primary lookup path
+//   - category, status: admin dashboards
+//   - archivedAt      : list-active filter
+//   - staleAt         : flag-hygiene cron (180-day cleanup)
+//
+// DPDP note: No PII stored. `createdByUserId` is the admin who created
+// the flag, never an end-user identifier.
+// ─────────────────────────────────────────────────────────────────
+
+model FeatureFlag {
+  id                String              @id @default(cuid())
+  /// Stable identifier used throughout the codebase. Matches the
+  /// `FLAG_KEYS` registry in `@repo/shared/flags`.
+  flagKey           String              @unique
+  /// Human-friendly label shown in the admin dashboard.
+  name              String
+  /// 1-2 line description. Surfaced to admins, never to end-users.
+  description       String              @default("")
+  category          FeatureFlagCategory
+  status            FeatureFlagStatus   @default(OFF)
+  /// Value returned when the flag is missing from the DB or fails
+  /// evaluation. SAFE default for KILL_SWITCH category = false.
+  defaultValue      Boolean             @default(false)
+  /// 0-100 percentage used when status=ROLLOUT_BUCKET. Validated at
+  /// the application layer (Prisma cannot constrain numeric range).
+  rolloutPercent    Int                 @default(0)
+  /// Stored as JSON because the shape is a discriminated union of
+  /// `FlagTargetingSpec` rules. Application validates with Zod.
+  targetingRules    Json                @default("{\"combinator\":\"AND\",\"rules\":[]}")
+  /// Optional multi-variant flags (A/B/C). For boolean flags this
+  /// stays as `{ "control": false, "treatment": true }`.
+  variants          Json                @default("{\"control\":false,\"treatment\":true}")
+  enabledClinicIds  String[]            @default([])
+  disabledClinicIds String[]            @default([])
+  /// Lifetime eval counter. BigInt because Datun's 5-year ceiling
+  /// is comfortably > 2^31 evaluations across all flags.
+  evaluationCount   BigInt              @default(0)
+  lastEvaluatedAt   DateTime?
+  /// When this flag should be reviewed for cleanup. Required by the
+  /// 90-day flag-hygiene policy (LaunchDarkly + Uber pattern).
+  staleAt           DateTime?
+  createdByUserId   String
+  archivedAt        DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  overrides FeatureFlagOverride[]
+
+  @@index([category])
+  @@index([status])
+  @@index([archivedAt])
+  @@index([staleAt])
+  @@map("feature_flags")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TABLE: FeatureFlagOverride — Per-entity overrides
+// ─────────────────────────────────────────────────────────────────
+//
+// Targeted exception rows. The evaluator checks this table FIRST
+// (before status/rollout logic). Used for:
+//   - VIP user always-on flags
+//   - Support reproducing a customer issue ("force ON for clinic_42")
+//   - Per-region kill switches
+//
+// `(flagId, entityType, entityId)` is unique → idempotent upsert.
+// ─────────────────────────────────────────────────────────────────
+
+model FeatureFlagOverride {
+  id              String                        @id @default(cuid())
+  flagId          String
+  flag            FeatureFlag                   @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  entityType      FeatureFlagOverrideEntityType
+  entityId        String
+  value           Boolean
+  /// Free-text ops note. e.g. "Repro for incident INC-2026-09".
+  reason          String?
+  createdByUserId String
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+  /// Optional auto-expiry. The evaluator treats expired rows as missing.
+  expiresAt       DateTime?
+
+  @@unique([flagId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@index([expiresAt])
+  @@map("feature_flag_overrides")
+}
+
+// ─────────────────────────────────────────────────────────────────
+// TABLE: FeatureFlagEvaluation — Sampled audit trail
+// ─────────────────────────────────────────────────────────────────
+//
+// Sampled at 1% by the application layer. Volume safeguard: at 10K
+// evals/sec across Datun, full logging = 10M rows/day. 1% sampling
+// = 100K rows/day = ~36M rows/year, manageable with monthly TTL
+// partitioning (added in a later migration when needed).
+//
+// Purpose:
+//   - DPDP audit ("which users saw treatment X?")
+//   - Drift detection (rollout bucket histogram)
+//   - Cost attribution (per-flag eval count)
+// ─────────────────────────────────────────────────────────────────
+
+model FeatureFlagEvaluation {
+  id          String                      @id @default(cuid())
+  flagKey     String
+  /// Null for anonymous evaluators (marketing site, public pages).
+  userId      String?
+  clinicId    String?
+  result      Boolean
+  variantKey  String?
+  reason      FeatureFlagEvaluationReason
+  /// Deterministic 0-99 bucket for ROLLOUT flags; null otherwise.
+  bucketHash  Int?
+  evaluatedAt DateTime                    @default(now())
+
+  @@index([flagKey, evaluatedAt(sort: Desc)])
+  @@index([userId])
+  @@map("feature_flag_evaluations")
+}
+
+// > TASK_49_FEATURE_FLAGS:END

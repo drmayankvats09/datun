@@ -3,6 +3,7 @@
 // Phase 7: Distributed lock (withCronLock) for multi-instance safety.
 // Task #41: Feature-flagged via CRON_BACKEND env (node-cron vs bullmq).
 // Task #41.5: Added DLQ monitor (independent of CRON_BACKEND).
+// Task #49: Added flag-hygiene cron (independent of CRON_BACKEND).
 // ═══════════════════════════════════════════════════════════════
 
 import cron from 'node-cron';
@@ -13,6 +14,7 @@ import { run3DayFollowUp, run7DayFollowUp } from './follow-up.cron.js';
 import { runDailyReport } from './daily-report.cron.js';
 import { runWhatsAppHeartbeat } from './whatsapp-heartbeat.cron.js';
 import { scanDlqAndAlert } from '../services/dlq-monitor.service.js';
+import { runFlagHygiene } from './flag-hygiene.cron.js';
 
 const IST = 'Asia/Kolkata';
 
@@ -24,6 +26,15 @@ export function startCronJobs(): void {
     timezone: IST,
   });
   logger.info('[Cron] DLQ monitor registered (every 5min)');
+
+  // ── Flag hygiene runs ALWAYS (independent of CRON_BACKEND) ──
+  // Reason: ops-side cleanup, not user-facing business logic.
+  // 03:00 IST = lowest traffic window; minimal lock contention with
+  // daily-report (09:00) and follow-ups (10:00 / 10:30).
+  cron.schedule('0 3 * * *', withCronLock('flag-hygiene', runFlagHygiene, 600), {
+    timezone: IST,
+  });
+  logger.info('[Cron] Flag hygiene registered (daily 03:00 IST)');
 
   if (env.CRON_BACKEND === 'bullmq') {
     logger.info(
