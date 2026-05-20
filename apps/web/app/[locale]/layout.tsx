@@ -36,6 +36,29 @@
 //       analytics already initialised.
 //   When NEXT_PUBLIC_POSTHOG_KEY is unset the provider runs in
 //   degraded mode (no SDK load, no events, no overhead).
+//
+// TASK #50 UPDATE — added <MotionConfigProvider>:
+//   Placement: INSIDE PostHogProvider, OUTSIDE ThemeProvider.
+//
+//   Why inside PostHog: MotionConfigProvider emits a telemetry event
+//   (`motion_level_active`) every time the resolved motion level
+//   changes — capturePostHogEvent() requires the PostHog SDK to be
+//   initialised, which the parent PostHogProvider does on mount.
+//
+//   Why outside ThemeProvider: motion governance is independent of
+//   theme; keeping it higher in the tree means every theme-aware
+//   component (ThemeProvider's descendants) gets motion config for
+//   free without re-wiring.
+//
+//   The provider does THREE jobs:
+//     1. <MotionConfig reducedMotion="user"> — Framer Motion honours
+//        the user's OS prefers-reduced-motion automatically.
+//     2. <LazyMotion features={domAnimation}> — bundle reduction
+//        foundation. Bundle savings accrue as components migrate
+//        to `m.*` (`strict` mode flip happens after that).
+//     3. <MotionLevelContext.Provider> — composite "effective motion
+//        level" (full / reduced / none) combining OS pref + network
+//        + future low-power signal. Consumed via useMotionLevel().
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';
@@ -47,6 +70,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/providers/app-provider';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { PostHogProvider } from '@/components/providers/posthog-provider';
+import { MotionConfigProvider } from '@/components/motion';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
@@ -114,18 +138,20 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
             <PostHogProvider>
-              <LocaleFont nonce={nonce || undefined} />
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="light"
-                enableSystem
-                disableTransitionOnChange
-                nonce={nonce || undefined}
-              >
-                <TranslationBanner />
-                <AppProvider>{children}</AppProvider>
-                <Toaster richColors position="top-right" />
-              </ThemeProvider>
+              <MotionConfigProvider>
+                <LocaleFont nonce={nonce || undefined} />
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="light"
+                  enableSystem
+                  disableTransitionOnChange
+                  nonce={nonce || undefined}
+                >
+                  <TranslationBanner />
+                  <AppProvider>{children}</AppProvider>
+                  <Toaster richColors position="top-right" />
+                </ThemeProvider>
+              </MotionConfigProvider>
             </PostHogProvider>
           </QueryProvider>
         </NextIntlClientProvider>

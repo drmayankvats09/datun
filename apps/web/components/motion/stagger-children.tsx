@@ -1,13 +1,25 @@
-// ═══════════════════════════════════════════════════════════════
-// STAGGER CHILDREN — List items animate one by one
-// Cards, list items, search results — appear sequentially.
-// Pattern: Notion database entries, Linear issue list.
-// ═══════════════════════════════════════════════════════════════
-
 'use client';
 
+// ═══════════════════════════════════════════════════════════════
+// STAGGER CHILDREN — List items animate one by one
+//
+// Cards, list items, search results — appear sequentially with a
+// configurable delay between each. Pattern: Notion database entries,
+// Linear issue list, Vercel project grid.
+//
+// Task #50 — refactored to use `buildStaggerContainer()` orchestration
+// helper + `staggerItemVariants` from the motion design system. Public
+// API (props of both <StaggerContainer> and <StaggerItem>) preserved.
+//
+// Reduced-motion behavior: plain <div> wrappers, items render
+// instantly. No Framer overhead.
+// ═══════════════════════════════════════════════════════════════
+
 import { motion } from 'framer-motion';
-import { useReducedMotion } from '@/hooks';
+import { useMemo } from 'react';
+import { STAGGER } from '@repo/shared';
+import { buildStaggerContainer, staggerItemVariants } from '@/lib/motion';
+import { useMotionLevel } from '@/hooks';
 
 interface StaggerChildrenProps {
   children: React.ReactNode;
@@ -16,57 +28,43 @@ interface StaggerChildrenProps {
   stagger?: number;
 }
 
-const containerVariants = {
-  hidden: {},
-  visible: (stagger: number) => ({
-    transition: { staggerChildren: stagger },
-  }),
-};
+export function StaggerContainer({
+  children,
+  className,
+  stagger = STAGGER.default,
+}: StaggerChildrenProps) {
+  const { isReduced } = useMotionLevel();
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] },
-  },
-};
+  // Memoize the variants object — buildStaggerContainer is a pure
+  // function and re-running it on every render would create a new
+  // reference, making Framer re-evaluate its internal cache.
+  const variants = useMemo(() => buildStaggerContainer(stagger), [stagger]);
 
-export function StaggerContainer({ children, className, stagger = 0.05 }: StaggerChildrenProps) {
-  const prefersReduced = useReducedMotion();
-
-  if (prefersReduced) {
+  if (isReduced) {
     return <div className={className}>{children}</div>;
   }
 
   return (
-    <motion.div
-      className={className}
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      custom={stagger}
-    >
+    <motion.div className={className} variants={variants} initial="hidden" animate="visible">
       {children}
     </motion.div>
   );
 }
 
-export function StaggerItem({
-  children,
-  className,
-}: {
+interface StaggerItemProps {
   children: React.ReactNode;
   className?: string;
-}) {
-  const prefersReduced = useReducedMotion();
+}
 
-  if (prefersReduced) {
+export function StaggerItem({ children, className }: StaggerItemProps) {
+  const { isReduced } = useMotionLevel();
+
+  if (isReduced) {
     return <div className={className}>{children}</div>;
   }
 
   return (
-    <motion.div className={className} variants={itemVariants}>
+    <motion.div className={className} variants={staggerItemVariants}>
       {children}
     </motion.div>
   );

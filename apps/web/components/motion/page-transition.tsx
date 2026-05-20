@@ -1,13 +1,23 @@
-// ═══════════════════════════════════════════════════════════════
-// PAGE TRANSITION — Subtle fade for route changes
-// Wraps page content. Animates on mount.
-// Pattern: Notion, Linear — pages don't just appear, they fade in.
-// ═══════════════════════════════════════════════════════════════
-
 'use client';
 
+// ═══════════════════════════════════════════════════════════════
+// PAGE TRANSITION — Subtle fade + slide on route change
+//
+// Wraps a page's root element. Animates on mount (`animate` prop,
+// not `whileInView`) so the page enters from a faded state every
+// time it's freshly rendered. Pattern: Notion, Linear — pages
+// don't just appear, they fade in.
+//
+// Task #50 — refactored to use motion design tokens. Public API
+// (PageTransitionProps) preserved exactly. Used in Phase 4's
+// layout.tsx wrap.
+//
+// Reduced-motion behavior: plain <div>, no Framer overhead.
+// ═══════════════════════════════════════════════════════════════
+
 import { motion } from 'framer-motion';
-import { useReducedMotion } from '@/hooks';
+import { DURATION, EASE, DISTANCE } from '@repo/shared';
+import { useMotionLevel } from '@/hooks';
 
 interface PageTransitionProps {
   children: React.ReactNode;
@@ -15,18 +25,18 @@ interface PageTransitionProps {
 }
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  const prefersReduced = useReducedMotion();
+  const { isReduced } = useMotionLevel();
 
-  if (prefersReduced) {
+  if (isReduced) {
     return <div className={className}>{children}</div>;
   }
 
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: DISTANCE.sm }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: DURATION.moderate, ease: EASE.smoothOut }}
     >
       {children}
     </motion.div>
