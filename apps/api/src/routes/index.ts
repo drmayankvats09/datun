@@ -8,6 +8,12 @@
 //     (uses its own rate limiter, bypasses generalLimiter).
 //   - /api/admin/security/*     → mounted under admin/index.ts (this file
 //     does not need updating; admin/index.ts adds the new sub-router).
+//
+// Task #49 (Feature Flags):
+//   - /api/flags                → public flag map endpoint (optional
+//     auth) mounted here under generalLimiter for parity with other
+//     public reads.
+//   - /api/admin/flags/*        → admin CRUD; mounted by admin/index.ts.
 // ═══════════════════════════════════════════════════════════════
 
 import type { Express } from 'express';
@@ -19,6 +25,7 @@ import { userRouter } from './user.router.js';
 import { webhookRouter } from './webhook.router.js';
 import { adminRouter } from './admin/index.js';
 import { mediaRouter } from './media.router.js';
+import { flagsRouter } from './flags.router.js';
 import { generalLimiter } from '../middleware/rate-limit.js';
 
 export function mountRoutes(app: Express): void {
@@ -32,8 +39,12 @@ export function mountRoutes(app: Express): void {
   app.use('/api', userRouter);
   app.use('/api', mediaRouter);
 
+  // Task #49 — public feature flag map endpoint (optional auth).
+  // Mounted under generalLimiter to match read-side public routes.
+  app.use('/api', generalLimiter, flagsRouter);
+
   // Admin API — JWT + ADMIN role required, gated by ADMIN_ROUTES_ENABLED flag.
-  // Includes /api/admin/security/* (Task #45).
+  // Includes /api/admin/security/* (Task #45) and /api/admin/flags/* (Task #49).
   app.use('/api/admin', adminRouter);
 
   // WhatsApp webhook — no rate limit (Meta sends bursts)

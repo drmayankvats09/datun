@@ -14,6 +14,7 @@
 //   /api/admin/outbox         — Outbox ops (DLQ replay, status)
 //   /api/admin/labeling       — Task #44 training-label workflows
 //   /api/admin/security       — Task #45 CSP violation dashboard
+//   /api/admin/flags          — Task #49 feature-flag platform admin
 //
 // Pattern: Stripe internal admin routes (gated by both flag + RBAC).
 // ═══════════════════════════════════════════════════════════════
@@ -29,6 +30,7 @@ import { experimentsRouter } from './experiments.router.js';
 import { outboxAdminRouter } from './outbox.router.js';
 import { labelingRouter } from './labeling.router.js';
 import { adminSecurityRouter } from './security.router.js';
+import { adminFlagsRouter } from './flags.router.js';
 
 export const adminRouter = Router();
 
@@ -42,6 +44,7 @@ if (featureFlags.adminRoutesEnabled) {
   adminRouter.use('/outbox', outboxAdminRouter);
   adminRouter.use('/labeling', labelingRouter);
   adminRouter.use('/security', adminSecurityRouter);
+  adminRouter.use('/flags', adminFlagsRouter);
 
   logger.info('Admin routes mounted at /api/admin/*');
 } else {

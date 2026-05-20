@@ -1,8 +1,17 @@
 // ═══════════════════════════════════════════════════════════════
 // DATUN API — Server Entry Point
-// Boot sequence: dotenv → sentry → env → redis → db → app → crons → listen
+// Boot sequence: dotenv → sentry → env → redis → db → flag-platform → app → crons → listen
 // Graceful shutdown: SIGTERM → stop accepting → drain → close DB → exit
 // Pattern: Google Cloud Run, AWS ECS, Railway — all expect graceful shutdown.
+//
+// Task #49 additions:
+//   - `initFlagPubsub()`  after Redis verify, BEFORE app create
+//     (so the subscriber is live before the first request).
+//   - `startFlagSync()`   after app create, BEFORE listen
+//     (kicks off PostHog → DB mirror; first tick runs immediately).
+//   - Shutdown: drain sync timer, close pub/sub connections, flush
+//     PostHog events. All wrapped in try/catch — shutdown never
+//     blocks on flag-platform best-effort cleanup.
 // ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
@@ -32,6 +41,15 @@ const prisma = registerAuditMiddleware(basePrisma);
 import { BRAND, API_VERSION } from '@repo/shared';
 import type { Server } from 'node:http';
 
+// Task #49 — flag platform lifecycle imports
+import {
+  startFlagSync,
+  stopFlagSync,
+  initFlagPubsub,
+  shutdownFlagPubsub,
+} from './services/flag/index.js';
+import { shutdownPostHog } from './lib/posthog.js';
+
 let server: Server | null = null;
 
 async function main(): Promise<void> {
@@ -58,13 +76,24 @@ async function main(): Promise<void> {
   // ── 3. Prisma audit middleware registered at import time (see top of file) ──
   logger.info('✅ Prisma audit extension active ($extends pattern)');
 
-  // ── 4. Create Express app ──
+  // ── 4. Initialise flag-platform pub/sub subscriber ──
+  // Must happen BEFORE the Express app starts handling requests so
+  // the first admin toggle does not race the subscriber.
+  try {
+    await initFlagPubsub();
+  } catch (err) {
+    logger.warn('[Flag-Platform] pub/sub init failed — running with TTL-only convergence', {
+      error: (err as Error).message,
+    });
+  }
+
+  // ── 5. Create Express app ──
   const app = createApp();
 
-  // ── 5. Start cron jobs ──
+  // ── 6. Start cron jobs ──
   startCronJobs();
 
-  // ── 5b. Register BullMQ scheduled jobs (parity with node-cron) ──
+  // ── 6b. Register BullMQ scheduled jobs (parity with node-cron) ──
   try {
     await registerScheduledJobs();
   } catch (err) {
@@ -74,7 +103,16 @@ async function main(): Promise<void> {
     // Non-fatal — node-cron is primary during soak
   }
 
-  // ── 6. Listen ──
+  // ── 7. Start PostHog → DB flag sync (no-op if PostHog unconfigured) ──
+  try {
+    startFlagSync();
+  } catch (err) {
+    logger.warn('[Flag-Platform] flag-sync start failed — DB-only mode active', {
+      error: (err as Error).message,
+    });
+  }
+
+  // ── 8. Listen ──
   server = app.listen(env.PORT, () => {
     logger.info(`${BRAND.name} API started on port ${env.PORT}`, {
       version: API_VERSION,
@@ -121,6 +159,25 @@ async function shutdown(signal: string): Promise<void> {
         resolve();
       }, 25_000);
     });
+  }
+
+  // ── Task #49: stop flag-platform background work ──
+  // Best-effort — each block is independently wrapped so a failure
+  // in one never blocks the rest of the shutdown chain.
+  try {
+    stopFlagSync();
+  } catch (err) {
+    logger.warn('[Flag-Platform] sync stop error', { error: (err as Error).message });
+  }
+  try {
+    await shutdownFlagPubsub();
+  } catch (err) {
+    logger.warn('[Flag-Platform] pubsub shutdown error', { error: (err as Error).message });
+  }
+  try {
+    await shutdownPostHog();
+  } catch (err) {
+    logger.warn('[Flag-Platform] posthog shutdown error', { error: (err as Error).message });
   }
 
   // Close BullMQ queues (drains in-flight enqueues)

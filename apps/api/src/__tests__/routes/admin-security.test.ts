@@ -10,6 +10,7 @@ vi.mock('../../middleware/auth.js', () => ({
   requireAuth: vi.fn((_req, _res, next) => next()),
   requireRole: vi.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
   requireUser: vi.fn((_req, _res, next) => next()),
+  optionalAuth: vi.fn((_req, _res, next) => next()),
 }));
 
 import { describe, it, expect, beforeEach } from 'vitest';

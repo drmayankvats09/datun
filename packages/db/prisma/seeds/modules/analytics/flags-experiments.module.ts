@@ -1,16 +1,30 @@
 // ═══════════════════════════════════════════════════════════════
-// COHORTS + FEATURE FLAGS + EXPERIMENTS
+// COHORTS + FEATURE FLAGS + EXPERIMENTS — Task #49 update
+// ─────────────────────────────────────────────────────────────────
+// Phase 7 left `featureFlagsModule.run` as a no-op with the comment
+// "/* schema may not support */". The Task #49 schema fully
+// supports persistence; this module now writes the baseline 30
+// flags (one per FLAG_KEYS registry entry) by calling the
+// factory's real `persist` (upsert on flagKey).
+//
+// Idempotency: the factory's upsert is keyed on `flagKey`, so
+// re-running the seed only refreshes `name`, `description`, and
+// `updatedAt`. Hand-tweaked rows survive.
+//
+// The cohort + experiment-assignment modules in this file are
+// unchanged — only `featureFlagsModule` materially changes.
 // ═══════════════════════════════════════════════════════════════
 
 import { defineModule, measureExecution, runInScope } from '../core';
 import { REGISTRY_KEYS } from '../core/module-registry';
 import { resetSequences } from '../../factories/core/sequence';
 import { cohortTableFactory } from '../../factories/analytics/cohort-table.factory';
-import { featureFlagFactory } from '../../factories/analytics/feature-flag.factory';
+import { featureFlagFactory, FLAG_TEMPLATES } from '../../factories/analytics/feature-flag.factory';
 import { experimentAssignmentFactory } from '../../factories/analytics/experiment-assignment.factory';
 
-const FLAG_COUNT = 30;
 const EXPERIMENT_COUNT = 5;
+
+// ─── Cohorts (unchanged) ────────────────────────────────────────
 
 export const cohortTablesModule = defineModule({
   name: 'analytics.cohort-tables',
@@ -57,15 +71,21 @@ export const cohortTablesModule = defineModule({
     }),
 });
 
+// ─── Feature flags (Task #49 — now persists for real) ───────────
+
 export const featureFlagsModule = defineModule({
   name: 'analytics.feature-flags',
-  description: 'LaunchDarkly-style feature flags',
+  description:
+    'Task #49 baseline: one row per FLAG_KEYS registry entry, idempotent upsert keyed on flagKey',
   category: 'analytics',
-  version: '2.0.0',
+  version: '3.0.0',
   dependencies: [],
   modelsTouched: ['featureFlag'],
   factoriesUsed: ['featureFlag'],
   bulkStrategy: 'CREATE_MANY',
+  // We deliberately re-run each invocation — upsert is the
+  // idempotency mechanism, not module-level skip. This lets seed
+  // refreshes pick up new registry keys without manual reset.
   idempotencyStrategy: { kind: 'NEVER' },
   providesRegistryKeys: [REGISTRY_KEYS.FLAG_IDS],
 
@@ -74,29 +94,55 @@ export const featureFlagsModule = defineModule({
   run: async (ctx) =>
     measureExecution(featureFlagsModule, ctx, async () => {
       resetSequences(ctx.masterSeed + 2750);
-      const flags = featureFlagFactory.buildList(FLAG_COUNT);
+
+      const flagIds: string[] = [];
+      let created = 0;
+      let failed = 0;
 
       await runInScope(featureFlagsModule, ctx, async () => {
-        /* schema may not support */
+        // Seed one row per registry template — exact coverage of the
+        // canonical FLAG_KEYS set. This guarantees every key the
+        // evaluator accepts has a backing row by the time the API
+        // starts serving traffic in a fresh environment.
+        for (const template of FLAG_TEMPLATES) {
+          try {
+            const flag = await featureFlagFactory.create(ctx.prisma, undefined, {
+              flagKey: template.key,
+            });
+            flagIds.push(flag.id);
+            created++;
+          } catch (err) {
+            // A factory failure for one flag must not poison the
+            // entire seed — log and continue. The dev workflow
+            // (re-run seed) will catch up on the missing row.
+            failed++;
+            ctx.logger?.warn?.('[featureFlagsModule] persist failed', {
+              flagKey: template.key,
+              error: (err as Error).message,
+            });
+          }
+        }
       });
-      ctx.registry.set(
-        REGISTRY_KEYS.FLAG_IDS,
-        flags.map((f) => f.id),
-      );
+
+      ctx.registry.set(REGISTRY_KEYS.FLAG_IDS, flagIds);
 
       return {
-        recordsCreated: 0,
-        recordsSkipped: flags.length,
-        recordsFailed: 0,
+        recordsCreated: created,
+        recordsSkipped: 0,
+        recordsFailed: failed,
         recordsCompensated: 0,
         factoriesUsed: ['featureFlag'],
         modelsTouched: ['featureFlag'],
         bulkStrategy: 'CREATE_MANY' as const,
         checkpointsSaved: 0,
-        metadata: { note: 'persisted only if schema supports' },
+        metadata: {
+          note: `Task #49: persisted ${created}/${FLAG_TEMPLATES.length} baseline flags`,
+        },
       };
     }),
 });
+
+// ─── Experiment assignments (unchanged) ─────────────────────────
 
 export const experimentAssignmentsModule = defineModule({
   name: 'analytics.experiment-assignments',

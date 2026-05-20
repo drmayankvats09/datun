@@ -9,6 +9,11 @@
 //     internally). Placed AFTER mountRoutes() so it doesn't conflict
 //     with any other /api mount, BEFORE setupErrorHandlers() so errors
 //     are caught by the global handler.
+//
+// Task #49 additions:
+//   - Mount `flagsMiddleware` GLOBALLY between request-id and routes.
+//     Populates `req.featureFlags` for every handler. Never throws —
+//     falls back to defaults on error. ~200µs hot-path cost.
 // ═══════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -16,6 +21,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { URLS } from '@repo/shared';
 import { requestIdMiddleware } from './middleware/request-id.js';
+import { flagsMiddleware } from './middleware/flags.middleware.js';
 import { mountRoutes } from './routes/index.js';
 import { setupErrorHandlers } from './middleware/error-handler.js';
 import { mountBullBoard } from './lib/queue/dashboard.js';
@@ -100,6 +106,14 @@ export function createApp(): express.Express {
 
   // ── Request ID tracing (before routes) ──
   app.use(requestIdMiddleware);
+
+  // ── Task #49: per-request feature-flag map ──
+  // Mounted GLOBALLY so every handler can read `req.featureFlags`.
+  // Never throws (falls back to defaults on error). Hot-path cost
+  // ≈ 200µs with warm L1 cache. Auth-aware refresh: route handlers
+  // can call `await refreshFeatureFlags(req)` after `requireAuth`
+  // populated `req.auth`. The global attach uses anonymous context.
+  app.use(flagsMiddleware);
 
   // ── All routes ──
   mountRoutes(app);

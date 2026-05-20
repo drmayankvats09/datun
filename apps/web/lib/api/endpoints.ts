@@ -24,7 +24,9 @@
 //   app.use('/api', consultationRouter) → /api/consultations/*
 //   app.use('/api', chatRouter)         → /api/chat/*
 //   app.use('/api', mediaRouter)        → /api/media/*
+//   app.use('/api', flagsRouter)        → /api/flags        (Task #49)
 //   app.use('/api/admin', adminRouter)  → /api/admin/*
+//   adminRouter.use('/flags', adminFlagsRouter) → /api/admin/flags/* (Task #49)
 // ═══════════════════════════════════════════════════════════════
 
 export const ENDPOINTS = {
@@ -118,6 +120,26 @@ export const ENDPOINTS = {
       stats: '/api/admin/labeling/stats',
       conflicts: '/api/admin/labeling/conflicts',
       judgeGrade: '/api/admin/labeling/judge/grade',
+    },
+    // Task #49 — feature-flag administration. Every path is gated by
+    // the parent admin router's JWT + ADMIN role middleware.
+    flags: {
+      list: '/api/admin/flags',
+      archived: '/api/admin/flags/archived',
+      create: '/api/admin/flags',
+      detail: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}`,
+      update: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}`,
+      kill: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/kill`,
+      restore: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/restore`,
+      archive: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/archive`,
+      unarchive: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/restore-archived`,
+      listOverrides: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/overrides`,
+      upsertOverride: (key: string) => `/api/admin/flags/${encodeURIComponent(key)}/overrides`,
+      deleteOverride: (key: string, overrideId: string) =>
+        `/api/admin/flags/${encodeURIComponent(key)}/overrides/${encodeURIComponent(overrideId)}`,
+      flushCache: '/api/admin/flags/cache/flush',
+      runSync: '/api/admin/flags/sync/run',
+      syncStatus: '/api/admin/flags/sync/status',
     },
   },
 } as const;

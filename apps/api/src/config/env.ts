@@ -143,6 +143,55 @@ const envSchema = z.object({
   // ── Task #46: signed-URL TTLs (override defaults from constants) ──
   MEDIA_SIGNED_UPLOAD_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   MEDIA_SIGNED_READ_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+
+  // ── Task #49: Feature Flag Platform ──
+  //
+  // PostHog acts as the admin console + remote source of truth. The
+  // local DB cache (feature_flags / overrides / evaluations) is the
+  // hot-path evaluator — if PostHog is down, evaluation keeps working.
+  //
+  // ALL keys are optional: with no PostHog credentials, the API runs
+  // in "DB-only mode" — flags managed exclusively through the admin
+  // UI, no upstream sync. This is the day-one default; PostHog is
+  // enabled later as the admin user count grows.
+  //
+  // Server-side secret. Required for the sync worker to read/write
+  // flag definitions in PostHog. Looks like: `phx_…` (PostHog Personal
+  // API key with `feature_flag:read` + `feature_flag:write` scopes).
+  POSTHOG_API_KEY: z.string().optional(),
+  // PostHog project key (a.k.a. project API key). Same value used in
+  // the browser bundle as NEXT_PUBLIC_POSTHOG_KEY for analytics events
+  // and client-side flag boots. Looks like: `phc_…`.
+  POSTHOG_PROJECT_KEY: z.string().optional(),
+  // Self-hosted PostHog instance or PostHog Cloud. Defaults to US Cloud.
+  POSTHOG_HOST: z.string().url().default('https://us.i.posthog.com'),
+
+  /**
+   * Global kill switch for the flag platform itself. When false, the
+   * evaluator returns each flag's hardcoded default from
+   * `flag-defaults.ts` and writes zero rows. Useful for incident
+   * response if the flag platform itself is the suspect.
+   */
+  FEATURE_FLAGS_ENABLED: z
+    .string()
+    .transform((v) => v !== 'false')
+    .default('true'),
+
+  /**
+   * Probability (0..1) that an evaluation is persisted to the
+   * `feature_flag_evaluations` audit table. 0.01 = 1% sample =
+   * ~100K rows/day at 10K evals/sec. Tune downward at scale.
+   */
+  FLAG_EVALUATION_AUDIT_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.01),
+
+  /** Interval at which the sync worker mirrors PostHog → DB. */
+  FLAG_SYNC_INTERVAL_SECONDS: z.coerce.number().int().positive().default(60),
+
+  /** In-memory L1 TTL (per-process). Trades freshness for latency. */
+  FLAG_CACHE_L1_TTL_SECONDS: z.coerce.number().int().positive().default(30),
+
+  /** Redis L2 TTL (per-cluster). Invalidated early via Redis pub/sub. */
+  FLAG_CACHE_L2_TTL_SECONDS: z.coerce.number().int().positive().default(60),
 });
 
 const refinedSchema = envSchema.superRefine((data, ctx) => {
@@ -286,6 +335,17 @@ const refinedSchema = envSchema.superRefine((data, ctx) => {
       code: z.ZodIssueCode.custom,
       message: 'CLOUDFLARE_ACCOUNT_HASH required when CLOUDFLARE_IMAGES_API_TOKEN is set',
       path: ['CLOUDFLARE_ACCOUNT_HASH'],
+    });
+  }
+
+  // ── Task #49: PostHog credentials pair check ──
+  // Server-side sync needs both the secret API key AND the project key.
+  // Browser-side flag boot only needs the project key (NEXT_PUBLIC_*).
+  if (data.POSTHOG_API_KEY && !data.POSTHOG_PROJECT_KEY) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'POSTHOG_PROJECT_KEY required when POSTHOG_API_KEY is set (sync worker needs both).',
+      path: ['POSTHOG_PROJECT_KEY'],
     });
   }
 });

@@ -23,6 +23,11 @@
 //     http:// in production set.
 //
 // Pattern: Stripe API CSP requirements doc, Cloudflare Workers AllowList.
+//
+// TASK #49 UPDATE — activated PostHog SCRIPT + CONNECT origins.
+//   The host names cover both PostHog Cloud (us.i.posthog.com) and the
+//   static asset CDN (us-assets.i.posthog.com). Browser SDK loads scripts
+//   from the asset CDN, then POSTs events to the main host.
 // ═══════════════════════════════════════════════════════════════
 
 /** Helper: flatten a vendor-grouped category into a unique string array. */
@@ -41,9 +46,9 @@ function flatten(record: Record<string, readonly string[]>): readonly string[] {
 //   - Sentry browser SDK (error tracking + Session Replay)
 //   - Cloudflare Insights beacon (analytics)
 //   - Vercel Analytics (web vitals)
+//   - PostHog (Task #49 — analytics + feature flag bootstrap)
 //
 // PRE-STAGED for future tasks (commented OUT until task ships):
-//   - PostHog (Task #49 — feature flags)
 //   - Razorpay (Task #53 — payment checkout)
 //   - Google Tag Manager (Task #58 — GTM container)
 // ═══════════════════════════════════════════════════════════════
@@ -53,8 +58,8 @@ export const SCRIPT_ORIGINS = {
   cloudflareInsights: ['https://static.cloudflareinsights.com'],
   vercelAnalytics: ['https://va.vercel-scripts.com'],
 
-  // ── Pre-staged for Task #49 (PostHog) — UNCOMMENT when task ships ──
-  // posthog: ['https://app.posthog.com', 'https://us-assets.i.posthog.com'],
+  // Task #49 — PostHog browser SDK + asset CDN
+  posthog: ['https://app.posthog.com', 'https://us-assets.i.posthog.com'],
 
   // ── Pre-staged for Task #53 (Razorpay) — UNCOMMENT when task ships ──
   // razorpay: ['https://checkout.razorpay.com'],
@@ -114,6 +119,9 @@ export const IMG_SRC_ORIGINS = flatten(IMG_ORIGINS);
 // CRITICAL: Sentry uses both browser-cdn (script-src) AND ingest endpoints
 // (connect-src) — they're different. Browser SDK loads from browser.sentry-cdn,
 // then POSTs error events to *.ingest.sentry.io.
+//
+// PostHog (Task #49) follows the same dual-host pattern: SDK loads from
+// us-assets.i.posthog.com, then POSTs analytics events to us.i.posthog.com.
 // ═══════════════════════════════════════════════════════════════
 
 export const CONNECT_ORIGINS = {
@@ -123,8 +131,8 @@ export const CONNECT_ORIGINS = {
   vercelAnalytics: ['https://vitals.vercel-insights.com'],
   cloudinaryUpload: ['https://api.cloudinary.com'],
 
-  // ── Pre-staged for Task #49 (PostHog) ──
-  // posthog: ['https://app.posthog.com', 'https://us.i.posthog.com'],
+  // Task #49 — PostHog event ingest + decide endpoint
+  posthog: ['https://app.posthog.com', 'https://us.i.posthog.com'],
 
   // ── Pre-staged for Task #53 (Razorpay API) ──
   // razorpay: ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'],
