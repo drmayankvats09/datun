@@ -231,7 +231,24 @@ body {
   top: 0;
 }
 
-/* ── Reduced motion — Disable animations for a11y ── */
+/* ── Reduced motion — Disable animations for a11y ──
+ * Task #50 hardening — CSS-level defense-in-depth.
+ *
+ *   - Framer Motion's <MotionConfig reducedMotion="user"> handles
+ *     JS-driven animations at the component layer.
+ *   - This media query is the second line of defense — catches CSS
+ *     animations / transitions / scroll-behavior from ANY source
+ *     (third-party libs, Tailwind plugins, legacy styles).
+ *   - WCAG 2.3.3 (Animation from Interactions) compliance gate.
+ *   - Setting transform/animation-iteration-count via !important is
+ *     intentional: we're overriding library-level styles whose
+ *     specificity we can't predict.
+ *
+ * Note: `animation-play-state: paused` is also an option, but
+ * `animation-duration: 0.01ms` is what every accessibility resource
+ * (MDN, WebAIM, Apple HIG) recommends — guaranteed to stop the
+ * animation regardless of how it was authored.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -294,7 +311,13 @@ body {
   }
 }
 
-/* ── Route progress bar (NProgress pattern) ── */
+/* ── Route progress bar (NProgress pattern) ──
+ * Task #50 update — Framer-driven width animation lives in JS
+ * (apps/web/components/feedback/route-progress.tsx). The CSS below
+ * only carries the bar's chrome (position, height, color, z-index).
+ * The `transition` here remains for the reduced-motion fallback,
+ * which renders a plain div instead of a motion.div.
+ */
 .route-progress {
   position: fixed;
   top: 0;
@@ -308,7 +331,6 @@ body {
 .route-progress-bar {
   height: 100%;
   background: var(--primary);
-  transition: width 300ms ease;
 }
 
 /* ── Text Expansion Handling — Scoped per-language ──

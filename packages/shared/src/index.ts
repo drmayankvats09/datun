@@ -13,6 +13,12 @@
 //   Added 1 new section at the bottom for feature-flag types,
 //   key registry and context factories. No existing exports
 //   removed or renamed. Zero risk to running app.
+//
+// TASK #50 UPDATE — ADDITIVE ONLY:
+//   Extended the design-tokens `./motion` re-export to expose the
+//   new Framer-Motion-friendly tokens (DURATION / EASE / SPRING /
+//   DISTANCE / STAGGER) and their public types. The legacy `MOTION`
+//   export is preserved unchanged.
 // ═══════════════════════════════════════════════════════════════
 
 // ── Brand & Identity ──
@@ -32,7 +38,17 @@ export { FONTS } from './typography';
 export { SPACING } from './spacing';
 export { SHADOWS } from './shadows';
 export { RADII } from './radii';
-export { MOTION } from './motion';
+// Task #21 (legacy CSS-side) + Task #50 (new Framer-side) — same file.
+export { MOTION, DURATION, EASE, SPRING, DISTANCE, STAGGER } from './motion';
+export type {
+  DurationKey,
+  EaseKey,
+  SpringKey,
+  DistanceKey,
+  StaggerKey,
+  CubicBezier,
+  SpringConfig,
+} from './motion';
 export { BREAKPOINTS, MEDIA } from './breakpoints';
 export { Z_INDEX } from './zindex';
 export { THEME } from './theme';

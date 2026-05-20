@@ -1,10 +1,24 @@
+'use client';
+
 // ═══════════════════════════════════════════════════════════════
 // EMPTY STATE — Beautiful "no data" with CTA
 // FAANG pattern: Empty ≠ blank. Empty = opportunity to guide user.
 // Notion, Linear, Stripe — sab empty states design karte hain.
+//
+// Task #50 update:
+//   The root container now fades + slides in subtly on mount. Empty
+//   states often appear right after a fetch resolves (server returned
+//   no rows) — without motion, the user sees a hard "pop" of content
+//   appearing. The 0.3s fade smooths the transition.
+//
+//   Reduced-motion: renders a plain <div> — no animation, no
+//   perceived layout shift.
 // ═══════════════════════════════════════════════════════════════
 
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { DURATION, EASE, DISTANCE } from '@repo/shared';
+import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
@@ -33,10 +47,16 @@ export function EmptyState({
   onAction,
   className,
 }: EmptyStateProps) {
-  return (
-    <div
-      className={cn('flex flex-col items-center justify-center px-6 py-16 text-center', className)}
-    >
+  const { isReduced } = useMotionLevel();
+
+  const containerClasses = cn(
+    'flex flex-col items-center justify-center px-6 py-16 text-center',
+    className,
+  );
+
+  // Body content is identical in both branches — extracted for clarity.
+  const body = (
+    <>
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-3xl">
         {icon}
       </div>
@@ -60,6 +80,21 @@ export function EmptyState({
             {actionLabel}
           </button>
         ))}
-    </div>
+    </>
+  );
+
+  if (isReduced) {
+    return <div className={containerClasses}>{body}</div>;
+  }
+
+  return (
+    <motion.div
+      className={containerClasses}
+      initial={{ opacity: 0, y: DISTANCE.sm }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.moderate, ease: EASE.smoothOut }}
+    >
+      {body}
+    </motion.div>
   );
 }
