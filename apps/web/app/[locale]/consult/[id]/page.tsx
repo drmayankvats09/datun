@@ -2,6 +2,26 @@
 // CONSULTATION DEEP LINK — /consult/:id
 // URL-driven state: bookmark, share, reload → same consultation.
 // Pattern: ChatGPT /c/abc123, Notion /page/xyz
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The previous Zustand-hydration placeholder — a small
+// `h-8 w-8 animate-pulse rounded-full bg-muted` dot — has been
+// replaced with <ConsultationLoadingSkeleton>. Patients now see
+// the consultation's actual structure (brand tile, title line,
+// status, chat scaffold) within ~40 ms of the click, rather than
+// a single ambiguous dot that reads as "is anything happening?".
+//
+// Two-pass loading narrative (continuous):
+//   • Pass 1 — route-level Suspense fallback
+//       apps/web/app/[locale]/consult/[id]/loading.tsx (Phase 3)
+//       Renders during server → client streaming. Same skeleton.
+//   • Pass 2 — Zustand store hydration (this file)
+//       Renders during the JS-arrival → store-rehydrate gap.
+//       Same skeleton again.
+//
+// User perception: a single, stable loading state across both
+// passes. No UI jump, no double-flash.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -13,6 +33,7 @@ import { useConsultationStore, useAuthStore } from '@/stores';
 import { useHydration } from '@/hooks';
 import { isLoggedIn } from '@/lib/auth';
 import { Link } from '@/i18n/navigation';
+import { ConsultationLoadingSkeleton } from '@/components/feedback/skeletons';
 
 export default function ConsultationPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,12 +56,9 @@ export default function ConsultationPage() {
     }
   }, [hydrated, id, activeConsultationId, resumeConsultation, router]);
 
+  // ─── Hydration gate — branded skeleton (Task #51) ───────────────
   if (!hydrated) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-      </main>
-    );
+    return <ConsultationLoadingSkeleton />;
   }
 
   if (!isLoggedIn()) return null;

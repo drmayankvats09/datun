@@ -1,11 +1,23 @@
 // apps/web/app/[locale]/admin/security/components/violation-table.tsx
 // ═══════════════════════════════════════════════════════════════
 // VIOLATION TABLE — Reusable table for both dashboard preview + full list
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The empty branch — previously a plain centered text div — now
+// renders <EmptyState> with the ShieldCheck icon in `positive`
+// tone. Zero violations is good news; the visual treatment now
+// matches the meaning.
+//
+// Translation: the existing `t('emptyState')` key is preserved as
+// the headline so no i18n change is required. A short FAANG-grade
+// English description is rendered below.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -15,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { EmptyState } from '@/components/feedback';
 
 /** Row shape — mirrors API GET /admin/security/violations select fields. */
 export interface ViolationRow {
@@ -62,8 +75,13 @@ export function ViolationTable({ rows, onRowClick }: Props) {
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">
-        {t('emptyState')}
+      <div className="rounded-md border bg-card">
+        <EmptyState
+          icon={ShieldCheck}
+          tone="positive"
+          title={t('emptyState')}
+          description="Your security posture looks healthy. New violations will appear here the moment they happen."
+        />
       </div>
     );
   }

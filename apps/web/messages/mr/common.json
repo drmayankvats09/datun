@@ -76,5 +76,65 @@
     "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
     "monthsAgo": "{count, plural, one {# month ago} other {# months ago}}",
     "yearsAgo": "{count, plural, one {# year ago} other {# years ago}}"
+  },
+  "emptyStates": {
+    "noConsultations": {
+      "title": "Your dental journey starts here",
+      "description": "Get expert AI guidance in under 60 seconds.",
+      "action": "Start consultation"
+    },
+    "noClinicPatients": {
+      "title": "Build your patient base",
+      "description": "Onboard your first patient and watch your dashboard come alive.",
+      "action": "Add patient"
+    },
+    "noPhotos": {
+      "title": "Upload your first photo",
+      "description": "Capture a clear shot of the affected area for an instant analysis.",
+      "action": "Upload photo"
+    },
+    "noAppointments": {
+      "title": "Your calendar is wide open",
+      "description": "Schedule your first appointment to get started.",
+      "action": "Book appointment"
+    },
+    "noSearchResults": {
+      "title": "Nothing matched that search",
+      "description": "Try different keywords or broaden your filters.",
+      "action": "Clear search"
+    },
+    "filteredEmpty": {
+      "title": "No matches with these filters",
+      "description": "Adjust your filters or clear them to see all results.",
+      "action": "Clear filters"
+    },
+    "noNotifications": {
+      "title": "You're all caught up",
+      "description": "New activity will land here the moment it happens."
+    },
+    "noLabelingQueue": {
+      "title": "Queue cleared. Nicely done.",
+      "description": "Fresh items will appear as new conversations come in.",
+      "action": "Refresh queue"
+    },
+    "noViolations": {
+      "title": "All clear. Zero violations today.",
+      "description": "Your security posture looks healthy."
+    },
+    "noFeatureFlags": {
+      "title": "Ship faster with feature flags",
+      "description": "Roll out changes safely. Toggle features on or off without a redeploy.",
+      "action": "Create flag"
+    },
+    "permissionDenied": {
+      "title": "Access restricted",
+      "description": "You don't have permission to view this. Contact your admin if this looks wrong.",
+      "action": "Contact admin"
+    },
+    "offlineEmpty": {
+      "title": "You're offline",
+      "description": "We'll pull in fresh data the moment you reconnect.",
+      "action": "Retry"
+    }
   }
 }
