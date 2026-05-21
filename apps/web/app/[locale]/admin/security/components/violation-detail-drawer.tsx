@@ -1,6 +1,14 @@
 // apps/web/app/[locale]/admin/security/components/violation-detail-drawer.tsx
 // ═══════════════════════════════════════════════════════════════
 // VIOLATION DETAIL DRAWER — Slide-out panel with full violation JSON
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The previous <Loader2> placeholder rendered as a small centered
+// spinner that left the drawer body visually empty during the brief
+// detail-fetch window. <DrawerSkeleton> now occupies the same body
+// shape (status badge + 15 field rows) so the drawer feels
+// substantive from the first frame.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -14,7 +22,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { DrawerSkeleton } from '@/components/feedback/skeletons';
 
 /** Full violation shape — mirrors API GET /admin/security/violations/:id. */
 export interface ViolationDetail {
@@ -69,8 +77,10 @@ export function ViolationDetailDrawer({ open, violation, onOpenChange }: Props) 
         </SheetHeader>
 
         {!violation ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          // Drawer body skeleton — 15 fields matches the live field
+          // grid below so the layout box stays stable on data arrival.
+          <div className="mt-4">
+            <DrawerSkeleton fieldCount={15} showBadge={true} />
           </div>
         ) : (
           <div className="mt-4">

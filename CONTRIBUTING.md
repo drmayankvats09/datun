@@ -38,4 +38,4 @@ Thank you for your interest in contributing to Datun.
 
 ## Questions?
 
-Email: dr.mayankvats09@gmail.com
+Email: support@datunai.com

@@ -10,6 +10,17 @@
 //   - date range (from / to)
 //
 // Click row → ViolationDetailDrawer slides out with full payload.
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The previous full-screen <Loader2> blanked the filter bar during
+// pagination and filter changes — disorienting. The upgrade keeps
+// the header, filter bar, and pagination row visible at all times
+// (Stripe Radar / Linear Issues pattern), and swaps only the table
+// body between <DataTableSkeleton> and the live <ViolationTable>.
+//
+// Skeleton variant: pulse — long-table surface, scroll-heavy, dwell
+// time per row is low. The opacity-fade is the right call.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -25,7 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { DataTableSkeleton } from '@/components/feedback/skeletons';
 import { useAuthStore } from '@/stores';
 import { getAccessToken } from '@/lib/auth';
 import { ViolationTable, type ViolationRow } from '../components/violation-table';
@@ -130,7 +142,7 @@ export default function AdminSecurityViolationsPage() {
         </p>
       </header>
 
-      {/* ── Filter bar ───────────────────────────────────────── */}
+      {/* ── Filter bar — always visible, never blanked during loading ─ */}
       <section
         aria-label={t('filtersLabel')}
         className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-4"
@@ -168,11 +180,10 @@ export default function AdminSecurityViolationsPage() {
         />
       </section>
 
-      {/* ── Table ────────────────────────────────────────────── */}
+      {/* ── Table — skeleton during loading, ErrorState during error,
+            ViolationTable (own empty-state) during success ─────────── */}
       {loading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <DataTableSkeleton cols={6} rows={10} variant="pulse" />
       ) : error ? (
         <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
           {error}
@@ -181,7 +192,7 @@ export default function AdminSecurityViolationsPage() {
         <ViolationTable rows={rows} onRowClick={openDetail} />
       )}
 
-      {/* ── Pagination ───────────────────────────────────────── */}
+      {/* ── Pagination — always visible ──────────────────────────── */}
       <nav className="flex items-center justify-between" aria-label={t('paginationLabel')}>
         <Button
           variant="outline"

@@ -31,6 +31,18 @@
 //   of whom read English. Following Stripe/Linear admin-panel pattern
 //   that ships English-only for back-office surfaces and saves
 //   translation budget for patient-facing flows.
+//
+// TASK #51 UPGRADE
+// ────────────────
+//   • Re-fetch loading branch ……… plain text → inline LabelingCard
+//                                  skeleton cluster (3 cards). Mirrors
+//                                  the route-level loading.tsx so users
+//                                  perceive a continuous loading state
+//                                  across initial nav + strategy change.
+//   • Empty branch ………………………… emoji "📭" + empty description →
+//                                  <CheckCircle2> icon + positive tone
+//                                  + FAANG-grade celebratory copy.
+//                                  Existing i18n key for title preserved.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -44,6 +56,8 @@ import type { SubmitLabelInput } from '@/hooks/mutations';
 import { LabelingCard } from '@/components/admin/labeling/LabelingCard';
 import { ProgressBar } from '@/components/admin/labeling/ProgressBar';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -52,7 +66,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { EmptyState } from '@/components/feedback';
-import { RefreshCw } from 'lucide-react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
 import type { LabelingQueueStrategy } from '@repo/shared';
 
 const STRATEGIES: readonly LabelingQueueStrategy[] = [
@@ -159,7 +173,7 @@ export default function LabelDashboardPage() {
           </Button>
         </div>
 
-        {/* Error banner */}
+        {/* Error banner — Task #52 will refactor */}
         {error && (
           <div
             role="alert"
@@ -171,14 +185,38 @@ export default function LabelDashboardPage() {
 
         {/* Queue */}
         {loading && items.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground" aria-live="polite">
-            {t('page.loadingItems')}
-          </p>
+          // ── Re-fetch loading skeleton — mirrors LabelingCard layout ──
+          <div
+            className="space-y-4"
+            role="status"
+            aria-busy="true"
+            aria-label={t('page.loadingItems')}
+          >
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <Skeleton className="h-5 w-32" />
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-4 w-3/5" />
+                  <div className="flex gap-2 pt-2">
+                    {[1, 2, 3, 4, 5].map((j) => (
+                      <Skeleton key={j} className="h-9 w-9 rounded-lg" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : items.length === 0 ? (
+          // ── Empty queue — celebratory (Task #51) ──
           <EmptyState
-            icon="📭"
+            icon={CheckCircle2}
+            tone="positive"
             title={t('page.noItems')}
-            description=""
+            description="Fresh items will appear as new conversations come in."
             actionLabel={t('page.refresh')}
             onAction={handleRefresh}
           />

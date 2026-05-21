@@ -4,6 +4,13 @@
 //
 // Data: aggregated client-side from a single /violations request scoped
 // to the last 7 days. Buckets by calendar day in viewer's timezone.
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The previous <Loader2> placeholder has been replaced with
+// <ChartSkeleton>. The skeleton frame matches the live chart's
+// outer card + h-64 body + legend row, so CLS stays at zero when
+// the Recharts SVG paints in.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -19,7 +26,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import { Loader2 } from 'lucide-react';
+import { ChartSkeleton } from '@/components/feedback/skeletons';
 import { useAuthStore } from '@/stores';
 import { getAccessToken } from '@/lib/auth';
 
@@ -105,11 +112,7 @@ export function ViolationChart() {
   const data = useMemo(() => bucketByDay(items), [items]);
 
   if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center rounded-md border bg-card">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <ChartSkeleton />;
   }
 
   return (

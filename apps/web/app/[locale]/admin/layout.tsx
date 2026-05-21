@@ -11,6 +11,23 @@
 //   4. If admin/owner → render children
 //
 // Pattern: Stripe Dashboard admin gate, Vercel team-admin check.
+//
+// TASK #51 UPGRADE
+// ────────────────
+// The previous <Loader2> placeholder during Zustand hydration has
+// been replaced with <AdminGateSkeleton> — a centered, brand-aware
+// placeholder (logo tile + title lines + progress bar). Visiting
+// admins see a deliberate, premium gate rather than a bare spinner.
+// Visual parity with Stripe / Vercel / Linear admin entry screens.
+//
+// Sequencing note:
+//   1. This skeleton renders during Zustand store hydration
+//      (≈50–300 ms on most devices).
+//   2. Immediately after, the route's own loading.tsx (Phase 3 of
+//      Task #51) takes over for the data-fetch phase.
+//   3. Once data lands, the real page paints in.
+// Two skeletons render in sequence — visually continuous, never a
+// blank frame, never a spinner.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
@@ -22,7 +39,7 @@ import { useAuthStore } from '@/stores';
 import { useHydration } from '@/hooks';
 import { isLoggedIn } from '@/lib/auth';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { AdminGateSkeleton } from '@/components/feedback/skeletons';
 
 const ADMIN_ROLES = ['ADMIN', 'OWNER'] as const;
 type AdminRole = (typeof ADMIN_ROLES)[number];
@@ -52,12 +69,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [hydrated, user, router, t]);
 
+  // ─── Hydration gate — branded skeleton (Task #51) ───────────────
   if (!hydrated) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Loading" />
-      </main>
-    );
+    return <AdminGateSkeleton />;
   }
 
   if (!isLoggedIn() || !user || !isAdminRole(user.role)) {
