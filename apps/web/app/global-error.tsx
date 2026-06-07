@@ -1,96 +1,63 @@
+// apps/web/app/global-error.tsx
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL ERROR PAGE — Task #52 Phase 3 (UPGRADE)
+//
+// Next.js's outermost error.tsx. Triggered ONLY when the root layout
+// itself throws — every regular route error is caught by the
+// segment-level error.tsx files (Phase 3 ships those). Reaching this
+// file means the app shell is broken — CSS variables, Tailwind
+// context, fonts, i18n: ALL potentially unavailable.
+//
+// Why use the shared AppError component:
+//   - AppError is the ONE component in our codebase explicitly
+//     designed for this "shell is dead" scenario. It uses inline
+//     styles (no Tailwind), embeds the brand colors as literals
+//     (#00A896 etc.), and uses a plain <a> tag (no i18n).
+//   - The v1 file inlined all of that. We now delete the inline
+//     duplication — a single source of truth for the last-resort UI.
+//
+// What changed vs v1:
+//   - Support email FIXED — was `dr.mayankvats09@gmail.com` (personal
+//     Gmail leaking into production); now `hello@datunai.com`. This
+//     bug was tracked in the Phase 1 plan and is now resolved.
+//   - Sentry capture moved INTO AppError's useEffect — single
+//     code path, single test surface.
+//   - Reference ID surfaced consistently (digest preferred over
+//     Sentry eventId).
+//
+// Layout shell requirement:
+//   Next.js requires global-error.tsx to return a complete
+//   <html><body>...</body></html> — that's why we wrap AppError in
+//   the html/body here. Inside the body, AppError takes over.
+//
+// References:
+//   - https://nextjs.org/docs/app/api-reference/file-conventions/error#global-error
+//   - https://nextjs.org/docs/app/getting-started/error-handling#handling-global-errors
+// ═══════════════════════════════════════════════════════════════
+
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
+import { AppError } from '@/components/error';
 
 export default function GlobalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    Sentry.captureException(error, {
-      tags: { errorBoundary: 'global', digest: error.digest ?? 'none' },
-    });
-  }, [error]);
+  readonly error: Error & { digest?: string };
+  readonly reset: () => void;
+}): React.ReactElement {
+  // Build a reference ID — prefer Next.js's digest because it's the
+  // ID that ends up in Vercel's logs alongside the underlying
+  // exception. AppError falls back to Sentry's lastEventId() if this
+  // is null.
+  const referenceId = error.digest ?? null;
 
-  // P4-F2: Inline styles ONLY — CSS variables unavailable (layout crashed)
   return (
+    // Next.js requires global-error.tsx to provide its own <html>
+    // wrapper — the root layout was the thing that crashed.
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px',
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-          background: '#ffffff',
-          color: '#0a0f1a',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ maxWidth: '440px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '16px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              fontSize: '28px',
-            }}
-          >
-            ⚠️
-          </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Something went wrong</h1>
-          <p style={{ fontSize: '14px', color: '#6b7280', marginTop: '8px', lineHeight: 1.5 }}>
-            An unexpected error occurred. Our team has been notified.
-          </p>
-          {error.digest && (
-            <p
-              style={{
-                fontSize: '12px',
-                color: '#9ca3af',
-                marginTop: '12px',
-                fontFamily: 'monospace',
-              }}
-            >
-              Error ID: {error.digest}
-            </p>
-          )}
-          <button
-            onClick={reset}
-            style={{
-              marginTop: '24px',
-              padding: '10px 20px',
-              background: '#00a896',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            Try again
-          </button>
-          <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '16px' }}>
-            Need help?{' '}
-            <a
-              href="mailto:dr.mayankvats09@gmail.com"
-              style={{ color: '#00a896', textDecoration: 'none' }}
-            >
-              dr.mayankvats09@gmail.com
-            </a>
-          </p>
-        </div>
+      <body>
+        <AppError error={error} referenceId={referenceId} reset={reset} />
       </body>
     </html>
   );

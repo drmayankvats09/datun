@@ -25,5 +25,114 @@
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The page you are looking for does not exist or has been moved.",
     "returnHome": "Return home"
+  },
+  "category": {
+    "network": {
+      "title": "You're offline",
+      "message": "Check your internet connection and try again.",
+      "messageWithFeature": "{feature} couldn't load — check your internet and try again."
+    },
+    "auth": {
+      "title": "Please sign in again",
+      "message": "Your session has ended. Sign in again to continue.",
+      "messageWithFeature": "{feature} needs you to sign in again to continue."
+    },
+    "validation": {
+      "title": "Something wasn't right",
+      "message": "We couldn't process that request. Please check the details and try again.",
+      "messageWithFeature": "{feature} couldn't process your input. Please check the details."
+    },
+    "rate-limit": {
+      "title": "Slow down a moment",
+      "message": "You've made too many requests in a short time. Please wait a moment before trying again.",
+      "messageWithFeature": "{feature} is busy. Please wait a moment before trying again."
+    },
+    "not-found": {
+      "title": "We couldn't find that",
+      "message": "The thing you're looking for doesn't exist or has been moved.",
+      "messageWithFeature": "{feature} couldn't find what you were looking for."
+    },
+    "server": {
+      "title": "Our servers hit a snag",
+      "message": "Something went wrong on our end. Our team has been notified.",
+      "messageWithFeature": "{feature} couldn't reach our servers. Our team has been notified."
+    },
+    "ai-service": {
+      "title": "The AI is taking a break",
+      "message": "Our AI service is temporarily unavailable. Please try again in a moment.",
+      "messageWithFeature": "{feature}'s AI is briefly offline. Please try again in a moment."
+    },
+    "consultation-state": {
+      "title": "This consultation has ended",
+      "message": "This consultation is no longer active. Start a new one from your home page.",
+      "messageWithFeature": "{feature} can't continue — this consultation has ended."
+    },
+    "chunk-load": {
+      "title": "A new version is ready",
+      "message": "We've shipped a new version of Datun. Reload the page to continue.",
+      "messageWithFeature": "{feature} needs a refresh — we've shipped a new version."
+    },
+    "unknown": {
+      "title": "Something went wrong",
+      "message": "An unexpected error occurred. Our team has been automatically notified.",
+      "messageWithFeature": "{feature} hit an unexpected error. Our team has been notified."
+    }
+  },
+  "actions": {
+    "retry": "Try again",
+    "retrying": "Retrying…",
+    "retryingIn": "Retrying in {seconds}s…",
+    "goHome": "Go home",
+    "signInAgain": "Sign in again",
+    "reload": "Reload",
+    "getHelp": "Get help",
+    "reportBug": "Report this bug",
+    "contactSupport": "Contact support"
+  },
+  "recovery": {
+    "recoveryNetwork": "Try again",
+    "recoveryAuth": "Sign in again",
+    "recoveryValidation": "Contact support",
+    "recoveryRateLimit": "Wait and retry",
+    "recoveryNotFound": "Go home",
+    "recoveryServer": "Try again",
+    "recoveryAiService": "Try again",
+    "recoveryConsultationState": "Start a new consultation",
+    "recoveryChunkLoad": "Reload",
+    "recoveryUnknown": "Try again"
+  },
+  "referenceLabel": "Reference",
+  "feedback": {
+    "title": "Tell us what happened",
+    "subtitle": "Help us fix this faster by sharing what you were doing.",
+    "subtitle2": "Your name and email are optional.",
+    "labelName": "Name",
+    "labelEmail": "Email",
+    "labelComments": "What happened?",
+    "labelClose": "Close",
+    "labelSubmit": "Send report",
+    "errorGeneric": "Unable to send report. Please try again.",
+    "errorFormEntry": "Please fill in all required fields.",
+    "successMessage": "Thanks — your report was sent."
+  },
+  "notFound": {
+    "title": "We can't find that page",
+    "description": "The page you are looking for doesn't exist or has been moved. Try one of these instead:",
+    "popular": "Popular destinations",
+    "destinations": {
+      "home": "Home",
+      "consult": "Start a consultation",
+      "signin": "Sign in"
+    },
+    "feedbackPrompt": "Tell us how you got here"
+  },
+  "offline": {
+    "badge": "You're offline",
+    "title": "No internet connection",
+    "description": "We can't reach our servers right now. Check your connection and try again — we'll pick up where you left off.",
+    "tipWifi": "Check your Wi-Fi or mobile data is on.",
+    "tipAirplane": "Make sure airplane mode is off.",
+    "tipMobile": "If you're on mobile, try moving to a spot with better signal.",
+    "retryLabel": "Try again"
   }
 }

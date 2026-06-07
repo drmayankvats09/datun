@@ -14,6 +14,13 @@
 //     auth) mounted here under generalLimiter for parity with other
 //     public reads.
 //   - /api/admin/flags/*        → admin CRUD; mounted by admin/index.ts.
+//
+// Task #52 (Error Boundaries):
+//   - /api/audit/error          → public-ish (optionalAuth) audit
+//     ingestion endpoint. Mounted under generalLimiter so an
+//     attacker can't spam more than 500 audit writes per 15 min
+//     per IP. See routes/audit.router.ts for rationale on
+//     optionalAuth.
 // ═══════════════════════════════════════════════════════════════
 
 import type { Express } from 'express';
@@ -26,6 +33,7 @@ import { webhookRouter } from './webhook.router.js';
 import { adminRouter } from './admin/index.js';
 import { mediaRouter } from './media.router.js';
 import { flagsRouter } from './flags.router.js';
+import { auditRouter } from './audit.router.js';
 import { generalLimiter } from '../middleware/rate-limit.js';
 
 export function mountRoutes(app: Express): void {
@@ -42,6 +50,11 @@ export function mountRoutes(app: Express): void {
   // Task #49 — public feature flag map endpoint (optional auth).
   // Mounted under generalLimiter to match read-side public routes.
   app.use('/api', generalLimiter, flagsRouter);
+
+  // Task #52 — error audit ingestion (optional auth).
+  // generalLimiter keeps audit writes capped at 500/15min/IP — enough
+  // for legitimate use (errors are rare per session), too low for abuse.
+  app.use('/api', generalLimiter, auditRouter);
 
   // Admin API — JWT + ADMIN role required, gated by ADMIN_ROUTES_ENABLED flag.
   // Includes /api/admin/security/* (Task #45) and /api/admin/flags/* (Task #49).

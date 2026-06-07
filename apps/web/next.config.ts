@@ -10,6 +10,18 @@
 //
 // SENTRY:
 //   Production builds are wrapped by @sentry/nextjs for source-map upload.
+//
+// TASK #52 PHASE 5 — PWA headers:
+//   - /sw.js          → MUST NOT be cached by the browser HTTP cache;
+//                        the SW lifecycle relies on byte-comparison of
+//                        the freshly-fetched script. `no-store` matches
+//                        the `updateViaCache: 'none'` we set in
+//                        lib/sw/register.ts.
+//   - /manifest.json  → cached for 24h (changes rarely; safe to cache)
+//   - /offline.html   → cached for 24h; pre-cached by the SW on install
+//   - /404.html       → platform-served by Vercel on edge errors;
+//                        cached aggressively (purely static)
+//   - /500.html       → same as 404.html
 // ═══════════════════════════════════════════════════════════════
 
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -63,6 +75,64 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+
+      // ── Task #52 Phase 5: Service worker MUST bypass HTTP cache ──
+      //
+      // Browsers use byte-comparison of the SW script to detect
+      // updates. If the script is HTTP-cached, updates won't propagate
+      // until the cache expires. `no-store` forces every check to hit
+      // the origin.
+      //
+      // Service-Worker-Allowed: '/' lets the SW control the entire
+      // origin even though it lives at /sw.js (the default scope is
+      // the script's directory).
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate, no-store' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+          // Content-Type override — Next.js's static handler usually
+          // sets this correctly for .js, but being explicit avoids
+          // edge runtime quirks.
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+
+      // ── PWA manifest — moderate cache, allows quick updates ──
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+          { key: 'Content-Type', value: 'application/manifest+json; charset=utf-8' },
+        ],
+      },
+
+      // ── Offline page — same cache as manifest ──
+      {
+        source: '/offline.html',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+          { key: 'Content-Type', value: 'text/html; charset=utf-8' },
+        ],
+      },
+
+      // ── Vercel platform 404 / 500 — long cache; they're static ──
+      {
+        source: '/:status(404|500).html',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+          { key: 'Content-Type', value: 'text/html; charset=utf-8' },
+        ],
+      },
     ];
   },
 };
@@ -80,6 +150,8 @@ export default process.env.NODE_ENV === 'production'
       sourcemaps: {
         deleteSourcemapsAfterUpload: true,
       },
-      authToken: process.env['SENTRY_AUTH_TOKEN'],
+      reactComponentAnnotation: { enabled: true },
+      widenClientFileUpload: true,
+      tunnelRoute: '/monitoring',
     })
   : wrappedConfig;

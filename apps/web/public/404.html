@@ -1,0 +1,135 @@
+<!doctype html>
+<!--
+  apps/web/public/404.html
+  ═══════════════════════════════════════════════════════════════
+  PLATFORM-LEVEL 404 — Task #52 Phase 5
+
+  Vercel automatically serves this file when:
+    - The Next.js function timed out before a 404 could be rendered
+    - The edge encountered an internal error during routing
+    - The /404 dynamic route itself crashed
+
+  Distinct from app/[locale]/not-found.tsx (Phase 3 upgrade):
+    - That file renders inside Next.js (i18n, theme, brand assets)
+    - This file works even when Next.js itself is unreachable
+
+  Constraints:
+    - ZERO external dependencies (no images, fonts, CSS files)
+    - Inline CSS, brand colors hardcoded (cannot reference CSS vars)
+    - English only (i18n is unavailable here)
+    - Self-contained <html><head><body>
+
+  Brand colors (matched to Datun's design system):
+    - Primary teal:    #00A896
+    - Background dark: #0A0F1A
+    - Text grey:       #6B7280
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Page not found — Datun</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background: #ffffff;
+        color: #0a0f1a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+        -webkit-font-smoothing: antialiased;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #0a0f1a;
+          color: #f8fafc;
+        }
+        .description { color: #94a3b8; }
+        .reference { color: #64748b; }
+        .secondary-link {
+          color: #f8fafc;
+          border-color: #1e293b;
+        }
+      }
+      .container { max-width: 440px; width: 100%; }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        color: #00a896;
+        background: rgba(0, 168, 150, 0.1);
+        border-radius: 9999px;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 24px 0 12px;
+        line-height: 1.2;
+      }
+      .description {
+        font-size: 15px;
+        color: #6b7280;
+        line-height: 1.5;
+        margin: 0 0 32px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+      }
+      .primary-link {
+        padding: 10px 24px;
+        background: #00a896;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background 150ms;
+      }
+      .primary-link:hover { background: #008f7f; }
+      .secondary-link {
+        padding: 10px 24px;
+        background: transparent;
+        color: #0a0f1a;
+        text-decoration: none;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .reference {
+        margin-top: 24px;
+        font-size: 12px;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" role="alert" aria-live="assertive">
+      <span class="badge">404</span>
+      <h1>We can't find that page</h1>
+      <p class="description">
+        The page you're looking for doesn't exist or has been moved.
+      </p>
+      <div class="actions">
+        <a href="/" class="primary-link">Go to homepage</a>
+        <a href="mailto:hello@datunai.com" class="secondary-link">Contact us</a>
+      </div>
+      <p class="reference">If this page should exist, please let us know.</p>
+    </div>
+  </body>
+</html>
