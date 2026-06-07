@@ -15,6 +15,14 @@
 //   `<Loader2>` from any `app/**/page.tsx`, `layout.tsx`, or
 //   `loading.tsx` file. See ./eslint-rules/no-bare-loader.js for
 //   the full rule contract and allowlist.
+//
+// TASK #53 ADDITION
+//   A `**/*.cjs` override gives CommonJS tool configs (currently
+//   lighthouserc.cjs, which Lighthouse CI loads via `require()`)
+//   Node/CommonJS language semantics and permits `require()` there.
+//   These files are build tooling executed by Node — they never
+//   ship to the browser, so the TypeScript/ESM import rules that
+//   protect app code do not apply to them.
 // ═══════════════════════════════════════════════════════════════
 
 import { nextJsConfig } from '@repo/eslint-config/next-js';
@@ -36,6 +44,28 @@ export default [
     },
     rules: {
       'datun/no-bare-loader': 'error',
+    },
+  },
+  {
+    // ── Task #53: CommonJS tool configs (lighthouserc.cjs) ──
+    // `.cjs` is CommonJS by definition; Node provides require/module/
+    // process/__dirname as runtime globals there. Declared inline
+    // (rather than importing the `globals` package) to keep this
+    // config dependency-free. `no-require-imports` is a TS/ESM app-code
+    // rule — irrelevant to Node-executed tooling, so it is disabled
+    // for exactly this file class and nowhere else.
+    files: ['**/*.cjs'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'writable',
+        process: 'readonly',
+        __dirname: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

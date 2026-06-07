@@ -59,6 +59,22 @@
 //     3. <MotionLevelContext.Provider> — composite "effective motion
 //        level" (full / reduced / none) combining OS pref + network
 //        + future low-power signal. Consumed via useMotionLevel().
+//
+// TASK #53 UPDATE — added <SpeedInsightsClient /> (field RUM):
+//   Placement: direct child of <body>, AFTER the provider tree.
+//     - It renders no UI and consumes no context (intl/theme/query),
+//       so nesting it inside the providers would be pure noise.
+//     - Last-in-body matches Vercel's official quickstart placement.
+//   Gate: rendered ONLY when `process.env.VERCEL` is set (Vercel
+//   sets VERCEL=1 on its build/runtime). Server-side check by design:
+//     - Lighthouse CI + local `next start` are NOT on Vercel — there
+//       the collector script would 404 and the console error would
+//       ding our own best-practices audit. Gated ⇒ clean lab runs.
+//     - Vercel preview + production get full real-user vitals.
+//   CSP: zero changes needed — strict-dynamic propagates trust to
+//   the runtime-injected collector, and Task #45 already allowlisted
+//   va.vercel-scripts.com / vitals.vercel-insights.com as backup.
+//   (Full rationale: components/providers/speed-insights.tsx.)
 // ═══════════════════════════════════════════════════════════════
 
 import { notFound } from 'next/navigation';
@@ -78,6 +94,7 @@ import type { Metadata } from 'next';
 import { LocaleFont } from '@/components/locale-font';
 import { TranslationBanner } from '@/components/translation-banner';
 import { getNonce } from '@/lib/csp/get-nonce';
+import { SpeedInsightsClient } from '@/components/providers/speed-insights';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -155,6 +172,10 @@ export default async function LocaleLayout({
             </PostHogProvider>
           </QueryProvider>
         </NextIntlClientProvider>
+        {/* ── Task #53: real-user Core Web Vitals (Vercel-only) ──
+            Server-side VERCEL gate keeps Lighthouse CI / local
+            `next start` free of a 404'ing collector script. */}
+        {process.env.VERCEL ? <SpeedInsightsClient /> : null}
       </body>
     </html>
   );
