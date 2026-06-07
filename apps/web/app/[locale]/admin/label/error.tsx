@@ -1,51 +1,41 @@
+// apps/web/app/[locale]/admin/label/error.tsx
 // ═══════════════════════════════════════════════════════════════
-// /admin/label ERROR BOUNDARY — Graceful fallback + Sentry report
-// Caught: render errors in admin/label/* subtree.
-// NOT caught: errors in server components (handled by global error.tsx)
+// ADMIN LABEL ERROR PAGE — Task #52 Phase 3 (UPGRADE)
+//
+// Replaces the v1 custom UI (Lucide AlertTriangle icon + 2-button
+// row + inline Sentry capture) with the unified <RouteError />.
+// Behaviour-equivalent — Sentry capture, retry, home — but now
+// shares the design language with every other route error in Datun.
+//
+// What changed vs v1:
+//   - v1 wired Sentry.captureException with a `surface: 'labeling-page'`
+//     extra. The shared component does the same plumbing via the
+//     `segment` prop (mapped to `route.segment` tag) so the dashboard
+//     filter still works — just under a more consistent key.
+//   - v1 read translations from `admin.labeling.errors` namespace.
+//     The shared component reads from the global `errors` namespace,
+//     so this page now uses the unified error copy. Phase 4 will
+//     add the localised strings used by RouteError to every locale.
+//   - v1 used `window.location.assign('/')` for the home button. The
+//     shared component uses i18n-aware `<Link href="/">` which
+//     respects locale prefix (e.g. `/hi/`).
+//   - Class component / inline icons / bespoke layout — all gone.
+//     File shrinks from ~50 lines to ~25 lines.
+//
+// References:
+//   - https://nextjs.org/docs/app/api-reference/file-conventions/error
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
-import { useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import * as Sentry from '@sentry/nextjs';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { RouteError } from '@/components/error';
 
-export default function LabelError({
+export default function AdminLabelError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  const t = useTranslations('admin.labeling.errors');
-
-  useEffect(() => {
-    Sentry.captureException(error, {
-      tags: { route: '/admin/label', surface: 'labeling-page' },
-      extra: { digest: error.digest },
-    });
-  }, [error]);
-
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12 text-center">
-      <AlertTriangle className="mb-4 size-12 text-destructive" aria-hidden="true" />
-      <h1 className="mb-2 text-xl font-semibold">{t('loadFailed')}</h1>
-      <p className="mb-6 max-w-md text-sm text-muted-foreground">
-        {error.message || 'Something unexpected happened. Our team has been notified.'}
-      </p>
-      <div className="flex gap-3">
-        <Button onClick={reset} variant="default">
-          {t('retry')}
-        </Button>
-        <Button variant="outline" onClick={() => window.location.assign('/')}>
-          Home
-        </Button>
-      </div>
-      {error.digest && (
-        <p className="mt-6 text-xs text-muted-foreground/60">Error ID: {error.digest}</p>
-      )}
-    </main>
-  );
+  readonly error: Error & { digest?: string };
+  readonly reset: () => void;
+}): React.ReactElement {
+  return <RouteError error={error} reset={reset} segment="admin_label" />;
 }

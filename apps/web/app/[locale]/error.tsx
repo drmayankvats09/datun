@@ -1,58 +1,51 @@
+// apps/web/app/[locale]/error.tsx
+// ═══════════════════════════════════════════════════════════════
+// LOCALE ROOT ERROR PAGE — Task #52 Phase 3 (UPGRADE)
+//
+// Replaces the v1 custom error UI with the unified <RouteError />
+// component from `@/components/error` (Phase 2). This file is now a
+// thin shell — every decision (categorisation, retry strategy, audit,
+// Sentry capture, copy resolution) lives in the shared component.
+//
+// What changed vs v1:
+//   - No bespoke layout, no manual Sentry capture, no inline copy.
+//   - `segment="locale_root"` is passed so the Sentry dashboard can
+//     filter "all errors from the top of the locale tree".
+//   - "use client" REMAINS — every Next.js error.tsx MUST be a client
+//     component (the framework documents this constraint, since it
+//     re-renders with `reset` from the browser).
+//
+// Position in the route tree:
+//   This file catches errors that bubble out of every child segment
+//   that doesn't have its OWN error.tsx. Phase 3 wires error.tsx
+//   into (auth), (legal), consult, consult/[id], admin, admin/security
+//   so this boundary becomes the last-resort net — typically only
+//   triggered when a layout itself throws (rare).
+//
+// What this file is NOT for:
+//   - 404 routing — that's `not-found.tsx` (Phase 3 also upgrades it)
+//   - Platform crashes — that's `global-error.tsx` (also Phase 3)
+//
+// References:
+//   - https://nextjs.org/docs/app/api-reference/file-conventions/error
+//   - https://nextjs.org/docs/app/getting-started/error-handling
+// ═══════════════════════════════════════════════════════════════
+
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { RouteError } from '@/components/error';
 
-export default function Error({
+/**
+ * Next.js error.tsx props contract — `error` (with optional digest)
+ * and `reset` (re-render the route children). Both come from the
+ * framework; we forward them to the shared component.
+ */
+export default function LocaleRootError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  const t = useTranslations('errors');
-
-  useEffect(() => {
-    Sentry.captureException(error, {
-      tags: { errorBoundary: 'page', digest: error.digest ?? 'none' },
-    });
-  }, [error]);
-
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center sm:px-6">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-3xl">
-        😔
-      </div>
-      <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
-        {t('page.errorTitle')}
-      </h2>
-      <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
-        {t('page.errorDescription')}
-      </p>
-      {process.env.NODE_ENV === 'development' && (
-        <pre className="mt-4 max-w-lg overflow-auto rounded-lg bg-muted p-4 text-left text-xs text-destructive">
-          {error.message}
-        </pre>
-      )}
-      {error.digest && (
-        <p className="mt-4 font-mono text-xs text-muted-foreground/70">Error ID: {error.digest}</p>
-      )}
-      <div className="mt-6 flex gap-3">
-        <button
-          onClick={reset}
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          {t('page.tryAgain')}
-        </button>
-        <Link
-          href="/"
-          className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-        >
-          {t('page.goHome')}
-        </Link>
-      </div>
-    </div>
-  );
+  readonly error: Error & { digest?: string };
+  readonly reset: () => void;
+}): React.ReactElement {
+  return <RouteError error={error} reset={reset} segment="locale_root" />;
 }
