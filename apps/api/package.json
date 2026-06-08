@@ -22,7 +22,7 @@
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@sentry/node": "^10.50.0",
+    "@sentry/node": "^10.56.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
