@@ -158,3 +158,6 @@ jobs:
           path: apps/web/.lighthouseci
           retention-days: 90
           if-no-files-found: warn
+          # .lighthouseci is a dot-folder; upload-artifact v4 skips hidden
+          # files by default — without this the artifact uploads empty.
+          include-hidden-files: true
