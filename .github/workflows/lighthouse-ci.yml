@@ -1,0 +1,163 @@
+# ═══════════════════════════════════════════════════════════════
+# DATUN — LIGHTHOUSE CI (Task #53 — Performance Budget Gate)
+#
+# WHAT THIS WORKFLOW DOES:
+#   On every PR that can affect the web app, it:
+#     1. Builds apps/web exactly the way ci.yml does (same Node,
+#        pnpm, Postgres service, env — mirrored on purpose so this
+#        workflow introduces ZERO new failure modes).
+#     2. Boots the real production server (next start).
+#     3. Runs Lighthouse 3× per URL (median wins — anti-flakiness).
+#     4. Asserts scores + Core Web Vitals + per-page byte budgets
+#        defined in apps/web/lighthouserc.cjs +
+#        apps/web/lighthouse-budgets.json.
+#     5. Archives every HTML report as a 90-day artifact
+#        (the temporary-public-storage links expire in 7 days —
+#        artifacts are our free trend history).
+#
+# WHY A SEPARATE WORKFLOW (not a job inside ci.yml):
+#   • Runs in parallel — main CI stays exactly as fast as today.
+#   • Per-concern workflow files is the existing Datun pattern
+#     (30 workflows, one responsibility each).
+#   • Enforcement has its own independent dial (below).
+#
+# ROLLOUT DIAL — READ BEFORE PANICKING AT A RED ❌:
+#   This workflow NEVER uses continue-on-error. Enforcement is
+#   controlled by GitHub branch protection instead:
+#     • Baseline week → "Performance Budget Gate" is NOT a required
+#       check. A red ❌ is visible and informative, but merging is
+#       still allowed. Read the report, learn the numbers.
+#     • After baseline → Settings → Branches → main → add
+#       "Performance Budget Gate" to required status checks.
+#       From that moment, red = no merge. (Runbook: ADR-0009.)
+#
+# TASK INTERLINKS:
+#   #45 CSP        — audits run against the real proxy.ts headers.
+#   #51 Skeletons  — CLS assertion is their permanent regression test.
+#   #54 WCAG       — a11y category pre-wired (warn→error flip in rc).
+#   #55/#56 UIs    — will be BORN inside these budgets, not retrofit.
+#   #216–221       — apps/clinics copies this harness on day one.
+# ═══════════════════════════════════════════════════════════════
+
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/lighthouse-ci.yml'
+  # Manual trigger — handy for re-measuring main after a merge or
+  # producing a fresh baseline without opening a PR.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  TURBO_TELEMETRY_DISABLED: 1
+  # Mirrors ci.yml — the build path may touch Prisma, so the same
+  # throwaway Postgres service + URL is provided here.
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/datun_lighthouse_ci'
+
+jobs:
+  lighthouse:
+    name: Performance Budget Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # ── Same service block as ci.yml (proven-green setup) ──
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: datun_lighthouse_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      # Same key family as ci.yml on purpose: if the quality job has
+      # already built this SHA, Turbo replays the build here in
+      # seconds instead of rebuilding from scratch.
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm turbo run db:generate
+
+      # Mirrors ci.yml's schema sync so `next build` / `next start`
+      # never meet an empty database. --skip-generate because the
+      # client was generated one step above.
+      - name: Sync schema to throwaway DB
+        run: pnpm --filter @repo/db exec prisma db push --skip-generate --accept-data-loss
+
+      # Build ONLY the web app and its workspace dependencies —
+      # api/worker binaries are irrelevant to a Lighthouse audit.
+      # Env block mirrors ci.yml's Build step 1:1.
+      - name: Build web app (production)
+        run: pnpm turbo run build --filter=web
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'https://datunai.com' }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.datunai.com' }}
+
+      # Pinned to the 0.15 line (current stable; bundles Lighthouse 12).
+      # Global install keeps it out of the app's dependency tree —
+      # it is CI tooling, not product code.
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.15.x
+
+      # autorun = collect (starts `pnpm start`, audits every URL 3×)
+      #         → assert (lighthouserc.cjs assertMatrix)
+      #         → upload (temporary public report links in the log).
+      - name: Run Lighthouse CI
+        working-directory: apps/web
+        run: lhci autorun
+
+      # Reports survive 90 days even when the public links die after 7.
+      # if: always() → we keep the evidence ESPECIALLY when the gate
+      # fails — that report is the debugging starting point.
+      - name: Archive Lighthouse reports (90-day trend history)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports-${{ github.run_number }}
+          path: apps/web/.lighthouseci
+          retention-days: 90
+          if-no-files-found: warn
+          # .lighthouseci is a dot-folder; upload-artifact v4 skips hidden
+          # files by default — without this the artifact uploads empty.
+          include-hidden-files: true

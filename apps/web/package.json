@@ -8,6 +8,9 @@
     "build": "next build",
     "postbuild": "next-sitemap",
     "start": "next start",
+    "analyze": "next experimental-analyze",
+    "lhci": "lhci autorun",
+    "perf": "lhci collect --numberOfRuns=1 && lhci assert",
     "lint": "eslint --max-warnings 0",
     "check-types": "next typegen && tsc --noEmit",
     "check-translations": "npx tsx scripts/check-translations.ts",
@@ -21,6 +24,7 @@
     "@repo/ui": "workspace:*",
     "@sentry/nextjs": "^10.52.0",
     "@tanstack/react-query": "^5.62.0",
+    "@vercel/speed-insights": "^2.0.0",
     "blurhash": "^2.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -44,6 +48,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.0",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@tailwindcss/postcss": "^4.2.2",
