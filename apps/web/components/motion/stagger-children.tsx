@@ -15,7 +15,7 @@
 // instantly. No Framer overhead.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useMemo } from 'react';
 import { STAGGER } from '@repo/shared';
 import { buildStaggerContainer, staggerItemVariants } from '@/lib/motion';
@@ -45,9 +45,9 @@ export function StaggerContainer({
   }
 
   return (
-    <motion.div className={className} variants={variants} initial="hidden" animate="visible">
+    <m.div className={className} variants={variants} initial="hidden" animate="visible">
       {children}
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -64,8 +64,8 @@ export function StaggerItem({ children, className }: StaggerItemProps) {
   }
 
   return (
-    <motion.div className={className} variants={staggerItemVariants}>
+    <m.div className={className} variants={staggerItemVariants}>
       {children}
-    </motion.div>
+    </m.div>
   );
 }

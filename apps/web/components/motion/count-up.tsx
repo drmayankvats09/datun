@@ -5,7 +5,7 @@
 //
 // A number animates from 0 (or the previous value) to a target value
 // over a configurable duration, using a Framer Motion value + transform
-// pipeline. Renders inside a motion.span for direct text interpolation.
+// pipeline. Renders inside a m.span for direct text interpolation.
 //
 // This is the MVP component for:
 //   - Task #64 — Dental Health Score reveal (0 → 72 in 1.2s)
@@ -24,7 +24,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useMotionValue, animate, useMotionValueEvent } from 'framer-motion';
+import { m, useMotionValue, animate, useMotionValueEvent } from 'framer-motion';
 import { DURATION, EASE } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -106,7 +106,7 @@ export function CountUp({
   }, [value, duration, delay, isReduced, motionValue, formatter]);
 
   return (
-    <motion.span
+    <m.span
       className={cn(className)}
       aria-live="polite"
       // `aria-atomic` ensures the entire number is announced, not
@@ -114,6 +114,6 @@ export function CountUp({
       aria-atomic="true"
     >
       {display}
-    </motion.span>
+    </m.span>
   );
 }

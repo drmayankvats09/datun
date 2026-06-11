@@ -68,4 +68,35 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  {
+    // ── Task #53.5 W2: LazyMotion strict-mode guard ──
+    // motion-config-provider.tsx runs <LazyMotion strict> — rendering
+    // any `motion.*` component now THROWS at runtime, and a static
+    // `domAnimation`/`domMax` import drags the whole animation engine
+    // (~146KB stat) back into the shared client chunk. This rule turns
+    // both mistakes into lint-time errors so Prasanth (or future-us at
+    // 2 AM) cannot ship them. The single legal feature import lives in
+    // lib/motion/features.ts — exempted below — which LazyMotion pulls
+    // via dynamic import only.
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'framer-motion',
+              importNames: ['motion', 'domAnimation', 'domMax'],
+              message:
+                "Use `m` from 'framer-motion' — LazyMotion strict mode is ON, so `motion.*` throws at runtime. Feature bundles load ONLY via lib/motion/features.ts (Task #53.5 W2).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The one legal home of the static feature-bundle import.
+    files: ['**/lib/motion/features.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
 ];

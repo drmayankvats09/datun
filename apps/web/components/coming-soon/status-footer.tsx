@@ -4,7 +4,7 @@
 
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { Globe } from 'lucide-react';
 
 interface StatusFooterProps {
@@ -78,7 +78,7 @@ export function StatusFooter({ languagesLabel, copyrightLabel }: StatusFooterPro
   const reduceMotion = useReducedMotion();
 
   return (
-    <motion.footer
+    <m.footer
       initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.7, delay: 1.6, ease: EASE_OUT_EXPO }}
@@ -99,6 +99,6 @@ export function StatusFooter({ languagesLabel, copyrightLabel }: StatusFooterPro
       </div>
 
       <p className="text-xs text-muted-foreground/60">{copyrightLabel}</p>
-    </motion.footer>
+    </m.footer>
   );
 }

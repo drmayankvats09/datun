@@ -4,7 +4,7 @@
 
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 
 interface HeroContentProps {
   mission: string;
@@ -28,7 +28,7 @@ export function HeroContent({ mission, headline, subheadline }: HeroContentProps
   return (
     <div className="mt-7 flex flex-col items-center gap-4 sm:mt-9 sm:gap-5">
       {/* Mission pill — stars on BOTH sides */}
-      <motion.div
+      <m.div
         initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, delay: 0.7, ease: EASE_OUT_EXPO }}
@@ -41,10 +41,10 @@ export function HeroContent({ mission, headline, subheadline }: HeroContentProps
         <StarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         <span className="tracking-wide">{mission}</span>
         <StarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-      </motion.div>
+      </m.div>
 
       {/* Headline */}
-      <motion.h2
+      <m.h2
         initial={reduceMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.85, delay: 0.85, ease: EASE_OUT_EXPO }}
@@ -52,17 +52,17 @@ export function HeroContent({ mission, headline, subheadline }: HeroContentProps
         style={{ letterSpacing: '-0.025em', lineHeight: 1.1 }}
       >
         {headline}
-      </motion.h2>
+      </m.h2>
 
       {/* Subheadline */}
-      <motion.p
+      <m.p
         initial={reduceMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 1.05, ease: EASE_OUT_EXPO }}
         className="max-w-xl text-base leading-relaxed text-balance text-muted-foreground sm:text-lg"
       >
         {subheadline}
-      </motion.p>
+      </m.p>
     </div>
   );
 }

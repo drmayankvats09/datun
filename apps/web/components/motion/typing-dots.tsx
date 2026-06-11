@@ -22,7 +22,7 @@
 //   - Reduced motion: renders three static dots, no movement.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { typingDotVariants } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -89,7 +89,7 @@ export function TypingDots({
       style={{ gap }}
     >
       {[0, 1, 2].map((i) => (
-        <motion.span
+        <m.span
           key={i}
           aria-hidden="true"
           style={{

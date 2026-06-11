@@ -26,7 +26,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useRef } from 'react';
-import { motion, useAnimationControls } from 'framer-motion';
+import { m, useAnimationControls } from 'framer-motion';
 import { shakeVariants } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -70,14 +70,9 @@ export function Shake({
 
   return (
     <>
-      <motion.div
-        className={cn(className)}
-        variants={shakeVariants}
-        initial="idle"
-        animate={controls}
-      >
+      <m.div className={cn(className)} variants={shakeVariants} initial="idle" animate={controls}>
         {children}
-      </motion.div>
+      </m.div>
       {/* aria-live region — invisible to sighted users, announced to AT */}
       <span role="status" aria-live="polite" className="sr-only">
         {trigger ? announceText : ''}

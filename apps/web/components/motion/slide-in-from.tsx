@@ -37,7 +37,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
-import { motion, type Variants } from 'framer-motion';
+import { m, type Variants } from 'framer-motion';
 import { SPRING, DURATION, EASE } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -114,7 +114,7 @@ export function SlideInFrom({
   }
 
   return (
-    <motion.div
+    <m.div
       className={cn(className)}
       variants={variants}
       initial="hidden"
@@ -123,6 +123,6 @@ export function SlideInFrom({
       transition={transition}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

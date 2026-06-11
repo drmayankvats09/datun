@@ -25,7 +25,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { checkCircleDrawVariants, checkPathDrawVariants } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -93,7 +93,7 @@ export function CheckMark({
   }
 
   return (
-    <motion.svg
+    <m.svg
       role="img"
       aria-label={ariaLabel}
       className={cn(className)}
@@ -108,17 +108,12 @@ export function CheckMark({
       initial="hidden"
       animate="visible"
     >
-      <motion.circle
-        cx={CIRCLE_CX}
-        cy={CIRCLE_CY}
-        r={CIRCLE_R}
-        variants={checkCircleDrawVariants}
-      />
-      <motion.path
+      <m.circle cx={CIRCLE_CX} cy={CIRCLE_CY} r={CIRCLE_R} variants={checkCircleDrawVariants} />
+      <m.path
         d={CHECK_PATH}
         variants={checkPathDrawVariants}
         onAnimationComplete={() => onComplete?.()}
       />
-    </motion.svg>
+    </m.svg>
   );
 }

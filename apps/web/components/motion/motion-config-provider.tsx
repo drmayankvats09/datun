@@ -12,17 +12,30 @@
 //        Motion; opacity-only animations stay enabled
 //        (vestibular-safe by default — WCAG 2.3.3).
 //
-//   2. <LazyMotion features={domAnimation}>
-//        Bundle-reduction foundation. The full `motion.*` API ships
-//        ~50KB gzipped. With LazyMotion + the `m.*` component, the
-//        runtime is ~25KB. Critical for India's 2G/3G users
-//        (Rule #22 — 1L users Day 1).
+//   2. <LazyMotion features={loadMotionFeatures} strict>
+//        Bundle reduction — COMPLETED in Task #53.5 W2 (CUT-3).
+//        Task #50 laid this foundation but imported `domAnimation`
+//        STATICALLY, which kept the full engine (`motion-dom`,
+//        101.10KB stat + framer-motion glue, 45.28KB stat) inside
+//        the shared chunk of every page. Features now arrive via
+//        dynamic import from `lib/motion/features.ts` → the engine
+//        lives in its own async chunk, fetched after hydration.
+//        Critical for India's 2G/3G users (Rule #22 — 1L users
+//        Day 1).
 //
-//        We do NOT enable `strict` mode yet — existing motion
-//        components (fade-in / page-transition / press-scale /
-//        stagger-children) use `motion.*`. After Phase 3 refactor
-//        migrates them to `m.*`, `strict` can be turned on as a
-//        compile-time guard.
+//        The bundle is `domMax` (not domAnimation): LayoutMorph is
+//        built on `layoutId` layout projection, which domAnimation
+//        silently no-ops — a latent Task #50 bug. Async chunk ⇒ the
+//        upgrade costs the sync bundle zero bytes. Details + the
+//        one-line downgrade path: lib/motion/features.ts.
+//
+//        `strict` is ON: all 23 motion consumers were codemodded to
+//        `m.*` in the same change, so any future `motion.*` render
+//        throws immediately in dev — and `no-restricted-imports`
+//        (eslint.config.js) catches the import before it even runs.
+//        First-frame note: `m.*` renders static markup until the
+//        feature chunk lands, then animates — imperceptible for our
+//        fade/reveal/press patterns.
 //
 //   3. <MotionLevelContext.Provider>
 //        Composite "effective motion level" — combines OS preference
@@ -43,7 +56,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { createContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
+import { LazyMotion, MotionConfig } from 'framer-motion';
 
 // IMPORTANT — direct hook paths (NOT `@/hooks` barrel) to avoid a
 // circular dependency. The barrel `apps/web/hooks/index.ts` re-exports
@@ -53,6 +66,13 @@ import { LazyMotion, MotionConfig, domAnimation } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import { useNetworkQuality } from '@/hooks/use-network-quality';
 import { capturePostHogEvent } from '@/lib/posthog';
+
+// ── Async feature loader (Task #53.5 W2, CUT-3) ──
+// Module scope ⇒ stable function identity across renders; LazyMotion
+// invokes it exactly once and caches the resolved bundle. The chunk
+// boundary is created by this dynamic import — see
+// lib/motion/features.ts for the full rationale (incl. domMax).
+const loadMotionFeatures = () => import('@/lib/motion/features').then((mod) => mod.default);
 
 /**
  * Effective motion level for the running session.
@@ -141,7 +161,7 @@ export function MotionConfigProvider({ children }: MotionConfigProviderProps) {
 
   return (
     <MotionLevelContext.Provider value={value}>
-      <LazyMotion features={domAnimation}>
+      <LazyMotion features={loadMotionFeatures} strict>
         <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </LazyMotion>
     </MotionLevelContext.Provider>

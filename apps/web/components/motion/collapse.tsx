@@ -28,7 +28,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { DURATION, EASE, SPRING } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -69,7 +69,7 @@ export function Collapse({ children, open, className, onAnimationComplete }: Col
   return (
     <AnimatePresence initial={false}>
       {open && (
-        <motion.div
+        <m.div
           key="collapse-panel"
           aria-hidden={false}
           className={cn(className)}
@@ -97,7 +97,7 @@ export function Collapse({ children, open, className, onAnimationComplete }: Col
           }}
         >
           {children}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

@@ -26,7 +26,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { DURATION, EASE, DISTANCE } from '@repo/shared';
 import { buildFadeItem } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
@@ -83,7 +83,7 @@ export function RevealOnScroll({
   }
 
   return (
-    <motion.div
+    <m.div
       className={cn(className)}
       variants={variants}
       initial="hidden"
@@ -92,6 +92,6 @@ export function RevealOnScroll({
       transition={{ duration, delay, ease: EASE.expoOut }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

@@ -14,7 +14,7 @@
 // Reduced-motion behavior: plain <div> wrapper, no animation.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { SPRING } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -30,7 +30,7 @@ interface PressScaleProps {
 
 export function PressScale({ children, className, scale = 0.97, as = 'div' }: PressScaleProps) {
   const { isReduced } = useMotionLevel();
-  const Tag = motion[as] as typeof motion.div;
+  const Tag = m[as] as typeof m.div;
 
   if (isReduced) {
     // When motion is reduced, render the unanimated equivalent.

@@ -11,7 +11,7 @@
 
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 
 interface BrandMarkProps {
   brandName: string;
@@ -62,7 +62,7 @@ export function BrandMark({ brandName }: BrandMarkProps) {
     <div className="flex flex-col items-center gap-6 sm:gap-7">
       <div className="relative flex h-[100px] w-[100px] items-center justify-center sm:h-[110px] sm:w-[110px]">
         {!reduceMotion && (
-          <motion.div
+          <m.div
             className="absolute -inset-4 rounded-full"
             initial={{ opacity: 0 }}
             animate={{
@@ -83,7 +83,7 @@ export function BrandMark({ brandName }: BrandMarkProps) {
           />
         )}
 
-        <motion.div
+        <m.div
           initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
           animate={reduceMotion ? { opacity: 1, scale: 1 } : { opacity: 1, scale: [1, 1.04, 1] }}
           transition={
@@ -102,10 +102,10 @@ export function BrandMark({ brandName }: BrandMarkProps) {
           className="relative z-10"
         >
           <ToothLogo size={100} />
-        </motion.div>
+        </m.div>
       </div>
 
-      <motion.h1
+      <m.h1
         initial={reduceMotion ? false : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.5, ease: EASE_OUT_EXPO }}
@@ -113,7 +113,7 @@ export function BrandMark({ brandName }: BrandMarkProps) {
         style={{ letterSpacing: '-0.04em', lineHeight: 1 }}
       >
         {brandName}
-      </motion.h1>
+      </m.h1>
     </div>
   );
 }

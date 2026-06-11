@@ -23,7 +23,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { useEffect } from 'react';
-import { motion, useAnimationControls } from 'framer-motion';
+import { m, useAnimationControls } from 'framer-motion';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
 
@@ -76,8 +76,8 @@ export function PulseAttention({
   }
 
   return (
-    <motion.div className={cn(className)} animate={controls} initial={{ scale: 1 }}>
+    <m.div className={cn(className)} animate={controls} initial={{ scale: 1 }}>
       {children}
-    </motion.div>
+    </m.div>
   );
 }

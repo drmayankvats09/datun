@@ -21,7 +21,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion, useMotionValue, useSpring, useMotionValueEvent, animate } from 'framer-motion';
+import { m, useMotionValue, useSpring, useMotionValueEvent, animate } from 'framer-motion';
 import { useMotionLevel } from '@/hooks';
 
 // Tunable visual constants — picked to feel like Vercel / Linear.
@@ -131,10 +131,10 @@ export function RouteProgress() {
   }
 
   // ── Full-motion path ──
-  // motion.div lets Framer drive the width directly from the spring.
+  // m.div lets Framer drive the width directly from the spring.
   return (
     <div className="route-progress" aria-hidden="true">
-      <motion.div
+      <m.div
         className="route-progress-bar"
         style={{
           width: smoothed.get() + '%',

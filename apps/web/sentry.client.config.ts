@@ -23,9 +23,21 @@
 //      from breadcrumb data even when they slip past the
 //      lib/sentry/breadcrumbs.ts wrapper.
 //
+// Task #53.5 W2 additions (CUT-4 — client bundle diet):
+//   1. Session Replay is NO LONGER in the init integrations array —
+//      it lazy-registers at browser idle via scheduleLazyReplay()
+//      (the rrweb recorder moves to its own async chunk; the
+//      replays*SampleRate options stay in init and apply the moment
+//      the integration registers — Sentry's documented pattern).
+//   2. The feedback widget switched to the ASYNC variant inside
+//      lib/sentry/feedback.ts — launcher button sync (tiny), form
+//      modal + screenshot tooling load on first click.
+//   3. SDK dead-weight build flags (bundleSizeOptimizations) live
+//      in next.config.ts.
+//
 // Reading order for new engineers:
 //   1. `Sentry.init` options — sample rates, integrations
-//   2. `feedbackIntegration` — Phase 5's user-feedback widget
+//   2. createFeedbackIntegration — Phase 5's widget (async since W2)
 //   3. `beforeSend` — drops noise, enriches CSP events
 //   4. `beforeBreadcrumb` — strips PII from breadcrumb data
 //   5. CSP violation reporter — Task #45 backup channel
@@ -56,6 +68,9 @@ if (process.env.NODE_ENV !== 'production') {
     release: process.env['SENTRY_RELEASE'] || undefined,
 
     tracesSampleRate: process.env['NODE_ENV'] === 'production' ? 0.1 : 1.0,
+    // Replay sample rates stay HERE even though the integration is
+    // lazy-registered below — the SDK stores them and applies them
+    // at registration time (documented "lazy-load Replay" pattern).
     replaysSessionSampleRate: 0.05,
     replaysOnErrorSampleRate: 1.0,
 
@@ -65,11 +80,13 @@ if (process.env.NODE_ENV !== 'production') {
     sendDefaultPii: false,
 
     integrations: [
-      Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
+      // Replay is intentionally ABSENT here — lazy-registered after
+      // init via scheduleLazyReplay() below (Task #53.5 W2, CUT-4).
+      //
       // ── Task #52 Phase 5: Persistent user-feedback widget ──
+      // (Task #53.5 W2: now the ASYNC variant under the hood — the
+      // launcher ships sync, the form chunk loads on first click.
+      // See lib/sentry/feedback.ts.)
       //
       // Labels are English here because the SDK initialises BEFORE
       // next-intl can resolve a locale. The crash-report dialog
@@ -138,4 +155,61 @@ if (process.env.NODE_ENV !== 'production') {
   // ── CSP violation reporter (backup channel) ──
   // Idempotent — safe across HMR / fast-refresh re-renders.
   initViolationReporter();
+
+  // ── Task #53.5 W2 (CUT-4): lazy-register Session Replay ──
+  //
+  // replayIntegration was the heaviest piece of the Sentry client
+  // bundle (the rrweb recorder), statically shipped to 100% of
+  // visitors to record 5% of sessions. Sentry's documented
+  // "lazy-load Replay" pattern moves it behind a dynamic import:
+  // the static module graph no longer references it, so the bundler
+  // emits the recorder as its own async chunk, fetched at browser
+  // idle.
+  //
+  // Trade-off (accepted, documented): an error thrown in the first
+  // ~0–3s — before the integration registers — carries no replay.
+  // Pre-launch, with a 5% session sample, the shared-chunk win for
+  // 100% of visitors outweighs replay coverage of the first seconds.
+  // Revisit when real traffic data argues otherwise.
+  scheduleLazyReplay();
+}
+
+/**
+ * Register Session Replay AFTER first paint, off the critical path.
+ *
+ * requestIdleCallback ⇒ zero contention with hydration; the
+ * setTimeout fallback covers Safari (still no rIC support). The
+ * 5s rIC timeout guarantees registration even on perpetually-busy
+ * main threads, so error-replay sampling stays predictable.
+ */
+function scheduleLazyReplay(): void {
+  if (typeof window === 'undefined') return;
+
+  const register = (): void => {
+    import('@sentry/nextjs')
+      .then((lazy) => {
+        Sentry.addIntegration(
+          lazy.replayIntegration({
+            maskAllText: true,
+            blockAllMedia: true,
+          }),
+        );
+      })
+      .catch(() => {
+        // Replay is best-effort observability — a failed chunk load
+        // (offline, ad-blocker, CSP hiccup) must never surface to
+        // the user, nor recurse into error tracking itself.
+      });
+  };
+
+  type IdleCapableWindow = Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  };
+  const w = window as IdleCapableWindow;
+
+  if (typeof w.requestIdleCallback === 'function') {
+    w.requestIdleCallback(register, { timeout: 5000 });
+  } else {
+    window.setTimeout(register, 3000);
+  }
 }
