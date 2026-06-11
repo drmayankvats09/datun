@@ -90,7 +90,6 @@ import { MotionConfigProvider } from '@/components/motion';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
-import { buildAlternates } from '@/lib/seo/alternates';
 import type { Metadata } from 'next';
 import { LocaleFont } from '@/components/locale-font';
 import { TranslationBanner } from '@/components/translation-banner';
@@ -115,10 +114,12 @@ export async function generateMetadata({
   const { locale } = await params;
 
   return {
-    // Task #53.5 W3-A: canonical + full hreflang set + x-default in
-    // ONE helper, so child pages can override alternates without
-    // losing the language cluster (Next merges this field shallowly).
-    alternates: buildAlternates(locale),
+    // W3 hotfix-2: NO alternates at layout level. A layout cannot know
+    // the leaf path, so a layout canonical pointed every nested page at
+    // the locale ROOT — Lighthouse `canonical` failed on /login and
+    // /signup ("points to another hreflang location"). Each indexable
+    // page now owns `alternates: buildAlternates(locale, '/its-path')`
+    // (legal pages already did; home + auth pages gained theirs here).
     openGraph: {
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
       alternateLocale: LOCALES.filter((l) => l !== locale).map((l) =>

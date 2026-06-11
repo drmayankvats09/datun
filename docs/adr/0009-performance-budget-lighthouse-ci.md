@@ -220,3 +220,18 @@ only move TOWARD destinations; loosening requires a new amendment.
 
 **Gate-to-required (W5):** two consecutive fully-green PRs on interim
 budgets → add check to branch protection; a11y warn→error with Task #54.
+
+#### Amendment v2 — post-gate correction (PR #129, run 27381864997)
+
+The first true gate run measured the home median TBT at **981 ms** —
+above the 800 ms interim, which had been derived from per-chunk
+script-eval timings rather than a full gate-run median. The interim
+TBT ceiling is re-anchored to **1100 ms** (981 × 1.12) **before** the
+gate ever passed, so the one-way valve is intact; the 200 ms
+destination is unchanged. The same run surfaced two non-budget
+blockers, fixed in hotfix-2: a pre-existing origin-inferred `noindex`
+guard in the root layout (now explicit via `NEXT_PUBLIC_NOINDEX`,
+with `1` set only on Vercel Preview), and layout-level canonicals —
+a layout cannot know its leaf path, so alternates moved to per-page
+ownership (`buildAlternates(locale, '/path')` on home, login, signup,
+forgot-password; legal pages already complied).

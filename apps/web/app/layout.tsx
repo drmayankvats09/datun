@@ -10,9 +10,16 @@ export const metadata: Metadata = {
   description: BRAND.description,
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com'),
   robots: {
-    // Production (datunai.com): allow indexing. Preview/dev: block.
-    index: process.env.NEXT_PUBLIC_APP_URL === 'https://datunai.com',
-    follow: process.env.NEXT_PUBLIC_APP_URL === 'https://datunai.com',
+    // W3 hotfix-2: explicit opt-OUT instead of origin inference.
+    // The old `APP_URL === prod` guard flipped to noindex on ANY
+    // non-prod origin — including the Lighthouse CI build (localhost),
+    // which tanked `is-crawlable` on every page (SEO 0.92 → 0.58).
+    // Now: indexable by default; set NEXT_PUBLIC_NOINDEX=1 only on
+    // deploys that must stay hidden (Vercel Preview environment).
+    // Vercel additionally sends X-Robots-Tag: noindex on *.vercel.app
+    // preview URLs itself, so previews stay protected either way.
+    index: process.env.NEXT_PUBLIC_NOINDEX !== '1',
+    follow: process.env.NEXT_PUBLIC_NOINDEX !== '1',
   },
 };
 
