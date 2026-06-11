@@ -8,6 +8,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
+import { buildAlternates } from '@/lib/seo/alternates';
 import {
   Section,
   InfoBox,
@@ -17,11 +18,21 @@ import {
   SummaryItem,
 } from '@/components/legal/legal-components';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description: `How ${BRAND.name} collects, uses, and protects your personal and health data. DPDP Act 2023 compliant.`,
-  alternates: { canonical: '/privacy' },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  return {
+    title: 'Privacy Policy',
+    description: `How ${BRAND.name} collects, uses, and protects your personal and health data. DPDP Act 2023 compliant.`,
+    // W3-A: per-locale canonical + full hreflang cluster — the bare
+    // static canonical here was wiping the layout's 10-locale set.
+    alternates: buildAlternates(locale, '/privacy'),
+  };
+}
 
 export default function PrivacyPage() {
   const jsonLd = {

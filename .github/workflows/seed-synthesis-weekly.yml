@@ -25,9 +25,9 @@ jobs:
       # Prisma generate needs SOMETHING here even though we don't connect
       DATABASE_URL: postgresql://noop:noop@localhost:5432/noop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -58,7 +58,7 @@ jobs:
             --judge-min 3.5 \
             --output ./tmp/synthetic-training.jsonl
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: synthetic-training-${{ github.run_id }}
           path: packages/db/tmp/synthetic-training.jsonl

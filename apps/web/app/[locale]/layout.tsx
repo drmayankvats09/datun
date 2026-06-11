@@ -90,6 +90,7 @@ import { MotionConfigProvider } from '@/components/motion';
 import { routing } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
 import { LOCALES } from '@/i18n/config';
+import { buildAlternates } from '@/lib/seo/alternates';
 import type { Metadata } from 'next';
 import { LocaleFont } from '@/components/locale-font';
 import { TranslationBanner } from '@/components/translation-banner';
@@ -112,13 +113,12 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com';
 
   return {
-    alternates: {
-      canonical: `${baseUrl}/${locale}`,
-      languages: Object.fromEntries(LOCALES.map((loc) => [loc, `${baseUrl}/${loc}`])),
-    },
+    // Task #53.5 W3-A: canonical + full hreflang set + x-default in
+    // ONE helper, so child pages can override alternates without
+    // losing the language cluster (Next merges this field shallowly).
+    alternates: buildAlternates(locale),
     openGraph: {
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
       alternateLocale: LOCALES.filter((l) => l !== locale).map((l) =>

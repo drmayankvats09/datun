@@ -39,6 +39,9 @@ export function PageShell({
   return (
     <div
       id="main-content"
+      // W3-C a11y `skip-link` audit: the skip target itself must be
+      // focusable so focus actually lands here after activation.
+      tabIndex={-1}
       className={cn(
         'mx-auto w-full px-4 sm:px-6 lg:px-8',
         maxWidthMap[maxWidth],

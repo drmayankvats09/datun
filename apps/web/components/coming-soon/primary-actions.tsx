@@ -102,7 +102,7 @@ export function PrimaryActions({
         whileHover={reduceMotion ? undefined : { y: -2 }}
         whileTap={reduceMotion ? undefined : { scale: 0.98 }}
         transition={{ duration: 0.18, ease: EASE_OUT_EXPO }}
-        className="group inline-flex flex-1 items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-base font-semibold whitespace-nowrap text-primary-foreground shadow-[0_8px_30px_-8px_rgba(0,168,150,0.6)] transition-shadow duration-300 hover:shadow-[0_12px_40px_-6px_rgba(0,168,150,0.7)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background focus-visible:outline-none sm:py-4"
+        className="group inline-flex flex-1 items-center justify-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-base font-semibold whitespace-nowrap text-primary-foreground shadow-[0_8px_30px_-8px_rgba(15,118,110,0.6)] transition-shadow duration-300 hover:shadow-[0_12px_40px_-6px_rgba(15,118,110,0.7)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background focus-visible:outline-none sm:py-4"
         aria-label={ctaWhatsAppLabel}
       >
         <WhatsAppIcon className="h-5 w-5" />

@@ -39,7 +39,7 @@ jobs:
       SEED_ANONYMIZATION_SALT: ${{ secrets.SEED_ANONYMIZATION_SALT }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Pre-flight — verify required secrets
         id: preflight
@@ -55,7 +55,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         if: steps.preflight.outputs.skip != 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.preflight.outputs.skip != 'true'
         with: { node-version: 22, cache: pnpm }
 

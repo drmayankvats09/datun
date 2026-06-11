@@ -98,7 +98,7 @@ export function StatusFooter({ languagesLabel, copyrightLabel }: StatusFooterPro
         </SocialLink>
       </div>
 
-      <p className="text-xs text-muted-foreground/60">{copyrightLabel}</p>
+      <p className="text-xs text-muted-foreground">{copyrightLabel}</p>
     </m.footer>
   );
 }

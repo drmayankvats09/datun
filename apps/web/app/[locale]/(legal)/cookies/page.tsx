@@ -7,6 +7,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
+import { buildAlternates } from '@/lib/seo/alternates';
 import {
   Section,
   LegalHeader,
@@ -14,11 +15,21 @@ import {
   SummaryItem,
 } from '@/components/legal/legal-components';
 
-export const metadata: Metadata = {
-  title: 'Cookie Policy',
-  description: `How ${BRAND.name} uses cookies and similar technologies. Learn about cookie types, consent, and your choices.`,
-  alternates: { canonical: '/cookies' },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  return {
+    title: 'Cookie Policy',
+    description: `How ${BRAND.name} uses cookies and similar technologies. Learn about cookie types, consent, and your choices.`,
+    // W3-A: per-locale canonical + full hreflang cluster — the bare
+    // static canonical here was wiping the layout's 10-locale set.
+    alternates: buildAlternates(locale, '/cookies'),
+  };
+}
 
 export default function CookiesPage() {
   const jsonLd = {

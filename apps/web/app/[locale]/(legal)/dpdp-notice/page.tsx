@@ -7,6 +7,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
+import { buildAlternates } from '@/lib/seo/alternates';
 import {
   Section,
   LegalHeader,
@@ -15,11 +16,21 @@ import {
   RightCard,
 } from '@/components/legal/legal-components';
 
-export const metadata: Metadata = {
-  title: 'DPDP Act Notice',
-  description: `${BRAND.name}'s notice under the Digital Personal Data Protection Act, 2023. Your rights as a Data Principal.`,
-  alternates: { canonical: '/dpdp-notice' },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  return {
+    title: 'DPDP Act Notice',
+    description: `${BRAND.name}'s notice under the Digital Personal Data Protection Act, 2023. Your rights as a Data Principal.`,
+    // W3-A: per-locale canonical + full hreflang cluster — the bare
+    // static canonical here was wiping the layout's 10-locale set.
+    alternates: buildAlternates(locale, '/dpdp-notice'),
+  };
+}
 
 export default function DpdpNoticePage() {
   const jsonLd = {

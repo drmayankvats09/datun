@@ -32,7 +32,7 @@ export function LegalNav() {
             <Link
               key={page.href}
               href={page.href}
-              className={`rounded-md px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`inline-flex min-h-11 items-center rounded-md px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                 isActive
                   ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -142,7 +142,7 @@ export function LegalHeader({
         onClick={() => {
           if (typeof window !== 'undefined') window.print();
         }}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-current hover:border-primary hover:text-primary print:hidden"
+        className="mt-4 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-current hover:border-primary hover:text-primary print:hidden"
       >
         <svg
           className="h-3.5 w-3.5"
