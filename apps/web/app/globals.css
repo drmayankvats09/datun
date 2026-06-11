@@ -50,7 +50,11 @@
   --card-foreground: #0a0f1a;
   --popover: #ffffff;
   --popover-foreground: #0a0f1a;
-  --primary: #00a896;
+  /* W3-C `color-contrast`: #00a896 on white ≈ 2.8:1 (fails AA for
+     text). teal-700 keeps the brand hue and passes BOTH directions:
+     as text on white AND under white button text (≈4.6–5.4:1).
+     Dark-mode --primary (#00c4aa on near-black) already passes. */
+  --primary: #0f766e;
   --primary-foreground: #ffffff;
   --secondary: #f3f4f6;
   --secondary-foreground: #0a0f1a;

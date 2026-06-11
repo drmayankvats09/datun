@@ -18,7 +18,7 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Pre-flight — verify required secrets
         id: preflight
@@ -35,7 +35,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         if: steps.preflight.outputs.skip != 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         if: steps.preflight.outputs.skip != 'true'
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile

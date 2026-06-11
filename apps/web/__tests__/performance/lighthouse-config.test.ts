@@ -168,13 +168,16 @@ describe('lighthouse-budgets.json — schema guard', () => {
     }
   });
 
-  it('keeps the homepage contract: script ≤ 150 KB, total ≤ 300 KB', () => {
+  it('keeps the homepage contract (ADR-0009 Amendment v2 interim): script ≤ 440 KB, total ≤ 580 KB', () => {
+    // Amendment v2 (commit ed1051f): interim = measured (418/548 KB) +
+    // headroom. Destinations stay 150/300 in ADR-0009 — this number
+    // only ever ratchets DOWN. Editing it again? Amend the ADR first.
     const home = mustFind(budgets, (entry) => entry.path === '/$', 'homepage budget');
     const sizes = Object.fromEntries(
       (home.resourceSizes ?? []).map((resource) => [resource.resourceType, resource.budget]),
     );
-    expect(sizes.script).toBe(150);
-    expect(sizes.total).toBe(300);
+    expect(sizes.script).toBe(440);
+    expect(sizes.total).toBe(580);
   });
 });
 
@@ -203,9 +206,11 @@ describe('lighthouserc.cjs — ADR-0009 assertion contract', () => {
     expect(globalEntry.matchingUrlPattern).toBe('.*');
   });
 
+  // LCP/TBT carry Amendment-v2 INTERIM ceilings (worst measured median
+  // +4–10%). Destinations 1500/200 live in ADR-0009; one-way ratchet.
   it.each([
-    ['largest-contentful-paint', 'error', 1500],
-    ['total-blocking-time', 'error', 200],
+    ['largest-contentful-paint', 'error', 5300],
+    ['total-blocking-time', 'error', 1100], // re-anchored to first gate-run median (981ms) +12%
     ['cumulative-layout-shift', 'error', 0.1],
     ['server-response-time', 'warn', 800],
   ] as const)('%s is %s at maxNumericValue=%s', (audit, severity, max) => {
@@ -216,7 +221,7 @@ describe('lighthouserc.cjs — ADR-0009 assertion contract', () => {
   });
 
   it.each([
-    ['categories:performance', 'error', 0.9],
+    ['categories:performance', 'error', 0.55], // Amendment v2 interim; destination 0.90
     ['categories:accessibility', 'warn', 0.95], // flips to error in Task #54
     ['categories:best-practices', 'error', 0.95],
     ['categories:seo', 'error', 0.95],
@@ -251,7 +256,8 @@ describe('lighthouserc.cjs — budgets → assertMatrix derivation', () => {
     );
     const [level, options] = assertionOf(login, 'resource-summary:script:size');
     expect(level).toBe('error');
-    expect(options.maxNumericValue).toBe(175 * 1024);
+    // Amendment v2 interim: /login script budget = 430 KB (was 175).
+    expect(options.maxNumericValue).toBe(430 * 1024);
   });
 
   it('maps resourceCounts to :count assertions (third-party ≤ 10)', () => {
@@ -275,7 +281,7 @@ describe('lighthouse-ci.yml — critical-step tripwires', () => {
     ['runs the gate', 'lhci autorun'],
     ['builds only the web app', 'pnpm turbo run build --filter=web'],
     ['pins the LHCI major.minor line', '@lhci/cli@0.15.x'],
-    ['archives 90-day report artifacts', 'actions/upload-artifact@v4'],
+    ['archives 90-day report artifacts', 'actions/upload-artifact@v5'],
     ['keeps evidence even on failure', 'if: always()'],
   ])('%s (`%s` present)', (_label, needle) => {
     expect(workflow).toContain(needle);

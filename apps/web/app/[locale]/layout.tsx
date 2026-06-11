@@ -112,13 +112,14 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://datunai.com';
 
   return {
-    alternates: {
-      canonical: `${baseUrl}/${locale}`,
-      languages: Object.fromEntries(LOCALES.map((loc) => [loc, `${baseUrl}/${loc}`])),
-    },
+    // W3 hotfix-2: NO alternates at layout level. A layout cannot know
+    // the leaf path, so a layout canonical pointed every nested page at
+    // the locale ROOT — Lighthouse `canonical` failed on /login and
+    // /signup ("points to another hreflang location"). Each indexable
+    // page now owns `alternates: buildAlternates(locale, '/its-path')`
+    // (legal pages already did; home + auth pages gained theirs here).
     openGraph: {
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
       alternateLocale: LOCALES.filter((l) => l !== locale).map((l) =>

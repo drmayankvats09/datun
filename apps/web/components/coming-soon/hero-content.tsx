@@ -34,8 +34,8 @@ export function HeroContent({ mission, headline, subheadline }: HeroContentProps
         transition={{ duration: 0.6, delay: 0.7, ease: EASE_OUT_EXPO }}
         className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold text-primary sm:px-5 sm:py-2 sm:text-sm"
         style={{
-          backgroundColor: 'rgba(0, 168, 150, 0.08)',
-          border: '1px solid rgba(0, 168, 150, 0.25)',
+          backgroundColor: 'rgba(15, 118, 110, 0.08)',
+          border: '1px solid rgba(15, 118, 110, 0.25)',
         }}
       >
         <StarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -44,15 +44,16 @@ export function HeroContent({ mission, headline, subheadline }: HeroContentProps
       </m.div>
 
       {/* Headline */}
-      <m.h2
-        initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.85, delay: 0.85, ease: EASE_OUT_EXPO }}
+      {/* W3-C: this <h2> IS the page's LCP element. The previous
+          opacity-0 + 0.85s delay meant the largest paint waited for
+          hydration + animation → LCP 5.1s. It now renders statically
+          (server paint = LCP); the badge/subhead keep their motion. */}
+      <h2
         className="mt-3 max-w-2xl text-3xl font-bold text-balance text-foreground sm:text-4xl lg:text-5xl"
         style={{ letterSpacing: '-0.025em', lineHeight: 1.1 }}
       >
         {headline}
-      </m.h2>
+      </h2>
 
       {/* Subheadline */}
       <m.p

@@ -21,9 +21,9 @@ jobs:
     outputs:
       sbom_path: ${{ steps.sbom.outputs.sbom_path }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: '22', cache: 'pnpm' }
       - run: pnpm install --frozen-lockfile
       - id: sbom
@@ -38,7 +38,7 @@ jobs:
             --output packages/db/tmp/sbom.cyclonedx.json \
             packages/db
           echo "sbom_path=packages/db/tmp/sbom.cyclonedx.json" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: sbom-${{ github.sha }}
           path: packages/db/tmp/sbom.cyclonedx.json

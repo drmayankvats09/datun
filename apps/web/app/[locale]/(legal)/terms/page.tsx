@@ -7,6 +7,7 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
 import { BRAND, CONTACTS } from '@repo/shared';
+import { buildAlternates } from '@/lib/seo/alternates';
 import {
   Section,
   InfoBox,
@@ -16,11 +17,21 @@ import {
   SummaryItem,
 } from '@/components/legal/legal-components';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description: `Terms governing the use of ${BRAND.name}, an AI-powered dental health platform. Includes medical disclaimers and service limitations.`,
-  alternates: { canonical: '/terms' },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  return {
+    title: 'Terms of Service',
+    description: `Terms governing the use of ${BRAND.name}, an AI-powered dental health platform. Includes medical disclaimers and service limitations.`,
+    // W3-A: per-locale canonical + full hreflang cluster — the bare
+    // static canonical here was wiping the layout's 10-locale set.
+    alternates: buildAlternates(locale, '/terms'),
+  };
+}
 
 export default function TermsPage() {
   const jsonLd = {

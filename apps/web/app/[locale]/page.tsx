@@ -12,6 +12,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BRAND, CONTACTS, URLS } from '@repo/shared';
+import { buildAlternates, localeUrl } from '@/lib/seo/alternates';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { AuroraBg } from '@/components/coming-soon/aurora-bg';
@@ -25,15 +26,17 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'common' });
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || URLS.websiteHttps;
 
   return {
     title: t('meta.homeTitle'),
     description: t('meta.homeDescription'),
+    // W3 hotfix-2: home owns its alternates now that the locale layout
+    // no longer emits them (layouts can't know the leaf path).
+    alternates: buildAlternates(locale, ''),
     openGraph: {
       title: t('meta.homeTitle'),
       description: t('meta.homeDescription'),
-      url: `${baseUrl}/${locale}`,
+      url: localeUrl(locale, ''),
       siteName: BRAND.name,
       type: 'website',
     },

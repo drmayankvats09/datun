@@ -18,7 +18,7 @@ jobs:
       POSTGRES_DB: ${{ secrets.PROD_DB_NAME }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
       - run: pip install soda-core-postgres==3.5.* soda-core==3.5.*
@@ -33,7 +33,7 @@ jobs:
             -c packages/db/prisma/seeds/data-quality/soda/soda-config.yml \
             -srf tmp/consultation-result.json \
             packages/db/prisma/seeds/data-quality/soda/checks-consultation.yml || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: soda-results-${{ github.run_id }}

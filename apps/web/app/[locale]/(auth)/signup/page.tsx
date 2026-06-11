@@ -151,7 +151,7 @@ export default function SignupPage() {
         <div className="space-y-2">
           <Label htmlFor="signup-phone">{t('phoneLabel')}</Label>
           <div className="flex gap-2">
-            <div className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-muted-foreground">
+            <div className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-foreground">
               +91
             </div>
             <Input
@@ -178,11 +178,15 @@ export default function SignupPage() {
               autoComplete="new-password"
               className="pr-10"
             />
+            {/* W3-C `button-name` (w10): icon-only control gets an accessible
+                name + keyboard focus (tabIndex=-1 removed). English literals
+                for now — localized keys land with Task #54. */}
             <button
               type="button"
               className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setShowPassword(!showPassword)}
-              tabIndex={-1}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>

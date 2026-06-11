@@ -91,13 +91,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -131,7 +131,11 @@ jobs:
       - name: Build web app (production)
         run: pnpm turbo run build --filter=web
         env:
-          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL || 'https://datunai.com' }}
+          # W3-C `canonical` audit: pages must declare a canonical that
+          # matches the URL under audit. Building with the prod origin made
+          # every localhost page point at datunai.com → uniform SEO 0.92.
+          # The Lighthouse build (and ONLY this workflow) uses localhost.
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.datunai.com' }}
 
       # Pinned to the 0.15 line (current stable; bundles Lighthouse 12).
@@ -152,7 +156,7 @@ jobs:
       # fails — that report is the debugging starting point.
       - name: Archive Lighthouse reports (90-day trend history)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: lighthouse-reports-${{ github.run_number }}
           path: apps/web/.lighthouseci

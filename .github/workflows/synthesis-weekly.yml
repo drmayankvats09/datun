@@ -42,9 +42,9 @@ jobs:
       STRATEGY: ${{ github.event.inputs.strategy || 'persona-vary' }}
       TARGET: ${{ github.event.inputs.target_count || '500' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -93,7 +93,7 @@ jobs:
 
       - name: Upload synthesis artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: synthesis-weekly-${{ github.run_id }}
           path: packages/db/tmp/synthesis-weekly.jsonl
