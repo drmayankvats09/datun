@@ -29,7 +29,7 @@
 //   - Reduced motion: no scale/fade, but click handler still works.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { SPRING } from '@repo/shared';
 import { chipVariants } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
@@ -86,7 +86,7 @@ export function AnimatedChip({
   }
 
   return (
-    <motion.button
+    <m.button
       type="button"
       onClick={onClick}
       disabled={disabled}
@@ -104,6 +104,6 @@ export function AnimatedChip({
       transition={SPRING.responsive}
     >
       {children}
-    </motion.button>
+    </m.button>
   );
 }

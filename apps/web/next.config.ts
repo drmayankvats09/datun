@@ -152,6 +152,24 @@ export default process.env.NODE_ENV === 'production'
       },
       reactComponentAnnotation: { enabled: true },
       widenClientFileUpload: true,
+      // ── Task #53.5 W2 (CUT-4b): SDK dead-weight stripping ──
+      // Build-time flag replacement inside the Sentry SDK source:
+      //   - excludeDebugStatements: drops the SDK's debug-logging
+      //     branches from production output.
+      //   - excludeReplayShadowDom / excludeReplayIframe: Replay is
+      //     lazy-loaded (sentry.client.config.ts) AND records with
+      //     maskAllText + blockAllMedia. shadcn/Radix render through
+      //     portals, not shadow DOM, and we embed no third-party
+      //     iframes — both capture paths are dead weight, shrinking
+      //     the deferred replay chunk further.
+      // excludeReplayWorker is intentionally NOT set: the
+      // compression worker stays, so the sampled 5% of sessions
+      // don't burn main-thread CPU compressing recordings.
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+        excludeReplayShadowDom: true,
+        excludeReplayIframe: true,
+      },
       tunnelRoute: '/monitoring',
     })
   : wrappedConfig;

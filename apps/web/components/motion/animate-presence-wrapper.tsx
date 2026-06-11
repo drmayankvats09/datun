@@ -20,7 +20,7 @@
 //
 // Usage (route transitions):
 //   <AnimatePresenceWrapper>
-//     <motion.div key={pathname} ...>{children}</motion.div>
+//     <m.div key={pathname} ...>{children}</m.div>
 //   </AnimatePresenceWrapper>
 //
 // Usage (conditional mount):

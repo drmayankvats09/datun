@@ -122,3 +122,38 @@ vi.mock('next/headers', () => ({
       delete: vi.fn(),
     }),
 }));
+
+// ── Mock: framer-motion — neutralise LazyMotion's async loader ──
+//
+// Task #53.5 W2 (CUT-3) made <LazyMotion> load its feature bundle via
+// dynamic import. In the BROWSER that is exactly the point: the
+// animation engine becomes a post-hydration async chunk. In JSDOM it
+// creates a timing leak: the two suites that render
+// <MotionConfigProvider> (motion-config-provider.test.tsx,
+// network-adaptive.test.tsx) kick off the import, the file finishes,
+// vitest tears the jsdom world down, and ONLY THEN the import promise
+// resolves — LazyMotion calls setState, react-dom touches the
+// now-destroyed `window`, and vitest reports unhandled rejections
+// even though every assertion passed (the "7 errors / 2211 passed"
+// signature).
+//
+// The fix lives at the TEST boundary, not in product code, because
+// the product behaviour IS the feature: a prod-side escape hatch
+// would either re-import the bundle statically (undoing CUT-3) or
+// grow a test-only prop. Here LazyMotion becomes a passthrough — no
+// loader call, no promise, no post-teardown setState — while
+// EVERYTHING else from framer-motion stays REAL (m, animate,
+// useMotionValue, MotionConfig, AnimatePresence, …), so the existing
+// suite keeps exercising the genuine library. Precedent: shake.test
+// has mocked LazyMotion as a passthrough since Task #50; per-file
+// framer mocks still override this for their own files (vitest
+// file-level mocks win). Feature-bundle loading itself is a
+// build-layer concern, verified by `pnpm analyze` + Lighthouse CI —
+// not something jsdom can or should prove.
+vi.mock('framer-motion', async () => {
+  const actual = await vi.importActual<typeof import('framer-motion')>('framer-motion');
+  return {
+    ...actual,
+    LazyMotion: ({ children }: { children: React.ReactNode }) => children,
+  };
+});

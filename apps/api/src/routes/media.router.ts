@@ -21,6 +21,9 @@ import { requireUser } from '../middleware/auth.js';
 import { validate, validateParams } from '../middleware/validate.js';
 import { logger } from '../lib/logger.js';
 
+// Task #53.5 W2: runtime zod schemas now live on the /validators
+// subpath — the root barrel exports them as TYPES only (client
+// bundle diet; see packages/shared/src/index.ts).
 import {
   requestUploadIntentSchema,
   confirmUploadSchema,
@@ -30,7 +33,7 @@ import {
   type ConfirmUploadBody,
   type DeleteMediaBody,
   type MediaIdParam,
-} from '@repo/shared';
+} from '@repo/shared/validators';
 
 import {
   requestUploadIntent,

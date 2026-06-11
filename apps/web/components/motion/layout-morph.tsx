@@ -29,7 +29,7 @@
 //     via the parent MotionConfig reducedMotion="user" setting).
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { SPRING } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ export interface LayoutMorphProps {
 
 export function LayoutMorph({ children, layoutId, as = 'div', className }: LayoutMorphProps) {
   const { isReduced } = useMotionLevel();
-  const Tag = motion[as] as typeof motion.div;
+  const Tag = m[as] as typeof m.div;
 
   if (isReduced) {
     // No layout animation under reduced motion — just render the

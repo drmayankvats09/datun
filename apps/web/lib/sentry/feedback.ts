@@ -4,10 +4,18 @@
 //
 // Wraps two Sentry capabilities into Datun-branded helpers:
 //
-//   1. feedbackIntegration() — the persistent "Send feedback" widget
-//      shown at the corner of every page. Used for general feedback,
-//      bug reports, and feature requests. Mounted ONCE via the
-//      Sentry.init() integrations array in `sentry.client.config.ts`.
+//   1. feedbackAsyncIntegration() — the persistent "Send feedback"
+//      widget shown at the corner of every page. Used for general
+//      feedback, bug reports, and feature requests. Mounted ONCE via
+//      the Sentry.init() integrations array in `sentry.client.config.ts`.
+//
+//      Task #53.5 W2 (CUT-4): switched from feedbackIntegration to
+//      the ASYNC variant. The launcher button ships in the sync
+//      bundle (tiny); the form modal + screenshot tooling load in a
+//      separate chunk on FIRST CLICK. Identical options API — only
+//      the loading strategy changed. (@sentry-internal/feedback was
+//      a named block in the Task #53 treemap; this removes it from
+//      the shared first-load chunk.)
 //
 //   2. showReportDialog() — the modal that opens AFTER an error has
 //      been captured by Sentry. Pre-fills the `eventId` so the
@@ -90,8 +98,8 @@ const BRAND_COLORS = {
  */
 export function createFeedbackIntegration(
   labels: FeedbackLabels,
-): ReturnType<typeof Sentry.feedbackIntegration> {
-  return Sentry.feedbackIntegration({
+): ReturnType<typeof Sentry.feedbackAsyncIntegration> {
+  return Sentry.feedbackAsyncIntegration({
     // ── Labels (localised by the caller) ──
     buttonLabel: labels.buttonLabel,
     formTitle: labels.formTitle,

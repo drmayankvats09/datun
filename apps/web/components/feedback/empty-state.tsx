@@ -29,7 +29,7 @@
 //   • Reads `useMotionLevel().isReduced` and renders a plain
 //     <div> when the user, OS, or network indicates a preference
 //     against animation.
-//   • Otherwise wraps the body in a Framer Motion <motion.div>
+//   • Otherwise wraps the body in a Framer Motion <m.div>
 //     that fades + slides in over `DURATION.moderate` with
 //     `EASE.smoothOut` — matches the motion language Linear and
 //     Stripe ship in 2026.
@@ -55,7 +55,7 @@
 
 import type { ComponentType } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import type { LucideIcon } from 'lucide-react';
 
@@ -339,7 +339,7 @@ function EmptyStateRenderer({
   }
 
   return (
-    <motion.div
+    <m.div
       className={wrapperClasses}
       role="status"
       aria-live="polite"
@@ -348,7 +348,7 @@ function EmptyStateRenderer({
       transition={{ duration: DURATION.moderate, ease: EASE.smoothOut }}
     >
       {body}
-    </motion.div>
+    </m.div>
   );
 }
 

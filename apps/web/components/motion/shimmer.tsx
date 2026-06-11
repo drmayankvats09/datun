@@ -20,13 +20,13 @@
 //
 // Performance:
 //   - Animates `background-position` — fully GPU-accelerated.
-//   - Single motion.div per shimmer (no extra DOM, no JS loop).
+//   - Single m.div per shimmer (no extra DOM, no JS loop).
 //
 // Reduced motion: renders a static muted rectangle (no sweep).
 // Slow network is treated as reduced (saves a layer composite).
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { shimmerTransition } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,7 @@ export function Shimmer({ className, ariaLabel = 'Loading', children }: ShimmerP
   }
 
   return (
-    <motion.div
+    <m.div
       role="status"
       aria-label={ariaLabel}
       aria-busy="true"
@@ -85,6 +85,6 @@ export function Shimmer({ className, ariaLabel = 'Loading', children }: ShimmerP
       transition={shimmerTransition}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

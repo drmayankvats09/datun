@@ -25,7 +25,7 @@
 // Reduced motion: renders the underlying tag with no animation.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { DURATION, EASE } from '@repo/shared';
 import { useMotionLevel } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -46,7 +46,7 @@ export function CardHoverLift({
   as = 'div',
 }: CardHoverLiftProps) {
   const { isReduced } = useMotionLevel();
-  const MotionTag = motion[as] as typeof motion.div;
+  const MotionTag = m[as] as typeof m.div;
 
   if (isReduced) {
     const PlainTag = as;

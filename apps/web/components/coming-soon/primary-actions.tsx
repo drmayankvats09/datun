@@ -7,7 +7,7 @@
 
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 
 interface PrimaryActionsProps {
   ctaWhatsAppLabel: string;
@@ -89,13 +89,13 @@ export function PrimaryActions({
     encodeURIComponent(notifyBody);
 
   return (
-    <motion.div
+    <m.div
       initial={reduceMotion ? false : { opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.85, delay: 1.25, ease: EASE_OUT_EXPO }}
       className="mt-9 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-11 sm:max-w-lg sm:flex-row sm:gap-4"
     >
-      <motion.a
+      <m.a
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
@@ -108,9 +108,9 @@ export function PrimaryActions({
         <WhatsAppIcon className="h-5 w-5" />
         <span>{ctaWhatsAppLabel}</span>
         <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-      </motion.a>
+      </m.a>
 
-      <motion.a
+      <m.a
         href={mailtoUrl}
         whileHover={reduceMotion ? undefined : { y: -2 }}
         whileTap={reduceMotion ? undefined : { scale: 0.98 }}
@@ -120,7 +120,7 @@ export function PrimaryActions({
       >
         <MailIcon className="h-5 w-5" />
         <span>{ctaNotifyLabel}</span>
-      </motion.a>
-    </motion.div>
+      </m.a>
+    </m.div>
   );
 }

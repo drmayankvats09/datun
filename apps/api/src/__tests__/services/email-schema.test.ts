@@ -3,7 +3,11 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { describe, it, expect } from 'vitest';
-import { emailTemplateNameSchema, emailSendRequestSchema, emailLogQuerySchema } from '@repo/shared';
+import {
+  emailTemplateNameSchema,
+  emailSendRequestSchema,
+  emailLogQuerySchema,
+} from '@repo/shared/validators';
 
 describe('emailTemplateNameSchema', () => {
   it('accepts valid template name', () => {

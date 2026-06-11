@@ -40,8 +40,10 @@ import type { ConsultationStatus } from '../validators/prisma-enums';
 //   - Lints catch any drift via the API's response schema validation
 //
 // `ConsultationStatus` is NOT redeclared here — see hotfix note at the top.
-// Consumers should `import { ConsultationStatus } from '@repo/shared'` which
-// will resolve via the prisma-enums export.
+// Consumers TYPE-import it from '@repo/shared' (the root barrel exposes the
+// validators tree via `export type *` since Task #53.5 W2). The rare VALUE
+// use (server-side enum object) imports from '@repo/shared/validators' —
+// prisma-enums is zod-built, so value access must never enter client code.
 
 export type ConsultationUrgency = 'ROUTINE' | 'URGENT' | 'EMERGENCY';
 

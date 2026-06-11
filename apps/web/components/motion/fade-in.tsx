@@ -19,7 +19,7 @@
 //     bytes for users on 2G/3G — critical for India reach.
 // ═══════════════════════════════════════════════════════════════
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { DURATION, EASE } from '@repo/shared';
 import { VIEWPORT_REVEAL } from '@/lib/motion';
 import { useMotionLevel } from '@/hooks';
@@ -64,7 +64,7 @@ export function FadeIn({
   const dir = directionMap[direction];
 
   return (
-    <motion.div
+    <m.div
       className={cn(className)}
       initial={{ opacity: 0, x: dir.x * distance, y: dir.y * distance }}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
@@ -72,6 +72,6 @@ export function FadeIn({
       transition={{ duration, delay, ease: EASE.smoothOut }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

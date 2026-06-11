@@ -67,10 +67,45 @@ export * from './queues';
 // ── Email Helpers ──
 export { emailWrapper, emailFooter } from './emails';
 
-// ── Validators (Task #38) ──
-export * from './validators/index';
+// ── Validators (Task #38 → split in Task #53.5 W2, CUT-2) ──
+// RUNTIME zod schemas moved to the `@repo/shared/validators`
+// subpath. The root barrel is imported by ~129 files — including
+// 30+ CLIENT components that only want design tokens / DTO types —
+// and the old `export * from './validators/index'` shipped the
+// entire zod runtime (58.88KB stat) inside the shared client chunk
+// of EVERY page, even though zero client files use zod directly.
+//
+// What the root barrel still provides (verified consumer census):
+//   1. `export type *` — every validator-derived TYPE (ApiResponse,
+//      ConsultationStatus, Locale, Gender, …150 names) keeps
+//      resolving from the root with ZERO import churn. Types erase
+//      at compile time → zero bytes shipped.
+//   2. ERROR_CODES — the ONE validator-tree export client code uses
+//      at RUNTIME (lib/api/api-error.ts, lib/api/auth-fetch.ts,
+//      lib/errors/categorize.ts, lib/query/query-client.ts + tests).
+//      It lives in responses/error-codes.ts — a pure-constant module
+//      with zero imports — so re-exporting it as a value costs the
+//      constant's bytes only, never zod.
+//
+// Server code imports runtime schemas from the subpath:
+//   import { signupEmailSchema } from '@repo/shared/validators';
+//
+// Guarantee (TS-verified): a VALUE import of any schema from the
+// root now fails type-check with TS1362 ("cannot be used as a value
+// because it was exported using 'export type'") — zod structurally
+// cannot re-leak through this barrel, independent of bundler config.
+// `sideEffects: false` in package.json is the second, independent
+// layer of the same defence (it also shakes flags/flag-context's
+// zod out of client builds, since clients import flag TYPES only).
+export { ERROR_CODES } from './validators/responses/error-codes';
+export type { ErrorCode } from './validators/responses/error-codes';
+export type * from './validators/index';
 
 // ── Trace / observability ──
+// Stays in the root barrel intentionally: Task #53.5 W2 rewrote
+// trace.ts onto Web Crypto, so it is now isomorphic and polyfill-free
+// (the old node:crypto import was dragging crypto-browserify, 98.96KB
+// stat, into the client bundle through this very barrel).
 export * from './trace';
 
 // ── Task #44: Training pipeline types ──
