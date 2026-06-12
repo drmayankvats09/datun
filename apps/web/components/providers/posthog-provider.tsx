@@ -58,7 +58,7 @@ export function PostHogProvider({ children, bootstrap }: PostHogProviderProps) {
   // Re-renders do not re-init — `initPostHog` is idempotent.
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
+    const host = process.env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
     if (!apiKey) {
       // Degraded mode — no PostHog. App still functions, flags come
       // exclusively from /api/flags via the TanStack hook.

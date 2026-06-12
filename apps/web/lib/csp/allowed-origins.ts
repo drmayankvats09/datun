@@ -25,8 +25,8 @@
 // Pattern: Stripe API CSP requirements doc, Cloudflare Workers AllowList.
 //
 // TASK #49 UPDATE — activated PostHog SCRIPT + CONNECT origins.
-//   The host names cover both PostHog Cloud (us.i.posthog.com) and the
-//   static asset CDN (us-assets.i.posthog.com). Browser SDK loads scripts
+//   The host names cover PostHog EU Cloud (eu.i.posthog.com) and the
+//   static asset CDN (eu-assets.i.posthog.com). Browser SDK loads scripts
 //   from the asset CDN, then POSTs events to the main host.
 // ═══════════════════════════════════════════════════════════════
 
@@ -59,13 +59,13 @@ export const SCRIPT_ORIGINS = {
   vercelAnalytics: ['https://va.vercel-scripts.com'],
 
   // Task #49 — PostHog browser SDK + asset CDN
-  posthog: ['https://app.posthog.com', 'https://us-assets.i.posthog.com'],
+  posthog: ['https://eu-assets.i.posthog.com'],
 
   // ── Pre-staged for Task #53 (Razorpay) — UNCOMMENT when task ships ──
   // razorpay: ['https://checkout.razorpay.com'],
 
   // ── Pre-staged for Task #58 (Google Tag Manager) — UNCOMMENT when task ships ──
-  // gtm: ['https://www.googletagmanager.com', 'https://www.google-analytics.com'],
+  googleAnalytics: ['https://www.googletagmanager.com', 'https://www.google-analytics.com'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Flattened script-src list. */
@@ -121,7 +121,7 @@ export const IMG_SRC_ORIGINS = flatten(IMG_ORIGINS);
 // then POSTs error events to *.ingest.sentry.io.
 //
 // PostHog (Task #49) follows the same dual-host pattern: SDK loads from
-// us-assets.i.posthog.com, then POSTs analytics events to us.i.posthog.com.
+// eu-assets.i.posthog.com, then POSTs analytics events to eu.i.posthog.com.
 // ═══════════════════════════════════════════════════════════════
 
 export const CONNECT_ORIGINS = {
@@ -132,7 +132,17 @@ export const CONNECT_ORIGINS = {
   cloudinaryUpload: ['https://api.cloudinary.com'],
 
   // Task #49 — PostHog event ingest + decide endpoint
-  posthog: ['https://app.posthog.com', 'https://us.i.posthog.com'],
+  posthog: ['https://eu.i.posthog.com'],
+
+  // GA4 (gtag) POSTs measurement beacons here. connect-src is NOT
+  // affected by 'strict-dynamic', so without these the gtag script
+  // loads but every event POST is blocked -> zero data in GA
+  // (the same failure mode PostHog hit).
+  googleAnalytics: [
+    'https://www.google-analytics.com',
+    'https://analytics.google.com',
+    'https://region1.google-analytics.com',
+  ],
 
   // ── Pre-staged for Task #53 (Razorpay API) ──
   // razorpay: ['https://api.razorpay.com', 'https://lumberjack.razorpay.com'],
