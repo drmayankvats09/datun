@@ -61,7 +61,7 @@ export function Section({
   return (
     <section id={id} className="mb-10 scroll-mt-24">
       <h2 className="mb-4 text-xl font-bold tracking-tight text-foreground">{title}</h2>
-      <div className="space-y-3 text-[0.938rem] leading-relaxed text-foreground/80 [&_li]:pl-1 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:space-y-2">
+      <div className="space-y-3 text-[0.938rem] leading-relaxed text-foreground/80 [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_ul]:ml-5 [&_ul]:list-disc [&_ul]:space-y-2">
         {children}
       </div>
     </section>
@@ -133,7 +133,12 @@ export function LegalHeader({
         <span>&middot;</span>
         <span>Version 2.0</span>
         <span>&middot;</span>
-        <a href={`mailto:${contactEmail}`} className="text-primary hover:underline">
+        {/* Task #54 r2: 24px floor (SC 2.5.8) + static underline (1.4.1) —
+            this header anchor sat outside the Section prose rule. */}
+        <a
+          href={`mailto:${contactEmail}`}
+          className="inline-flex min-h-6 items-center text-primary underline underline-offset-4"
+        >
           {contactEmail}
         </a>
       </div>

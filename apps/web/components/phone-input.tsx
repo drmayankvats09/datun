@@ -18,7 +18,7 @@ export function PhoneInput({
   return (
     <div className="flex gap-2">
       <div
-        className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-muted-foreground"
+        className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-foreground"
         aria-hidden="true"
       >
         {countryCode}

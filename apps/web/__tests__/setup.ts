@@ -157,3 +157,60 @@ vi.mock('framer-motion', async () => {
     LazyMotion: ({ children }: { children: React.ReactNode }) => children,
   };
 });
+
+// ═══════════════════════════════════════════════════════════════
+// TASK #54 — jsdom polyfills for Radix portal primitives
+//
+// The component-level WCAG suite (__tests__/a11y/*) renders Dialog,
+// Sheet and AlertDialog in their OPEN state. Radix's layering stack
+// (DismissableLayer / FocusScope / presence measurements) touches
+// three browser APIs jsdom doesn't implement. Each stub below is
+// guarded — if a future jsdom ships the real API, the real API
+// wins automatically.
+//
+// These are NO-OP shims, not behavior fakes: nothing here can make
+// a failing a11y assertion pass; they only stop jsdom from throwing
+// before axe gets to look at the DOM.
+// ═══════════════════════════════════════════════════════════════
+
+// ── ResizeObserver — Radix measures content panels on mount ──
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  class ResizeObserverStub {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  Object.defineProperty(globalThis, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: ResizeObserverStub,
+  });
+}
+
+// ── scrollIntoView — focus management scrolls the active item ──
+if (typeof Element.prototype.scrollIntoView === 'undefined') {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  });
+}
+
+// ── Pointer capture trio — DismissableLayer pointer tracking ──
+if (typeof Element.prototype.hasPointerCapture === 'undefined') {
+  Object.defineProperty(Element.prototype, 'hasPointerCapture', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(() => false),
+  });
+  Object.defineProperty(Element.prototype, 'setPointerCapture', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  });
+  Object.defineProperty(Element.prototype, 'releasePointerCapture', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  });
+}

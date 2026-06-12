@@ -51,7 +51,7 @@ const SEVERITY_VARIANT: Record<ViolationRow['severity'], string> = {
   critical: 'bg-destructive/15 text-destructive border-destructive/30',
   high: 'bg-orange-500/15 text-orange-700 border-orange-500/30 dark:text-orange-300',
   medium: 'bg-amber-500/15 text-amber-700 border-amber-500/30 dark:text-amber-300',
-  low: 'bg-muted text-muted-foreground border-muted-foreground/20',
+  low: 'bg-muted text-foreground border-muted-foreground/20',
 };
 
 function truncate(s: string, max: number): string {

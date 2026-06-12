@@ -63,8 +63,9 @@
 //   requires an ADR amendment — one-way quality valve.
 //
 // FUTURE INTERLINKS (so nobody re-does this later):
-//   • Task #54 (WCAG 2.2 AA): flip `categories:accessibility` from
-//     'warn' to 'error'. One word. The gate is pre-wired today.
+//   • Task #54 (WCAG 2.2 AA): DONE — `categories:accessibility`
+//     flipped to 'error' in #54's final commit, alongside the axe
+//     E2E gate (a11y.yml). Two engines, one bar.
 //   • Task #56 (/consult chat): add '/consult' to AUDIT_PATHS below.
 //     Its byte budget already exists in lighthouse-budgets.json.
 //   • Tasks #216–221 (apps/clinics split): copy this file + the
@@ -182,11 +183,12 @@ const GLOBAL_ASSERTIONS = {
     { minScore: 0.55, aggregationMethod: 'median-run' },
   ],
 
-  // WARN until Task #54 (WCAG 2.2 AA) completes the remediation pass,
-  // then flip to 'error'. The gate exists from Day 1 so #54 starts
-  // with a live scoreboard instead of a blank page.
+  // Task #54 flipped this to ERROR (was 'warn' during the Day-1
+  // scoreboard period). Lighthouse a11y + the axe E2E gate (a11y.yml)
+  // now enforce the same WCAG bar from two independent engines —
+  // a page must satisfy BOTH to merge.
   'categories:accessibility': [
-    'warn',
+    'error',
     { minScore: 0.95, aggregationMethod: 'median-run' },
   ],
 

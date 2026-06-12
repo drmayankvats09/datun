@@ -219,10 +219,12 @@ export default function LoginPage() {
                 />
                 {/* W3-C `button-name` (w10): icon-only control gets an accessible
                     name + keyboard focus (tabIndex=-1 removed). English literals
-                    for now — localized keys land with Task #54. */}
+                    for now — localized keys land with Task #54.
+                    Task #54 E2E: 32px hit-box for the 24px floor (SC 2.5.8);
+                    right-1.5 keeps the icon visually in place. */}
                 <button
                   type="button"
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute top-1/2 right-1.5 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                   aria-pressed={showPassword}
@@ -244,7 +246,7 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t('phoneLabel')}</Label>
                   <div className="flex gap-2">
-                    <div className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center rounded-md bg-muted px-3 text-sm font-medium text-foreground">
                       +91
                     </div>
                     <Input

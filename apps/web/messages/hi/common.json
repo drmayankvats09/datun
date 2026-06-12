@@ -47,6 +47,10 @@
     "switchLabel": "भाषा",
     "currentLanguage": "हिन्दी"
   },
+  "theme": {
+    "switchToLight": "लाइट मोड पर स्विच करें",
+    "switchToDark": "डार्क मोड पर स्विच करें"
+  },
   "homepage": {
     "title": "दातुन",
     "mission": "स्वास्थ्य सेवा अधिकार है, सुविधा नहीं",

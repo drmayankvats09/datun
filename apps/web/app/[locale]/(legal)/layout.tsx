@@ -11,11 +11,20 @@ const LEGAL_PAGES = [
   { href: '/terms', label: 'Terms of Service' },
   { href: '/cookies', label: 'Cookie Policy' },
   { href: '/dpdp-notice', label: 'DPDP Notice' },
+  // Task #54 — public WCAG 2.2 AA statement (EAA Art. 13(2) shape).
+  { href: '/accessibility', label: 'Accessibility' },
 ] as const;
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    // Task #54 audit fix — SC 3.1.2 (Language of Parts): legal content
+    // is professional English on EVERY locale's URL (/hi/privacy serves
+    // English under html[lang="hi"]). Without this, NVDA/TalkBack read
+    // English text with a Hindi/Tamil pronunciation engine — word soup.
+    // lang="en" on the legal subtree corrects the engine for all five
+    // pages (privacy/terms/cookies/dpdp/accessibility) in one place.
+    // html[lang] stays the locale — correct for the URL's chrome.
+    <div lang="en" className="min-h-screen bg-background text-foreground">
       {/* ── Top Navigation ── */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl print:static print:border-0">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -56,7 +65,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                   <Link
                     key={page.href}
                     href={page.href}
-                    className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                    className="inline-flex min-h-6 w-fit items-center text-sm text-muted-foreground transition-colors hover:text-primary"
                   >
                     {page.label}
                   </Link>
@@ -68,13 +77,13 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                 <a
                   href={`mailto:${CONTACTS.supportEmail}`}
-                  className="transition-colors hover:text-primary"
+                  className="inline-flex min-h-6 w-fit items-center transition-colors hover:text-primary"
                 >
                   {CONTACTS.supportEmail}
                 </a>
                 <a
                   href={`mailto:${CONTACTS.defaultAlertEmail}`}
-                  className="transition-colors hover:text-primary"
+                  className="inline-flex min-h-6 w-fit items-center transition-colors hover:text-primary"
                 >
                   {CONTACTS.defaultAlertEmail}
                 </a>
@@ -91,7 +100,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                     href={URLS.social.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors hover:text-primary"
+                    className="inline-flex min-h-6 items-center transition-colors hover:text-primary"
                   >
                     Instagram
                   </a>
@@ -99,7 +108,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
                     href={URLS.social.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="transition-colors hover:text-primary"
+                    className="inline-flex min-h-6 items-center transition-colors hover:text-primary"
                   >
                     LinkedIn
                   </a>
@@ -107,7 +116,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
               </div>
             </div>
           </div>
-          <div className="mt-8 border-t border-border/40 pt-6 text-center text-xs text-muted-foreground/60">
+          <div className="mt-8 border-t border-border/40 pt-6 text-center text-xs text-muted-foreground">
             {BRAND.copyright()}
           </div>
         </div>

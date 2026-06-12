@@ -161,3 +161,11 @@ tc-output.log
 
 # CI workflow audit logs (local-only)
 workflow-logs/
+
+# ── Task #54: Playwright E2E artifacts (local runs) ──
+# CI uploads these as 90-day artifacts via a11y.yml; locally they
+# regenerate on every `pnpm test:e2e` and must never enter git.
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+apps/web/playwright/.cache/

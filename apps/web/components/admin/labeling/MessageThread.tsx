@@ -29,7 +29,7 @@ function MessageBubble({ msg, isFocal }: { msg: LabelingQueueItem; isFocal: bool
   if (isSystem) {
     return (
       <div className="flex justify-center py-2">
-        <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+        <span className="rounded-full bg-muted px-3 py-1 text-xs text-foreground">
           {msg.content.slice(0, 80)}
         </span>
       </div>

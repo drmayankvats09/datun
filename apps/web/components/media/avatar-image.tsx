@@ -82,7 +82,7 @@ export function AvatarImage({
           onError={() => setHasFailed(true)}
         />
       ) : null}
-      <AvatarFallback className="flex h-full w-full items-center justify-center bg-muted text-xs font-medium text-muted-foreground uppercase">
+      <AvatarFallback className="flex h-full w-full items-center justify-center bg-muted text-xs font-medium text-foreground uppercase">
         {initials}
       </AvatarFallback>
     </Avatar>
