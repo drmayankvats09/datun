@@ -95,6 +95,7 @@ import { LocaleFont } from '@/components/locale-font';
 import { TranslationBanner } from '@/components/translation-banner';
 import { getNonce } from '@/lib/csp/get-nonce';
 import { SpeedInsightsClient } from '@/components/providers/speed-insights';
+import { GoogleAnalytics } from '@next/third-parties/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -177,6 +178,14 @@ export default async function LocaleLayout({
             Server-side VERCEL gate keeps Lighthouse CI / local
             `next start` free of a 404'ing collector script. */}
         {process.env.VERCEL ? <SpeedInsightsClient /> : null}
+        {/* GA4 (gtag via @next/third-parties). Gated on BOTH the Vercel
+            runtime AND a configured measurement id, so Lighthouse CI /
+            local `next start` never load gtag (perf-budget run stays
+            clean; a noindex preview never sends hits). Nonce is injected
+            automatically from the CSP header Next.js already emits. */}
+        {process.env.VERCEL && process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        ) : null}
       </body>
     </html>
   );
