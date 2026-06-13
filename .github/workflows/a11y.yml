@@ -1,0 +1,184 @@
+# ═══════════════════════════════════════════════════════════════
+# DATUN — ACCESSIBILITY GATE (Task #54 — WCAG 2.2 AA, every PR)
+#
+# WHAT THIS WORKFLOW DOES:
+#   On every PR that can affect the web app, it:
+#     1. Builds apps/web exactly the way ci.yml / lighthouse-ci.yml
+#        do (same Node, pnpm, Postgres service, env — mirrored on
+#        purpose so this workflow introduces ZERO new failure modes).
+#     2. Installs the pinned Playwright Chromium.
+#     3. Runs the e2e/a11y suites against the REAL production server
+#        (Playwright's webServer boots `pnpm start`) in BOTH
+#        viewports — Desktop Chrome and Pixel 7. That is: full
+#        axe-core WCAG 2.2 AA page sweeps (light + dark), keyboard
+#        journeys (skip link, Escape/focus-return, route announcer,
+#        focus-not-obscured), and the SC 3.3.8 accessible-auth
+#        battery (paste + autocomplete tokens).
+#     4. Archives the Playwright HTML report — which embeds every
+#        attached axe JSON — as a 90-day artifact. That artifact IS
+#        the standing compliance evidence trail (IS-17802 / EAA /
+#        Task #75 manual-audit input).
+#
+#   Layer-2 (component axe tests in __tests__/a11y/) needs no step
+#   here — vitest's include pattern already runs them inside
+#   ci.yml's existing `pnpm test`. Architecture, not luck.
+#
+# WHY A SEPARATE WORKFLOW (not a job inside ci.yml):
+#   • Runs in parallel — main CI stays exactly as fast as today.
+#   • Per-concern workflow files is the existing Datun pattern
+#     (30+ workflows, one responsibility each).
+#   • Enforcement has its own independent dial (below).
+#
+# ROLLOUT DIAL — READ BEFORE PANICKING AT A RED ❌:
+#   This workflow NEVER uses continue-on-error. Enforcement is
+#   controlled by GitHub branch protection instead:
+#     • Baseline week → "Accessibility Gate (WCAG 2.2 AA)" is NOT a
+#       required check. A red ❌ is visible and informative, but
+#       merging is still allowed. Read the report, learn the
+#       violations.
+#     • After baseline → Settings → Branches → main → add
+#       "Accessibility Gate (WCAG 2.2 AA)" to required status
+#       checks — same moment the Lighthouse a11y category flips
+#       warn→error (Phase 3 of this task). From then on, red = no
+#       merge. (Runbook: ADR-0010.)
+#
+# TASK INTERLINKS:
+#   #28 OTP UX     — flips the one-time-code test.fixme in
+#                    auth-flows.a11y.spec.ts to a live test.
+#   #55/#56 UIs    — add their routes to public-pages spec in the
+#                    SAME PR they ship ("verified every PR").
+#   #75 SR audit   — consumes the axe JSON artifacts archived here.
+#   #76–99 clinics — copies this harness on day one.
+#   #160/#161      — push + pen-test read this gate's evidence.
+# ═══════════════════════════════════════════════════════════════
+
+name: Accessibility
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/a11y.yml'
+  # Manual trigger — re-audit main after a merge, or produce a fresh
+  # evidence artifact for a compliance request without opening a PR.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: a11y-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  TURBO_TELEMETRY_DISABLED: 1
+  # Mirrors ci.yml — the build path may touch Prisma, so the same
+  # throwaway Postgres service + URL is provided here.
+  DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/datun_a11y_ci'
+
+jobs:
+  a11y:
+    name: Accessibility Gate (WCAG 2.2 AA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    # ── Same service block as ci.yml (proven-green setup) ──
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: datun_a11y_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      # Same key family as ci.yml on purpose: if the quality job has
+      # already built this SHA, Turbo replays the build here in
+      # seconds instead of rebuilding from scratch.
+      - name: Cache Turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm turbo run db:generate
+
+      # Mirrors ci.yml's schema sync so `next build` / `next start`
+      # never meet an empty database. --skip-generate because the
+      # client was generated one step above.
+      - name: Sync schema to throwaway DB
+        run: pnpm --filter @repo/db exec prisma db push --skip-generate --accept-data-loss
+
+      # Build ONLY the web app and its workspace dependencies.
+      # Env block mirrors lighthouse-ci.yml 1:1 — the audits run
+      # against localhost, so canonicals must be built for localhost.
+      - name: Build web app (production)
+        run: pnpm turbo run build --filter=web
+        env:
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.datunai.com' }}
+
+      # Chromium only — axe-core results are engine-deterministic,
+      # and both Playwright projects (desktop + Pixel 7) ride the
+      # same binary. --with-deps pulls the runner's system libs.
+      # Version is pinned transitively by @playwright/test in the
+      # lockfile — install always matches the test runner exactly.
+      - name: Install Playwright Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      # Playwright's webServer boots `pnpm start` (the production
+      # build above), waits for first byte, runs every *.a11y.spec.ts
+      # in both projects, and tears the server down.
+      - name: Run accessibility E2E suites
+        run: pnpm --filter web test:e2e
+
+      # The HTML report embeds every attached axe-*.json — pass or
+      # fail. if: always() → we keep the evidence ESPECIALLY when
+      # the gate fails; that report is the debugging starting point
+      # AND the compliance paper trail.
+      - name: Archive Playwright a11y report (90-day evidence trail)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: a11y-report-${{ github.run_number }}
+          path: apps/web/playwright-report
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Archive raw test results (traces on retry, screenshots on failure)
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: a11y-test-results-${{ github.run_number }}
+          path: apps/web/test-results
+          retention-days: 30
+          if-no-files-found: ignore

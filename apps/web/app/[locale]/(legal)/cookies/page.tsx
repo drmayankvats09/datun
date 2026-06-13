@@ -139,7 +139,7 @@ export default function CookiesPage() {
                   <tr className="border-b border-border">
                     <td className="px-4 py-3 font-mono text-xs">datun_theme</td>
                     <td className="px-4 py-3">
-                      <span className="rounded bg-muted-foreground/20 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      <span className="rounded bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
                         Functional
                       </span>
                     </td>

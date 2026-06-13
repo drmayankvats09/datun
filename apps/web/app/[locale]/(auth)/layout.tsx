@@ -1,5 +1,6 @@
 import { BRAND } from '@repo/shared';
 import { FormLayout } from '@/components/layout';
+import { ConsistentHelp } from '@/components/a11y';
 import { useTranslations } from 'next-intl';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -16,9 +17,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="mt-2 text-sm text-muted-foreground">{t('brand.tagline')}</p>
         </div>
         {children}
-        <p className="mt-6 text-center text-xs text-muted-foreground/50 sm:mt-8">
+        <p className="mt-6 text-center text-xs text-muted-foreground sm:mt-8">
           {t('footer.copyright', { year: new Date().getFullYear() })}
         </p>
+        {/* Task #54 — SC 3.2.6: help lives in the SAME slot (last
+            element of the card) on every auth page. Patients stuck at
+            sign-in are exactly who this criterion exists for. */}
+        <div className="mt-3 flex justify-center">
+          <ConsistentHelp />
+        </div>
       </FormLayout>
     </main>
   );

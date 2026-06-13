@@ -47,6 +47,10 @@
     "switchLabel": "Language",
     "currentLanguage": "English"
   },
+  "theme": {
+    "switchToLight": "లైట్ మోడ్‌కు మార్చండి",
+    "switchToDark": "డార్క్ మోడ్‌కు మార్చండి"
+  },
   "homepage": {
     "title": "Datun",
     "mission": "Healthcare is a Right, Not a Privilege",

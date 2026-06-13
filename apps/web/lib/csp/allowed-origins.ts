@@ -131,8 +131,15 @@ export const CONNECT_ORIGINS = {
   vercelAnalytics: ['https://vitals.vercel-insights.com'],
   cloudinaryUpload: ['https://api.cloudinary.com'],
 
-  // Task #49 — PostHog event ingest + decide endpoint
-  posthog: ['https://eu.i.posthog.com'],
+  // Task #49 — PostHog event ingest + decide endpoint.
+  // Task #54 fix — eu-assets.i.posthog.com added: PostHog lazy-loads
+  // feature modules (web-vitals, surveys, session-recorder) and their
+  // source maps from the ASSETS host via fetch. connect-src is NOT
+  // covered by 'strict-dynamic' (same GA4 lesson below), so without
+  // this host those fetches are blocked — the exact pair of console
+  // violations seen on 12 Jun 26. The dual-host pattern was already
+  // documented in this file's header; the list now matches it.
+  posthog: ['https://eu.i.posthog.com', 'https://eu-assets.i.posthog.com'],
 
   // GA4 (gtag) POSTs measurement beacons here. connect-src is NOT
   // affected by 'strict-dynamic', so without these the gtag script

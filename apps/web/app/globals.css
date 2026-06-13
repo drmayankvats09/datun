@@ -66,7 +66,14 @@
   --destructive-foreground: #ffffff;
   --border: #e5e7eb;
   --input: #e5e7eb;
-  --ring: #00a896;
+  /* Task #54 — WCAG 1.4.11 Non-text Contrast (focus indicators).
+     Brand teal #00a896 on white measures 2.98:1 — UNDER the 3:1
+     floor a focus indicator must clear against adjacent colors.
+     Aligned to --primary (teal-700): #0f766e on white = 5.47:1 ✓.
+     Every shadcn `ring-ring` / `border-ring` utility inherits the
+     fix from this single token. (Math: relative-luminance per
+     WCAG 2.x; verified 2026-06-12, see ADR-0010.) */
+  --ring: #0f766e;
   --chart-1: #00a896;
   --chart-2: #0ea5e9;
   --chart-3: #f59e0b;
@@ -79,7 +86,8 @@
   --sidebar-accent: #f0fdf9;
   --sidebar-accent-foreground: #0a0f1a;
   --sidebar-border: #e5e7eb;
-  --sidebar-ring: #00a896;
+  /* Task #54 — same 1.4.11 fix as --ring above (5.47:1 on white). */
+  --sidebar-ring: #0f766e;
 }
 
 .dark {
@@ -101,6 +109,9 @@
   --destructive-foreground: #f9fafb;
   --border: #2d3748;
   --input: #2d3748;
+  /* Task #54 — dark ring verified: #00c4aa on --background = 8.65:1,
+     on --card #1a2332 = 7.12:1. Both clear the 3:1 floor with room;
+     no change needed — value kept, math recorded (ADR-0010). */
   --ring: #00c4aa;
   --chart-1: #00c4aa;
   --chart-2: #38bdf8;
@@ -233,6 +244,77 @@ body {
 
 .skip-to-content:focus {
   top: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TASK #54 — WCAG 2.2 AA CSS LAYER
+   The 2.2-specific success criteria that live naturally in CSS.
+   Companion layers: eslint (packages/eslint-config/a11y.js),
+   axe E2E (Phase 2), human protocol (Phase 3, docs/accessibility).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── SC 2.4.11 Focus Not Obscured (Minimum) ──
+ * Sticky headers (legal layout: sticky top-0, ~64px tall) can sit
+ * ON TOP of the element the keyboard just focused — the #1 failure
+ * mode WCAG 2.2 added this criterion for, and per industry audit
+ * data the most common 2.2 miss on otherwise-2.1-clean sites.
+ * `scroll-margin-top` makes the browser's scroll-into-view math
+ * reserve headroom ABOVE the focused element so it lands fully
+ * below any sticky chrome. 5rem = 64px header + 16px breathing
+ * room. Applied to keyboard-focus targets AND fragment (#hash)
+ * targets; zero visual effect on mouse flows.
+ */
+:focus-visible,
+:target {
+  scroll-margin-top: 5rem;
+}
+
+/* ── SC 2.5.8 Target Size (Minimum) — 24×24 CSS px floor ──
+ * Opt-in utility for interactive elements built OUTSIDE the design
+ * system (raw <a>/<button> in prose, chat chips in Task #56, future
+ * one-off controls). The shadcn Button variants already clear the
+ * floor (audited 2026-06-12: xs/icon-xs = 24px exactly, all others
+ * larger — contract documented in components/ui/button.tsx), so
+ * this class is for everything the variant system doesn't cover.
+ * Box-model note: the SC measures the pointer-target BOX, so
+ * min-height/min-width (not font-size) is the correct mechanism.
+ */
+.min-target {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+/* ── Windows High Contrast / forced-colors mode ──
+ * ~4% of Windows users run forced-colors (WebAIM). In this mode the
+ * OS replaces all author colors with a system palette; our custom
+ * teal outline would be repainted arbitrarily. Re-declaring the
+ * focus indicator with the `Highlight` system keyword guarantees
+ * the ring stays visible in whatever palette the user chose —
+ * including inverted and high-contrast-black themes. `transparent`
+ * borders also vanish in forced-colors (repainted to ButtonText),
+ * which is desired default behavior; we only pin the focus ring.
+ */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .skip-to-content:focus {
+    outline: 2px solid Highlight;
+  }
+}
+
+/* ── prefers-contrast: more — user asked for stronger indicators ──
+ * iOS "Increase Contrast" / Android "High contrast text" surface
+ * here. Thicken the ring and drop border-radius rounding of the
+ * outline so the indicator reads as a hard, unambiguous box.
+ */
+@media (prefers-contrast: more) {
+  :focus-visible {
+    outline-width: 3px;
+    outline-offset: 3px;
+  }
 }
 
 /* ── Reduced motion — Disable animations for a11y ──

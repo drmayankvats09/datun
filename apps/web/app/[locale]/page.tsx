@@ -67,21 +67,24 @@ export default async function HomePage({ params }: Props) {
     copyright: t('footer.copyright', { year: new Date().getFullYear() }),
   };
 
+  // Task #54 E2E catch: SkipToContent targets #main-content, but this page
+  // builds its own <main> (no PageShell) — the skip link was a dead anchor.
+  // id + tabIndex={-1} make Enter actually land focus here (SC 2.4.1).
   return (
     <main
+      id="main-content"
+      tabIndex={-1}
       className="relative flex min-h-svh flex-col overflow-hidden bg-background text-foreground"
       role="main"
     >
       <AuroraBg />
 
       <header className="relative z-10 flex items-center justify-between px-4 py-5 sm:px-8 sm:py-6">
-        <div
-          className="flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-md"
-          style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.6)',
-            border: '1px solid rgba(0, 0, 0, 0.08)',
-          }}
-        >
+        {/* Task #54 r2: translucent glass over AuroraBg = unverifiable
+            background (dark run measured the blend at #9d9fa3 → 2.2:1).
+            Opaque bg-card makes the ratio deterministic in BOTH themes;
+            text-foreground/80 on card ≥ 8:1. */}
+        <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3.5 py-1.5 text-xs font-medium text-foreground/80">
           <span aria-hidden="true" className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />

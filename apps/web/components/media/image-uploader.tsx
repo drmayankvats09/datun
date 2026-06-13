@@ -19,12 +19,31 @@
 //
 // Memory rule #22: accessibility — drag area is a button with role,
 // aria-label, keyboard interactions; input has htmlFor label.
+//
+// TASK #54 UPDATE (WCAG 2.2 AA — SC 1.1.1 / 4.1.2 Name, Role, Value):
+//   ProgressBar previously exposed role="progressbar" + value but NO
+//   accessible NAME — NVDA announced a bare "progress bar, 40%",
+//   leaving a blind patient guessing 40% of *what*. Flagged by the
+//   new jsx-a11y/control-has-associated-label gate (the single
+//   genuine hit across the whole tree, audit 2026-06-12).
+//
+//   Fix pattern: aria-labelledby → the ALREADY-VISIBLE stage line
+//   ("Uploading…" / its 9 translations). One source of truth, zero
+//   new i18n keys across 10 locales, and the announcement stays in
+//   lock-step with the on-screen text by construction:
+//
+//     NVDA now reads: "Uploading…, progress bar, 40%."
+//
+//   Mechanics: `useId()` (SSR-safe, hydration-stable) names the
+//   stage <p>; the id is threaded to <ProgressBar labelledBy={…}/>.
+//   `aria-labelledby` resolves across the sibling boundary — no DOM
+//   restructuring, no visual change.
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
 import type { JSX } from 'react';
-import { useCallback, useRef, useState, type DragEvent, type ChangeEvent } from 'react';
+import { useCallback, useId, useRef, useState, type DragEvent, type ChangeEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Camera, Upload, Loader2, AlertCircle, X, Image as ImageIcon } from 'lucide-react';
@@ -72,6 +91,10 @@ export function ImageUploader({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Task #54 — stable, SSR-safe id linking the visible stage label
+  // to the progressbar's accessible name (see header block).
+  const stageLabelId = useId();
 
   // ── Handlers ────────────────────────────────────────────
   const handleFiles = useCallback(
@@ -202,12 +225,16 @@ export function ImageUploader({
         {isBusy ? (
           <div className="relative z-10 flex w-full max-w-xs flex-col items-center gap-2">
             <Loader2 className="size-8 animate-spin text-primary" aria-hidden />
-            <p className="text-sm font-medium">
+            {/* Task #54: this visible stage line doubles as the
+                progressbar's accessible name via aria-labelledby —
+                screen readers announce "Uploading…, progress bar,
+                40%" in the user's locale, from one source of truth. */}
+            <p id={stageLabelId} className="text-sm font-medium">
               {state.stage === 'processing' && t('stageProcessing')}
               {state.stage === 'uploading' && t('stageUploading')}
               {state.stage === 'confirming' && t('stageConfirming')}
             </p>
-            <ProgressBar value={state.progress} />
+            <ProgressBar value={state.progress} labelledBy={stageLabelId} />
             <Button
               type="button"
               variant="ghost"
@@ -301,7 +328,17 @@ export function ImageUploader({
 
 // ─── Subcomponents ───────────────────────────────────────────
 
-function ProgressBar({ value }: { value: number }): JSX.Element {
+/**
+ * Determinate progress bar following the WAI-ARIA progressbar
+ * pattern (native <progress> remains unstylable cross-browser; the
+ * ARIA-div pattern is what Radix/shadcn ship for the same reason).
+ *
+ * Task #54: `labelledBy` is REQUIRED — a progressbar without an
+ * accessible name fails SC 4.1.2 (Name, Role, Value) and the
+ * jsx-a11y/control-has-associated-label CI gate. Callers point it
+ * at a visible text element describing what is progressing.
+ */
+function ProgressBar({ value, labelledBy }: { value: number; labelledBy: string }): JSX.Element {
   // Clamp to [0, 100] — defensive against hook bugs or stale state
   // passing through a fractional progress > 1. Without this, the
   // aria-valuenow reports nonsense to assistive tech and the bar
@@ -310,6 +347,7 @@ function ProgressBar({ value }: { value: number }): JSX.Element {
   return (
     <div
       role="progressbar"
+      aria-labelledby={labelledBy}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent}

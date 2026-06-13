@@ -222,7 +222,7 @@ describe('lighthouserc.cjs — ADR-0009 assertion contract', () => {
 
   it.each([
     ['categories:performance', 'error', 0.55], // Amendment v2 interim; destination 0.90
-    ['categories:accessibility', 'warn', 0.95], // flips to error in Task #54
+    ['categories:accessibility', 'error', 0.95], // flipped by Task #54 (ADR-0010 dial)
     ['categories:best-practices', 'error', 0.95],
     ['categories:seo', 'error', 0.95],
   ] as const)('%s is %s at minScore=%s', (audit, severity, min) => {
