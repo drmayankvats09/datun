@@ -52,7 +52,18 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* ── Page Content ── */}
-      <main className="mx-auto max-w-5xl px-6 py-12 md:py-16">{children}</main>
+      {/* Task #54 follow-up — skip-link target. The global SkipToContent
+          links to #main-content; legal pages render via this raw <main>
+          (not PageShell), so without id+tabIndex the anchor was dead and
+          focus never moved. tabIndex={-1} makes <main> programmatically
+          focusable so Enter actually lands focus here (SC 2.4.1). */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-5xl px-6 py-12 focus-visible:outline-none md:py-16"
+      >
+        {children}
+      </main>
 
       {/* ── Legal Footer ── */}
       <footer className="border-t border-border/40 print:hidden">
