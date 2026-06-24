@@ -52,7 +52,9 @@
       "@vitest/ui": "^3.2.4",
       "thrift": ">=0.23.0",
       "postcss": ">=8.5.10",
-      "protobufjs": ">=8.0.2",
+      "protobufjs": ">=8.4.1",
+      "form-data@>=4.0.0 <4.0.6": "4.0.6",
+      "ws@>=1.1.0 <5.2.5": "5.2.5",
       "@aws-sdk/client-s3": "3.1042.0",
       "@aws-sdk/s3-request-presigner": "3.1042.0"
     },
