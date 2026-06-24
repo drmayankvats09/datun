@@ -1,0 +1,13 @@
+/* ============================================================================
+   DATUN — DESIGN SYSTEM ENTRY  (consumers link THIS one file)
+   Order matters: colours first, then type, then spatial system.
+   ============================================================================ */
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/radii.css';
+@import './tokens/elevation.css';
+@import './tokens/borders.css';
+@import './tokens/motion.css';
+@import './tokens/zindex.css';
+@import './tokens/icons.css';

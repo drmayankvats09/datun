@@ -1,0 +1,287 @@
+/* ============================================================================
+   DATUN — TYPOGRAPHY TOKENS  (Design System Part 3 · LOCKED)
+   Anek-only variable superfamily (Latin + 9 Indic scripts) · Noto Sans fallback.
+   3-tier: @theme primitives -> :root role tokens -> utilities. rem sizes,
+   unitless line-heights. Body fixed 16px (never shrunk). Consumes Part 2 colours.
+   NOTE: serif/mono are intentionally absent (Part 3.1 lock).
+   ============================================================================ */
+
+/* ---------- @font-face · Anek (variable WOFF2) + metric-matched Noto fallback ----------
+   Self-host these WOFF2 for production (paths below). Subset by script; ship Latin +
+   active Indic script, lazy-load others on language switch (Part 3.11). */
+@font-face {
+  font-family: 'Anek Latin';
+  /* Subset for the web budget: Latin glyphs only, wght axis kept (100–800),
+     wdth axis instanced out (unused) — 176 KB → ~40 KB. */
+  src: url('/fonts/AnekLatin-Variable.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  /* optional, not swap: the browser only uses Anek if it's ready at first paint
+     and NEVER swaps it in mid-view, so there is zero font-driven CLS regardless
+     of which fallback the CI/OS resolves (local()-matched fallbacks can't be
+     guaranteed to resolve on the Linux runner). Anek still renders on capable
+     connections and on every cached/repeat visit. */
+  font-display: optional;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+20B9; /* Latin + ₹ */
+}
+@font-face {
+  /* Devanagari (Hindi/Marathi) — example Indic face */
+  font-family: 'Anek Devanagari';
+  src: url('/fonts/AnekDevanagari-Variable.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-display: optional; /* see Anek Latin note — zero font-driven CLS */
+  unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
+}
+/* Metric-matched fallback (anti-CLS) — fontaine / next-font method.
+   Descriptors are computed against ARIAL's metrics (upm 2048, asc 1491,
+   desc 431, xAvg 904) vs Anek Latin (upm 2000, asc 1800, desc 400, xAvg 1004).
+   'Arial' resolves to real Arial on Windows/macOS and to Liberation Sans
+   (metric-IDENTICAL) via fontconfig aliasing on Linux/CI — so these numbers
+   match the ACTUAL resolved fallback on every OS, making the font swap cause
+   ~0 layout shift while Anek still renders (font-display: swap). */
+@font-face {
+  font-family: 'Anek Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Arimo'), local('Helvetica Neue');
+  font-display: swap;
+  size-adjust: 113.73%;
+  ascent-override: 79.14%;
+  descent-override: 17.59%;
+  line-gap-override: 0%;
+}
+
+/* ---------- TAILWIND v4 STATIC PRIMITIVES ---------- */
+:root {
+  /* Families (Part 3.1) — primary Anek, Noto Sans fallback, no serif/mono */
+  --font-sans: 'Anek Latin', 'Anek Fallback', 'Noto Sans', system-ui, sans-serif; /* @kind font */
+  --font-display:
+    'Anek Latin', 'Anek Fallback', 'Noto Sans', system-ui, sans-serif; /* @kind font */
+  --font-devanagari:
+    'Anek Devanagari', 'Noto Sans Devanagari', 'Anek Latin', sans-serif; /* @kind font */
+  /* Tamil/Telugu/Bangla/Kannada/Malayalam/Gujarati/Gurmukhi/Odia are bound inline
+     in the :lang() rules below until each Anek WOFF2 is self-hosted (then promote
+     each to a token + @font-face). Latin + Devanagari are live above. */
+
+  /* Size scale — px→rem @16, 4px-grid-aligned (Part 3.3/3.4) */
+  --text-caption: 0.75rem; /* 12 */
+  --text-label-s: 0.75rem; /* 12 */
+  --text-label-m: 0.875rem; /* 14 */
+  --text-label-l: 0.875rem; /* 14 */
+  --text-body-s: 0.875rem; /* 14 */
+  --text-body-m: 1rem; /* 16 = base, never shrunk */
+  --text-body-l: 1.125rem; /* 18 */
+  --text-title-s: 1.125rem; /* 18 */
+  --text-title-m: 1.25rem; /* 20 */
+  --text-title-l: 1.5rem; /* 24 */
+  --text-headline-s: 1.5rem; /* 24 */
+  --text-headline-m: 1.75rem; /* 28 */
+  --text-headline-l: 2rem; /* 32 */
+  --text-display-s: 2.25rem; /* 36 */
+  --text-display-m: 2.8125rem; /* 45 */
+  --text-display-l: 3.5625rem; /* 57 */
+
+  /* Fluid display/headline sizing lives in the utilities below (clamp, not a token) */
+
+  /* Weights (Part 3.5) — load 400/500/600/700 only */
+  --weight-regular: 400; /* @kind font */
+  --weight-medium: 500; /* @kind font */
+  --weight-semibold: 600; /* @kind font */
+  --weight-bold: 700; /* @kind font */
+
+  /* Line-heights (Part 3.6, unitless) */
+  --leading-display: 1.1; /* @kind font */
+  --leading-headline: 1.15; /* @kind font */
+  --leading-title: 1.3; /* @kind font */
+  --leading-body: 1.55; /* @kind font */
+  --leading-label: 1.4; /* @kind font */
+  /* Indic "Tall" scripts — body bump so matras/conjuncts never clip (Part 3.6) */
+  --leading-body-indic: 1.75; /* @kind font */
+
+  /* Tracking (Part 3.7) — Latin only; Indic uses 0 always */
+  --tracking-display: -0.025em; /* @kind font */
+  --tracking-headline: -0.01em; /* @kind font */
+  --tracking-title: -0.005em; /* @kind font */
+  --tracking-body: 0em; /* @kind font */
+  --tracking-label: 0.01em; /* @kind font */
+  --tracking-caps: 0.04em; /* @kind font */
+
+  /* Measure (Part 3.9) */
+  --measure-body: 66ch;
+  --measure-max: 80ch;
+}
+
+/* ---------- SEMANTIC ROLE TOKENS (size · weight · line-height · tracking per role) ---------- */
+:root {
+  --type-display-l: var(--weight-bold) var(--text-display-l)/var(--leading-display) var(--font-sans);
+  --type-display-m: var(--weight-semibold) var(--text-display-m)/var(--leading-display)
+    var(--font-sans);
+  --type-display-s: var(--weight-semibold) var(--text-display-s)/var(--leading-display)
+    var(--font-sans);
+  --type-headline-l: var(--weight-semibold) var(--text-headline-l)/var(--leading-headline)
+    var(--font-sans);
+  --type-headline-m: var(--weight-semibold) var(--text-headline-m)/var(--leading-headline)
+    var(--font-sans);
+  --type-headline-s: var(--weight-semibold) var(--text-headline-s)/var(--leading-headline)
+    var(--font-sans);
+  --type-title-l: var(--weight-semibold) var(--text-title-l)/var(--leading-title) var(--font-sans);
+  --type-title-m: var(--weight-semibold) var(--text-title-m)/var(--leading-title) var(--font-sans);
+  --type-title-s: var(--weight-medium) var(--text-title-s)/var(--leading-title) var(--font-sans);
+  --type-body-l: var(--weight-regular) var(--text-body-l)/var(--leading-body) var(--font-sans);
+  --type-body-m: var(--weight-regular) var(--text-body-m)/var(--leading-body) var(--font-sans);
+  --type-body-s: var(--weight-regular) var(--text-body-s)/var(--leading-body) var(--font-sans);
+  --type-body-xs: var(--weight-regular) var(--text-caption)/var(--leading-label) var(--font-sans);
+  --type-label-l: var(--weight-medium) var(--text-label-l)/var(--leading-label) var(--font-sans);
+  --type-label-m: var(--weight-medium) var(--text-label-m)/var(--leading-label) var(--font-sans);
+  --type-label-s: var(--weight-medium) var(--text-label-s)/var(--leading-label) var(--font-sans);
+  --type-caption: var(--weight-medium) var(--text-caption)/var(--leading-label) var(--font-sans);
+}
+
+/* ---------- UTILITIES ---------- */
+.type-display-l {
+  font: var(--type-display-l);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+.type-display-m {
+  font: var(--type-display-m);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+.type-display-s {
+  font: var(--type-display-s);
+  letter-spacing: var(--tracking-headline);
+  text-wrap: balance;
+}
+.type-headline-l {
+  font: var(--type-headline-l);
+  letter-spacing: var(--tracking-headline);
+  text-wrap: balance;
+}
+.type-headline-m {
+  font: var(--type-headline-m);
+  letter-spacing: var(--tracking-headline);
+  text-wrap: balance;
+}
+.type-headline-s {
+  font: var(--type-headline-s);
+  letter-spacing: var(--tracking-headline);
+  text-wrap: balance;
+}
+.type-title-l {
+  font: var(--type-title-l);
+  letter-spacing: var(--tracking-title);
+}
+.type-title-m {
+  font: var(--type-title-m);
+  letter-spacing: var(--tracking-title);
+}
+.type-title-s {
+  font: var(--type-title-s);
+  letter-spacing: var(--tracking-title);
+}
+.type-body-l {
+  font: var(--type-body-l);
+  letter-spacing: var(--tracking-body);
+  max-inline-size: var(--measure-body);
+  text-wrap: pretty;
+}
+.type-body-m {
+  font: var(--type-body-m);
+  letter-spacing: var(--tracking-body);
+  max-inline-size: var(--measure-body);
+  text-wrap: pretty;
+}
+.type-body-s {
+  font: var(--type-body-s);
+  letter-spacing: var(--tracking-body);
+  text-wrap: pretty;
+}
+.type-label-l {
+  font: var(--type-label-l);
+  letter-spacing: var(--tracking-label);
+}
+.type-label-m {
+  font: var(--type-label-m);
+  letter-spacing: var(--tracking-label);
+}
+.type-label-s {
+  font: var(--type-label-s);
+  letter-spacing: var(--tracking-label);
+}
+.type-caption {
+  font: var(--type-caption);
+  letter-spacing: var(--tracking-label);
+}
+.type-overline {
+  font: var(--type-label-s);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* Paragraph rhythm (Part 3.8) — ~1 body line between blocks */
+.type-prose > * + * {
+  margin-block-start: 1.5rem;
+}
+/* Display/Headline fluid variants (Part 3.10) — bounded clamp, no breakpoint CLS */
+.type-display-l--fluid {
+  font-size: clamp(2.8125rem, 1.9rem + 4vw, 3.5625rem);
+}
+.type-display-m--fluid {
+  font-size: clamp(2.25rem, 1.7rem + 2.6vw, 2.8125rem);
+}
+.type-headline-l--fluid {
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2rem);
+}
+
+/* Numerals (Part 3 a11y + 12.13) — tabular for data/scores/prices/tables */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Indic per-script bindings — family + Tall-script leading, never negative tracking */
+:lang(hi),
+:lang(mr),
+:lang(ne) {
+  font-family: var(--font-devanagari);
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(ta) {
+  font-family: 'Anek Tamil', 'Noto Sans Tamil', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(te) {
+  font-family: 'Anek Telugu', 'Noto Sans Telugu', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(bn) {
+  font-family: 'Anek Bangla', 'Noto Sans Bengali', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(kn) {
+  font-family: 'Anek Kannada', 'Noto Sans Kannada', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(ml) {
+  font-family: 'Anek Malayalam', 'Noto Sans Malayalam', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(gu) {
+  font-family: 'Anek Gujarati', 'Noto Sans Gujarati', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(pa) {
+  font-family: 'Anek Gurmukhi', 'Noto Sans Gurmukhi', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}
+:lang(or) {
+  font-family: 'Anek Odia', 'Noto Sans Oriya', 'Anek Latin', sans-serif;
+  line-height: var(--leading-body-indic);
+  letter-spacing: 0;
+}

@@ -1,0 +1,268 @@
+/* ============================================================================
+   DATUN — SPACING · LAYOUT · SIZING TOKENS  (Design System Parts 4 + 5 · LOCKED)
+   One dimensional system on the 4px base / 8px rhythm. rem-authored.
+   Heights = FIXED tokens (layout stability) · widths = FLUID.
+   Whitespace is a feature (Calm + Trust). Logical properties throughout (RTL-ready).
+   Boundary: radii = Part 6 · z-index = Part 11 · icon style = Part 10.
+   ============================================================================ */
+
+:root {
+  /* Tailwind v4 base 0.25rem(4px): p-1=4 p-2=8 p-3=12 p-4=16 p-5=20 p-6=24
+     p-8=32 p-10=40 p-12=48 p-14=56 p-16=64 p-20=80 p-24=96 p-32=128 */
+  --spacing: 0.25rem;
+
+  /* ---- Spacing scale (4.2) — finite, rem ---- */
+  --space-0: 0;
+  --space-2: 0.125rem; /* 2 · rare hairline */
+  --space-4: 0.25rem; /* 4 */
+  --space-8: 0.5rem; /* 8 */
+  --space-12: 0.75rem; /* 12 */
+  --space-16: 1rem; /* 16 base */
+  --space-20: 1.25rem; /* 20 */
+  --space-24: 1.5rem; /* 24 */
+  --space-32: 2rem; /* 32 */
+  --space-40: 2.5rem; /* 40 */
+  --space-48: 3rem; /* 48 */
+  --space-56: 3.5rem; /* 56 */
+  --space-64: 4rem; /* 64 */
+  --space-80: 5rem; /* 80 */
+  --space-96: 6rem; /* 96 */
+  --space-128: 8rem; /* 128 */
+
+  /* Semantic aliases (4.2) */
+  --space-2xs: var(--space-4);
+  --space-xs: var(--space-8);
+  --space-sm: var(--space-12);
+  --space-md: var(--space-16);
+  --space-lg: var(--space-24);
+  --space-xl: var(--space-32);
+  --space-2xl: var(--space-48);
+  --space-3xl: var(--space-64);
+  --space-4xl: var(--space-80);
+  --space-5xl: var(--space-96);
+
+  /* ---- Gutters & margins (4.5) ---- */
+  --gutter-mobile: var(--space-16);
+  --gutter-desktop: var(--space-24);
+  --margin-mobile: var(--space-16);
+  --margin-desktop: var(--space-32);
+
+  /* ---- Container max-widths (4.7) ---- */
+  --container-prose: 66ch; /* @kind spacing */
+  --container-app: 40rem; /* 640 · app-face single column */
+  --container-content: 75rem; /* 1200 · marketing */
+  --container-wide: 90rem; /* 1440 · max site */
+
+  /* ---- Breakpoints (4.6) — Tailwind v4 defaults ---- */
+  --breakpoint-sm: 40rem; /* 640  @kind spacing */
+  --breakpoint-md: 48rem; /* 768 → 8-col  @kind spacing */
+  --breakpoint-lg: 64rem; /* 1024 → 12-col  @kind spacing */
+  --breakpoint-xl: 80rem; /* 1280  @kind spacing */
+  --breakpoint-2xl: 96rem; /* 1536  @kind spacing */
+
+  /* ---- Aspect ratios (4.9) — anti-CLS ---- */
+  --aspect-square: 1 / 1; /* @kind other */
+  --aspect-4-3: 4 / 3; /* @kind other */
+  --aspect-16-9: 16 / 9; /* @kind other */
+  --aspect-3-2: 3 / 2; /* @kind other */
+  --aspect-4-5: 4 / 5; /* @kind other */
+  --aspect-9-16: 9 / 16; /* @kind other */
+
+  /* ---- Control heights (5.2) — FIXED ---- */
+  --control-xs: 2rem; /* 32 · desktop-dense / clinic tables (pad ≥44 hit-area on touch) */
+  --control-sm: 2.5rem; /* 40 */
+  --control-md: 3rem; /* 48 · DEFAULT (Material 48dp) */
+  --control-lg: 3.5rem; /* 56 · hero "Ask Datun" CTA */
+
+  /* ---- Icon sizes (5.4 — size only) ---- */
+  --icon-16: 1rem; /* inline w/ small text */
+  --icon-20: 1.25rem; /* dense rows / secondary */
+  --icon-24: 1.5rem; /* DEFAULT interactive/nav */
+  --icon-32: 2rem; /* feature */
+  --icon-40: 2.5rem;
+  --icon-48: 3rem; /* marketing/illustrative */
+
+  /* ---- Avatar sizes (5.5) — doctor photo = trust ---- */
+  --avatar-24: 1.5rem;
+  --avatar-32: 2rem; /* inline */
+  --avatar-40: 2.5rem;
+  --avatar-48: 3rem; /* cards */
+  --avatar-64: 4rem;
+  --avatar-96: 6rem; /* doctor profile */
+  --avatar-128: 8rem; /* hero */
+
+  /* ---- Tap targets & hit-area (5.3) ---- */
+  --target-floor: 1.5rem; /* 24 · WCAG 2.2 AA, non-critical + spaced only */
+  --target-min: 2.75rem; /* 44 · Apple/WCAG AAA */
+  --target-default: 3rem; /* 48 · Material default */
+}
+
+/* ============================================================================
+   LAYOUT PRIMITIVES (4.8) — composable, intrinsic CSS, minimal media queries
+   ============================================================================ */
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+.stack > * + * {
+  margin-block-start: var(--stack-space, var(--space-16));
+}
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cluster-space, var(--space-12));
+  align-items: var(--cluster-align, center);
+}
+.grid-auto {
+  display: grid;
+  gap: var(--grid-gap, var(--gutter-desktop));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--grid-min, 16rem)), 1fr));
+}
+.inset {
+  padding: var(--inset, var(--space-16));
+}
+.inset-squish {
+  padding-block: var(--inset-squish-y, var(--space-12));
+  padding-inline: var(--inset-squish-x, var(--space-24));
+}
+.inset-stretch {
+  padding-block: var(--inset-stretch-y, var(--space-24));
+  padding-inline: var(--inset-stretch-x, var(--space-16));
+}
+.bleed {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+}
+.center {
+  max-inline-size: var(--measure, var(--container-content));
+  margin-inline: auto;
+  padding-inline: var(--gutter-mobile);
+  box-sizing: content-box;
+}
+@media (min-width: 48rem) {
+  .center {
+    padding-inline: var(--gutter-desktop);
+  }
+}
+
+/* Responsive 12-col grid (4.5): 4 → 8 → 12 */
+.grid12 {
+  display: grid;
+  gap: var(--gutter-mobile);
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (min-width: 48rem) {
+  .grid12 {
+    gap: var(--gutter-desktop);
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+@media (min-width: 64rem) {
+  .grid12 {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+
+/* Fluid section spacing (4.11) — bounded clamp, inner paddings stay on fixed scale */
+.section {
+  padding-block: clamp(3rem, 8vw, 6rem);
+}
+
+/* Aspect-ratio media box (4.9) */
+.ratio {
+  aspect-ratio: var(--ratio, var(--aspect-16-9));
+  overflow: hidden;
+}
+.ratio > img,
+.ratio > video {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Sizing recipes (Part 5) ---- */
+.control {
+  block-size: var(--control-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding-inline: var(--space-16);
+  font-size: 1rem;
+} /* body 16, no iOS zoom */
+.control--sm {
+  block-size: var(--control-sm);
+}
+.control--xs {
+  block-size: var(--control-xs);
+}
+.control--lg {
+  block-size: var(--control-lg);
+  padding-inline: var(--space-24);
+}
+.control--block {
+  display: flex;
+  inline-size: 100%;
+  justify-content: center;
+} /* primary CTA full-width on mobile */
+@media (min-width: 48rem) {
+  .control--block.control--auto-md {
+    inline-size: auto;
+    display: inline-flex;
+  }
+}
+.icon-btn {
+  inline-size: var(--control-md);
+  block-size: var(--control-md);
+  display: inline-grid;
+  place-items: center;
+} /* square, ≥48 hit-area */
+
+/* Hit-area ≥ visual (5.3): small glyph in a ≥44–48 target */
+.target {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: var(--target-default);
+  min-block-size: var(--target-default);
+}
+@media (hover: hover) and (pointer: fine) {
+  .target--shrink {
+    min-inline-size: var(--control-xs);
+    min-block-size: var(--control-xs);
+  }
+}
+
+/* ---- Safe-areas & full-height (4.10) ---- */
+.safe-b {
+  padding-block-end: env(safe-area-inset-bottom);
+}
+.safe-t {
+  padding-block-start: env(safe-area-inset-top);
+}
+.safe-x {
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+.app-tabbar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  padding-block-end: env(safe-area-inset-bottom);
+}
+.app-header {
+  position: sticky;
+  inset-block-start: 0;
+  padding-block-start: env(safe-area-inset-top);
+}
+.min-h-screen {
+  min-block-size: 100dvh;
+}
+
+/* ---- Density (4.3) — comfortable default; compact = clinic tables only ---- */
+[data-density='compact'] {
+  --inset: var(--space-12);
+  --stack-space: var(--space-12);
+  --cluster-space: var(--space-8);
+}
+
+/* Base-component law (4.4): components export ZERO external margin — space via gap/padding. */

@@ -1,0 +1,172 @@
+/* ============================================================================
+   DATUN — BORDERS & RINGS TOKENS  (Design System Part 8 · LOCKED)
+   Borders DEFINE (grouping) + SIGNAL (focus/selection/error). Whitespace over
+   lines; thin + soft. Focus ring is NON-NEGOTIABLE — outline-based, survives any
+   bg / dark / forced-colors. Border colours + ring colour come from locked Part 2.10/2.11.
+   Widths on the 4px grid; borders/rings follow Part 6 corner shape.
+   ============================================================================ */
+
+:root {
+  /* ---- Border widths (8.1) — width = prominence, colour = meaning ---- */
+  --border-hairline: 1px; /* subtle dividers (0.5px on retina, see @media below) */
+  --border-default: 1px; /* component boundaries, inputs, cards */
+  --border-strong: 2px; /* emphasis, selected, active-tab, input-hover */
+  --border-heavy: 3px; /* rare brand moments */
+
+  /* ---- Focus ring metrics (8.5) — colour/halo from locked Part 2 ---- */
+  --ring-width: 2px;
+  --ring-offset: 2px;
+  --ring-halo-width: 4px;
+  /* --color-ring (teal-600) and --color-ring-halo (surface) are locked in colors.css */
+}
+
+/* Retina hairline (8.1) */
+@media (min-resolution: 2dppx) {
+  :root {
+    --border-hairline: 0.5px;
+  }
+}
+
+/* ============================================================================
+   FOCUS RING (8.5) — the hard rule. Reusable utility.
+   :focus-visible only · outline (not box-shadow) · respects radius · + halo for
+   coloured surfaces · survives forced-colors · never clipped · no layout shift.
+   ============================================================================ */
+.focus-ring:focus-visible,
+.focusable:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+  /* enhancement-only halo so the ring reads on any coloured surface */
+  box-shadow: 0 0 0 var(--ring-halo-width) var(--color-ring-halo);
+}
+.focus-ring:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+} /* no ring on mouse */
+
+/* Global keyboard baseline — every native interactive gets the ring */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+@media (forced-colors: active) {
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+/* ============================================================================
+   BORDER STYLES (8.2) & DIVIDERS (8.4)
+   ============================================================================ */
+.border-thin {
+  border: var(--border-default) solid var(--color-border-default);
+}
+.border-subtle {
+  border: var(--border-hairline) solid var(--color-border-subtle);
+}
+.dashed-zone {
+  border: var(--border-strong) dashed var(--color-border-strong);
+} /* drag/add-new only */
+
+.divider {
+  border: none;
+  border-block-start: var(--border-hairline) solid var(--color-border-subtle);
+  margin-block: var(--space-16);
+}
+.divider--inset {
+  margin-inline: var(--space-16);
+}
+hr {
+  border: none;
+  border-block-start: var(--border-hairline) solid var(--color-border-subtle);
+}
+
+/* ============================================================================
+   CONTROL BORDER STATES (8.6) — colour never alone; pair with icon/text/shape
+   Layout-shift-safe: permanent transparent border, swap only the colour (8.9).
+   ============================================================================ */
+.control-border {
+  border: var(--border-default) solid var(--color-border-default); /* ≥3:1 (8.3) */
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  transition: border-color var(--dur-fast, 140ms) var(--ease-out, ease);
+}
+.control-border:hover {
+  border-color: var(--color-border-strong);
+}
+.control-border:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+  border-color: var(--color-border-focus);
+}
+.control-border[aria-invalid='true'],
+.control-border:user-invalid {
+  border-color: var(--color-error);
+}
+.control-border[aria-invalid='true']:focus-visible {
+  outline-color: var(--color-error);
+}
+.control-border:disabled,
+.control-border[aria-disabled='true'] {
+  border-color: var(--color-border-subtle);
+  opacity: 0.38;
+}
+.control-border:read-only {
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .control-border {
+    border-color: FieldText;
+  }
+  .control-border:disabled {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}
+
+/* ============================================================================
+   SELECTION / ACTIVE RING (8.7) — strong 2px teal + teal-weak bg + non-colour cue
+   ============================================================================ */
+.is-selected {
+  border: var(--border-strong) solid var(--color-border-focus);
+  background: var(--color-bg-brand-weak);
+  color: var(--color-text-link);
+}
+.tab-active {
+  box-shadow: inset 0 calc(-1 * var(--border-strong)) 0 0 var(--color-bg-brand);
+  color: var(--color-text-link);
+  font-weight: var(--weight-semibold);
+}
+@media (forced-colors: active) {
+  .is-selected {
+    border-color: SelectedItem;
+    color: SelectedItemText;
+  }
+}
+
+/* ============================================================================
+   FLAT-CARD BORDER (8.8) — L0 flat card uses border instead of shadow.
+   border + subtle shadow together = considered/premium. HC strips shadow → border carries.
+   ============================================================================ */
+.card-flat {
+  background: var(--color-surface);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+}
+.card-premium {
+  background: var(--color-surface-raised);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Layout-shift-safe hover border (8.9) — transparent reserve, swap colour only */
+.border-swap {
+  border: var(--border-default) solid transparent;
+  transition: border-color var(--dur-fast, 140ms) var(--ease-out, ease);
+}
+.border-swap:hover {
+  border-color: var(--color-border-strong);
+}

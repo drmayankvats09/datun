@@ -1,0 +1,6 @@
+/* ============================================================================
+   DATUN @repo/ui — STYLE ENTRY (consumers import this one file)
+   tokens (via datun-theme → styles.css) → shadcn/Tailwind bridge → dtn-* components.
+   ============================================================================ */
+@import './datun-theme.css';
+@import './components.css';
