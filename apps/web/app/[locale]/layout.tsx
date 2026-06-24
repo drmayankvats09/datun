@@ -153,7 +153,7 @@ export default async function LocaleLayout({
               <MotionConfigProvider>
                 <LocaleFont nonce={nonce || undefined} />
                 <ThemeProvider
-                  attribute="data-theme"
+                  attribute={['class', 'data-theme']}
                   defaultTheme="light"
                   enableSystem
                   disableTransitionOnChange

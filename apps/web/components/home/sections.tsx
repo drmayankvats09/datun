@@ -682,7 +682,7 @@ export async function TourismTeaser({ locale }: SectionProps) {
             <p
               style={{
                 font: 'var(--type-body-m)',
-                color: 'var(--color-text-muted)',
+                color: 'var(--color-text-secondary)',
                 margin: 0,
                 maxInlineSize: '52ch',
               }}
@@ -746,7 +746,7 @@ export async function ForClinics({ locale }: SectionProps) {
             <p
               style={{
                 font: 'var(--type-body-m)',
-                color: 'var(--color-text-muted)',
+                color: 'var(--color-text-secondary)',
                 margin: 0,
                 maxInlineSize: '52ch',
               }}
@@ -786,7 +786,7 @@ export async function FinalCta({ locale }: SectionProps) {
           <a
             className="dtn-btn dtn-btn--lg"
             href={lp(locale, '/consult')}
-            style={{ position: 'relative', background: '#fff', color: 'var(--color-text-link)' }}
+            style={{ position: 'relative', background: '#fff', color: 'var(--teal-700)' }}
           >
             {t('home.finalCta.cta')}
           </a>

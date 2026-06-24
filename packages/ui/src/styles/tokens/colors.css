@@ -182,6 +182,12 @@
   --color-text-primary: oklch(0.95 0.005 85);
   --color-text-secondary: oklch(0.78 0.008 85);
   --color-text-muted: oklch(0.64 0.008 85);
+  --color-text-faint: oklch(
+    0.67 0.008 85
+  ); /* WCAG AA on dark surfaces (was inheriting the light value) */
+  --color-text-accent: var(
+    --clay-500
+  ); /* lighter clay → eyebrow accent is AA on dark (clay-700 = 3.4:1) */
   --color-text-on-brand: oklch(0.2 0.01 85);
   --color-text-link: var(--teal-300);
 
