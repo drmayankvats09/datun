@@ -18,7 +18,8 @@ Symptoms and fixes for problems with the local shadow database used by Prisma Mi
 Get-Service postgresql-x64-18
 
 # Can you connect at all?
-$env:PGPASSWORD = "@Mayank0521%"
+# Set your local Postgres password (do NOT commit real secrets)
+$env:PGPASSWORD = "<your-local-postgres-password>"
 psql -U postgres -d datun_shadow -c "SELECT 1;"
 $env:PGPASSWORD = $null
 ```
@@ -34,7 +35,7 @@ Start-Service postgresql-x64-18
 ### Shadow DB corrupt / lock issue
 
 ```powershell
-$env:PGPASSWORD = "@Mayank0521%"
+$env:PGPASSWORD = "<your-local-postgres-password>"
 psql -U postgres -c "DROP DATABASE IF EXISTS datun_shadow;"
 psql -U postgres -c "CREATE DATABASE datun_shadow;"
 $env:PGPASSWORD = $null
@@ -43,7 +44,7 @@ $env:PGPASSWORD = $null
 ### Reset entire local DB state
 
 ```powershell
-$env:PGPASSWORD = "@Mayank0521%"
+$env:PGPASSWORD = "<your-local-postgres-password>"
 psql -U postgres -c "DROP DATABASE IF EXISTS datun_dev;"
 psql -U postgres -c "DROP DATABASE IF EXISTS datun_shadow;"
 psql -U postgres -c "CREATE DATABASE datun_dev;"
