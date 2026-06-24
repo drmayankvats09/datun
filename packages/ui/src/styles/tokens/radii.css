@@ -1,0 +1,124 @@
+/* ============================================================================
+   DATUN — RADII (CORNER) TOKENS  (Design System Part 6 · LOCKED)
+   Moderate-to-generous, calm-not-clinical. Tap-direct elements rounder; large
+   surfaces moderate. Consistent per component type. Squircle = progressive
+   enhancement. On the 4px grid. Boundary: shadow=Part 7, border/ring=Part 8.
+   ============================================================================ */
+
+:root {
+  /* ---- Radius scale (6.2) — 4px-grid, t-shirt + none + full + circle ---- */
+  --radius-none: 0;
+  --radius-xs: 0.25rem; /* 4 */
+  --radius-sm: 0.5rem; /* 8 */
+  --radius-md: 0.75rem; /* 12 · default rounded-rect */
+  --radius-lg: 1rem; /* 16 · cards */
+  --radius-xl: 1.5rem; /* 24 · modals */
+  --radius-2xl: 1.75rem; /* 28 · sheet top */
+  --radius-full: 9999px; /* pill */
+  --radius-circle: 50%;
+
+  /* ---- Per-component semantic aliases (6.3) — components ref these, never raw ---- */
+  --radius-button: var(--radius-full); /* pill */
+  --radius-button-icon: var(--radius-full); /* circle/pill */
+  --radius-input: var(--radius-md); /* 12 */
+  --radius-chip: var(--radius-full);
+  --radius-tag: var(--radius-full);
+  --radius-badge: var(--radius-full);
+  --radius-toggle-track: var(--radius-full);
+  --radius-toggle-thumb: var(--radius-circle);
+  --radius-card: var(--radius-lg); /* 16 */
+  --radius-card-feature: var(--radius-xl); /* 24 */
+  --radius-modal: var(--radius-xl); /* 24 */
+  --radius-sheet-top: var(--radius-2xl); /* 28 top; bottom 0 (see .sheet) */
+  --radius-checkbox: var(--radius-xs); /* 4 */
+  --radius-radio: var(--radius-full);
+  --radius-avatar: var(--radius-circle);
+  --radius-image: var(--radius-lg); /* 16 · match card context */
+  --radius-thumbnail: var(--radius-md); /* 12 */
+  --radius-tooltip: var(--radius-md);
+  --radius-popover: var(--radius-md);
+  --radius-menu: var(--radius-md);
+  --radius-tabs-container: var(--radius-lg);
+  --radius-tabs-pill: var(--radius-full);
+}
+
+/* ============================================================================
+   CONCENTRIC RULE (6.4) — inner = outer − padding (never reuse the same radius)
+   Usage: set --radius-outer + --pad on the parent; child uses --radius-inner.
+   ============================================================================ */
+.concentric {
+  border-radius: var(--radius-outer);
+  padding: var(--pad);
+}
+.concentric > .concentric-inner {
+  border-radius: var(--radius-inner);
+}
+:root {
+  --radius-inner: max(
+    2px,
+    calc(var(--radius-outer, var(--radius-lg)) - var(--pad, var(--space-16)))
+  );
+}
+
+/* ============================================================================
+   COMPONENT SHAPE RECIPES
+   ============================================================================ */
+.r-button {
+  border-radius: var(--radius-button);
+}
+.r-input {
+  border-radius: var(--radius-input);
+}
+.r-chip {
+  border-radius: var(--radius-chip);
+}
+.r-card {
+  border-radius: var(--radius-card);
+}
+.r-modal {
+  border-radius: var(--radius-modal);
+}
+.r-avatar {
+  border-radius: var(--radius-avatar);
+}
+.r-image {
+  border-radius: var(--radius-image);
+}
+.r-tooltip {
+  border-radius: var(--radius-tooltip);
+}
+
+/* Bottom sheet — top corners only, reaches the screen edge (6.3) */
+.sheet {
+  border-start-start-radius: var(--radius-sheet-top);
+  border-start-end-radius: var(--radius-sheet-top);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* Segmented / tabs — inner full pills inside an lg container (6.3) */
+.segmented {
+  border-radius: var(--radius-tabs-container);
+  padding: var(--space-4);
+}
+.segmented > * {
+  border-radius: var(--radius-tabs-pill);
+}
+
+/* ============================================================================
+   SQUIRCLE (6.6) — continuous corners, iOS-grade. Progressive enhancement only.
+   Falls back to standard border-radius where unsupported (zero risk).
+   ============================================================================ */
+@supports (corner-shape: superellipse(2)) {
+  .r-button,
+  .r-input,
+  .r-card,
+  .r-modal,
+  .r-avatar,
+  .r-image,
+  .r-tooltip,
+  .sheet,
+  .squircle {
+    corner-shape: superellipse(2);
+  }
+}

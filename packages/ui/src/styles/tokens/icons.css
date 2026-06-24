@@ -1,0 +1,129 @@
+/* ============================================================================
+   DATUN — Icon tokens (Part 10.7 / 10.10 / 10.14). Token-only; no magic numbers.
+   Sizes mirror Part 5 icon scale; colours reference Part 2 semantics; weights
+   name the three active Phosphor weights. Consumed by the Icon primitive + CSS.
+   ============================================================================ */
+:root {
+  /* ---- icon sizes (10.7 — Part 5 scale; visual glyph ≠ 48dp hit-area) ---- */
+  --icon-size-xs: 16px; /* @kind spacing */
+  --icon-size-sm: 20px; /* @kind spacing */
+  --icon-size-md: 24px; /* @kind spacing */
+  --icon-size-lg: 32px; /* @kind spacing */
+  --icon-size-xl: 40px; /* @kind spacing */
+  --icon-size-2xl: 48px; /* @kind spacing */
+  --icon-hit-min: 48px; /* @kind spacing */
+
+  /* ---- icon stroke (10.4 — ~1.5–2px@24, scales with size) ---- */
+  --icon-stroke: 1.75; /* @kind other */
+
+  /* ---- icon colours (10.10 — default inherits text; semantic = Part 2.6) ---- */
+  --icon-color-default: currentColor;
+  --icon-color-muted: var(--color-text-muted);
+  --icon-color-brand: var(--color-icon-brand, var(--color-text-link));
+  --icon-color-success: var(--color-success);
+  --icon-color-warning: var(--color-warning);
+  --icon-color-error: var(--color-error);
+  --icon-color-info: var(--color-info);
+
+  /* ---- duotone layers (10.3 — fg teal-family + soft bg tint) ---- */
+  --icon-fg: var(--color-text-link);
+  --icon-bg: var(--color-bg-brand-weak);
+  --icon-duotone-bg-opacity: 0.24; /* @kind other */
+}
+
+/* Icon primitive base (10.7/10.10). Glyph centres in an optional 48dp target. */
+.dtn-icon {
+  display: inline-block;
+  flex: none;
+  inline-size: var(--icon-size-md);
+  block-size: var(--icon-size-md);
+  color: var(--icon-color-default);
+  fill: currentColor;
+  vertical-align: middle;
+}
+.dtn-icon--xs {
+  inline-size: var(--icon-size-xs);
+  block-size: var(--icon-size-xs);
+}
+.dtn-icon--sm {
+  inline-size: var(--icon-size-sm);
+  block-size: var(--icon-size-sm);
+}
+.dtn-icon--md {
+  inline-size: var(--icon-size-md);
+  block-size: var(--icon-size-md);
+}
+.dtn-icon--lg {
+  inline-size: var(--icon-size-lg);
+  block-size: var(--icon-size-lg);
+}
+.dtn-icon--xl {
+  inline-size: var(--icon-size-xl);
+  block-size: var(--icon-size-xl);
+}
+.dtn-icon--2xl {
+  inline-size: var(--icon-size-2xl);
+  block-size: var(--icon-size-2xl);
+}
+.dtn-icon--muted {
+  color: var(--icon-color-muted);
+}
+.dtn-icon--brand {
+  color: var(--icon-color-brand);
+}
+.dtn-icon--success {
+  color: var(--icon-color-success);
+}
+.dtn-icon--warning {
+  color: var(--icon-color-warning);
+}
+.dtn-icon--error {
+  color: var(--icon-color-error);
+}
+.dtn-icon--info {
+  color: var(--icon-color-info);
+}
+
+/* Duotone: two-layer paths — .dtn-icon__bg tinted, .dtn-icon__fg solid (10.3) */
+.dtn-icon--duotone .dtn-icon__bg {
+  fill: var(--icon-bg);
+  opacity: var(--icon-duotone-bg-opacity);
+}
+.dtn-icon--duotone .dtn-icon__fg {
+  fill: var(--icon-fg);
+}
+.dtn-icon--duotone {
+  color: var(--icon-fg);
+}
+
+/* 48dp hit-area wrapper for icon-only controls (10.7 / Part 5.3) */
+.dtn-icon-target {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: var(--icon-hit-min);
+  min-block-size: var(--icon-hit-min);
+}
+
+/* Outline → Fill cross-fade for active state (10.8 + Part 9). */
+.dtn-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.dtn-icon-swap > * {
+  grid-area: 1/1;
+  transition: opacity var(--motion-fast, 0.15s) ease;
+}
+.dtn-icon-swap .is-fill {
+  opacity: 0;
+}
+.dtn-icon-swap[data-active='true'] .is-outline {
+  opacity: 0;
+}
+.dtn-icon-swap[data-active='true'] .is-fill {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dtn-icon-swap > * {
+    transition: none;
+  }
+}

@@ -1,7 +1,31 @@
 @import 'tailwindcss';
 
+/* ─────────────────────────────────────────────────────────────────────────
+   DATUN DESIGN SYSTEM (Task #55)
+   The @repo/ui entry brings the LOCKED design tokens + the shadcn/Tailwind
+   theme bridge + the dtn-* component styles. The bridge re-maps the shadcn
+   CSS vars (--background, --primary, --border, --ring …) onto Datun tokens,
+   so the existing components/ui/* adopt the Datun look with no edits (fix #6).
+   ───────────────────────────────────────────────────────────────────────── */
+@import '@repo/ui/styles.css';
+
 @plugin 'tailwindcss-animate';
 
+/* Scan the workspace UI package so its Tailwind utility classes (button
+   variants etc.) are generated in the app build. */
+@source '../../../packages/ui/src';
+
+/* next-themes sets [data-theme="dark"] on <html> (Task #55: migrated from the
+   .dark class to align with the locked Datun tokens, which key dark/high-
+   contrast off [data-theme]). This makes Tailwind `dark:` utilities follow the
+   same signal as the CSS-variable theme switch. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Expose the shadcn CSS vars (set to Datun tokens by the @repo/ui bridge) as
+   Tailwind utilities — bg-background, text-foreground, border-border, etc. —
+   so components/ui/* keep working. Brand teal is now the logo-locked teal-700
+   (#0A6A66, AA 6.27:1) from the tokens, superseding the old inline #0f766e;
+   the Task-54 WCAG focus/contrast work stays satisfied (ring = teal-600). */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -39,93 +63,21 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Locked typeface: Anek (Part 3), self-hosted via tokens/typography.css. */
+  --font-sans: 'Anek Latin', 'Anek Fallback', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Sidebar surface vars (no direct equivalent in the Datun tokens) sourced from
+   Datun semantic tokens, so the admin sidebar themes across light/dark/HC. */
 :root {
-  --radius: 0.625rem;
-  --background: #ffffff;
-  --foreground: #0a0f1a;
-  --card: #ffffff;
-  --card-foreground: #0a0f1a;
-  --popover: #ffffff;
-  --popover-foreground: #0a0f1a;
-  /* W3-C `color-contrast`: #00a896 on white ≈ 2.8:1 (fails AA for
-     text). teal-700 keeps the brand hue and passes BOTH directions:
-     as text on white AND under white button text (≈4.6–5.4:1).
-     Dark-mode --primary (#00c4aa on near-black) already passes. */
-  --primary: #0f766e;
-  --primary-foreground: #ffffff;
-  --secondary: #f3f4f6;
-  --secondary-foreground: #0a0f1a;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #f0fdf9;
-  --accent-foreground: #0a0f1a;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  /* Task #54 — WCAG 1.4.11 Non-text Contrast (focus indicators).
-     Brand teal #00a896 on white measures 2.98:1 — UNDER the 3:1
-     floor a focus indicator must clear against adjacent colors.
-     Aligned to --primary (teal-700): #0f766e on white = 5.47:1 ✓.
-     Every shadcn `ring-ring` / `border-ring` utility inherits the
-     fix from this single token. (Math: relative-luminance per
-     WCAG 2.x; verified 2026-06-12, see ADR-0010.) */
-  --ring: #0f766e;
-  --chart-1: #00a896;
-  --chart-2: #0ea5e9;
-  --chart-3: #f59e0b;
-  --chart-4: #8b5cf6;
-  --chart-5: #ef4444;
-  --sidebar-background: #ffffff;
-  --sidebar-foreground: #0a0f1a;
-  --sidebar-primary: #00a896;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0fdf9;
-  --sidebar-accent-foreground: #0a0f1a;
-  --sidebar-border: #e5e7eb;
-  /* Task #54 — same 1.4.11 fix as --ring above (5.47:1 on white). */
-  --sidebar-ring: #0f766e;
-}
-
-.dark {
-  --background: #0a0f1a;
-  --foreground: #f9fafb;
-  --card: #1a2332;
-  --card-foreground: #f9fafb;
-  --popover: #1a2332;
-  --popover-foreground: #f9fafb;
-  --primary: #00c4aa;
-  --primary-foreground: #0a0f1a;
-  --secondary: #1a2332;
-  --secondary-foreground: #f9fafb;
-  --muted: #1a2332;
-  --muted-foreground: #9ca3af;
-  --accent: #0d2a26;
-  --accent-foreground: #f9fafb;
-  --destructive: #dc2626;
-  --destructive-foreground: #f9fafb;
-  --border: #2d3748;
-  --input: #2d3748;
-  /* Task #54 — dark ring verified: #00c4aa on --background = 8.65:1,
-     on --card #1a2332 = 7.12:1. Both clear the 3:1 floor with room;
-     no change needed — value kept, math recorded (ADR-0010). */
-  --ring: #00c4aa;
-  --chart-1: #00c4aa;
-  --chart-2: #38bdf8;
-  --chart-3: #fbbf24;
-  --chart-4: #a78bfa;
-  --chart-5: #f87171;
-  --sidebar-background: #0a0f1a;
-  --sidebar-foreground: #f9fafb;
-  --sidebar-primary: #00c4aa;
-  --sidebar-primary-foreground: #0a0f1a;
-  --sidebar-accent: #0d2a26;
-  --sidebar-accent-foreground: #f9fafb;
-  --sidebar-border: #2d3748;
-  --sidebar-ring: #00c4aa;
+  --sidebar-background: var(--color-surface);
+  --sidebar-foreground: var(--color-text-primary);
+  --sidebar-primary: var(--color-bg-brand);
+  --sidebar-primary-foreground: var(--color-text-on-brand);
+  --sidebar-accent: var(--color-bg-brand-weak);
+  --sidebar-accent-foreground: var(--color-text-link);
+  --sidebar-border: var(--color-border-default);
+  --sidebar-ring: var(--color-ring);
 }
 
 *,

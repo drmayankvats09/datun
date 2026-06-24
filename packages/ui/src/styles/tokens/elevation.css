@@ -1,0 +1,133 @@
+/* ============================================================================
+   DATUN — ELEVATION & SHADOW TOKENS  (Design System Part 7 · LOCKED)
+   Depth is information, not decoration. Flat-first; soft, layered, warm-tinted
+   elevation used sparingly. One top light source. Warm hue ~85, never pure black.
+   REJECTED: harsh black shadows, neumorphism, heavy glass.
+   Consumes locked Part 2 surfaces/alpha + follows Part 6 corner shape.
+   ============================================================================ */
+
+:root {
+  /* ---- Shadow scale (7.3) — multi-layer (tight key + soft ambient), warm hue 85 ---- */
+  --shadow-xs: 0 1px 2px hsl(85 12% 20% / 0.05); /* @kind shadow */
+  --shadow-sm:
+    0 1px 2px hsl(85 12% 20% / 0.06), 0 2px 6px hsl(85 12% 20% / 0.07); /* @kind shadow */
+  --shadow-md:
+    0 1px 2px hsl(85 12% 20% / 0.05), 0 4px 8px hsl(85 12% 20% / 0.07),
+    0 8px 16px hsl(85 12% 20% / 0.06); /* @kind shadow */
+  --shadow-lg:
+    0 2px 4px hsl(85 12% 20% / 0.05), 0 8px 16px hsl(85 12% 20% / 0.07),
+    0 16px 28px hsl(85 12% 20% / 0.08); /* @kind shadow */
+  --shadow-xl:
+    0 2px 4px hsl(85 12% 20% / 0.04), 0 8px 16px hsl(85 12% 20% / 0.06),
+    0 18px 36px hsl(85 12% 20% / 0.09), 0 32px 56px hsl(85 14% 18% / 0.1); /* @kind shadow */
+  --shadow-inset: inset 0 1px 2px hsl(85 12% 20% / 0.1); /* @kind shadow */
+
+  /* ---- Elevation levels (7.2) — surface + shadow PAIRS, never mix ---- */
+  --elevation-0-surface: var(--color-surface); /* flat — most of the UI; hairline border (Part 8) */
+  --elevation-0-shadow: none; /* @kind shadow */
+  --elevation-1-surface: var(--color-surface-raised); /* resting cards / raised buttons */
+  --elevation-1-shadow: var(--shadow-sm); /* @kind shadow */
+  --elevation-2-surface: var(--color-surface-raised); /* sticky header, FAB, hover-lifted */
+  --elevation-2-shadow: var(--shadow-md); /* @kind shadow */
+  --elevation-3-surface: var(--color-surface-raised); /* dropdown, menu, popover, tooltip */
+  --elevation-3-shadow: var(--shadow-lg); /* @kind shadow */
+  --elevation-4-surface: var(--color-surface-raised); /* modal, bottom sheet (+ scrim/backdrop) */
+  --elevation-4-shadow: var(--shadow-xl); /* @kind shadow */
+}
+
+/* ---- Dark mode (7.5): depth via LIGHTER surfaces (Part 2.8) + faint shadow ---- */
+[data-theme='dark'] {
+  --shadow-xs: 0 1px 2px hsl(0 0% 0% / 0.3); /* @kind shadow */
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.32), 0 2px 6px hsl(0 0% 0% / 0.3); /* @kind shadow */
+  --shadow-md: 0 2px 4px hsl(0 0% 0% / 0.34), 0 6px 14px hsl(0 0% 0% / 0.4); /* @kind shadow */
+  --shadow-lg: 0 4px 8px hsl(0 0% 0% / 0.4), 0 14px 28px hsl(0 0% 0% / 0.46); /* @kind shadow */
+  --shadow-xl: 0 6px 14px hsl(0 0% 0% / 0.44), 0 24px 48px hsl(0 0% 0% / 0.56); /* @kind shadow */
+  --shadow-inset: inset 0 1px 2px hsl(0 0% 0% / 0.4); /* @kind shadow */
+}
+
+/* ============================================================================
+   ELEVATION UTILITIES — apply a surface+shadow pair (never mix across levels)
+   ============================================================================ */
+.e0 {
+  background: var(--elevation-0-surface);
+  box-shadow: var(--elevation-0-shadow);
+  border: 1px solid var(--color-border-subtle);
+} /* flat = border, not shadow */
+.e1 {
+  background: var(--elevation-1-surface);
+  box-shadow: var(--elevation-1-shadow);
+}
+.e2 {
+  background: var(--elevation-2-surface);
+  box-shadow: var(--elevation-2-shadow);
+}
+.e3 {
+  background: var(--elevation-3-surface);
+  box-shadow: var(--elevation-3-shadow);
+}
+.e4 {
+  background: var(--elevation-4-surface);
+  box-shadow: var(--elevation-4-shadow);
+}
+/* Dark separation aid (7.5): soft border for raised/overlay where shadow is faint */
+[data-theme='dark'] .e1,
+[data-theme='dark'] .e2,
+[data-theme='dark'] .e3,
+[data-theme='dark'] .e4 {
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* Modal scrim/backdrop (L4) — locked Part 2.14 alpha */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+}
+.backdrop-blur {
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* ============================================================================
+   INTERACTION LIFT (7.6) — animate a pseudo-element's opacity/transform,
+   NEVER the box-shadow property (avoids per-frame repaint on low-end Android).
+   Desktop hover only; touch uses Part 2.11 overlay press-states.
+   ============================================================================ */
+.lift {
+  position: relative;
+  transition: transform var(--dur-fast, 140ms) var(--ease-out, ease);
+}
+.lift::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity var(--dur-fast, 140ms) var(--ease-out, ease);
+  pointer-events: none;
+  z-index: -1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lift:hover {
+    transform: translateY(-2px);
+  }
+  .lift:hover::after {
+    opacity: 1;
+  }
+  .lift:active {
+    transform: translateY(0);
+  }
+  .lift:active::after {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift,
+  .lift::after {
+    transition: none;
+  }
+  .lift:hover {
+    transform: none;
+  }
+}

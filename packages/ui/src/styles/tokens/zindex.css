@@ -1,0 +1,146 @@
+/* ============================================================================
+   DATUN — Z-INDEX & LAYERING TOKENS  (Design System Part 11 · LOCKED)
+   Predictable layering, not a war of magic numbers. Prefer the browser:
+   native top-layer (<dialog>/Popover) + Radix portals (stack by open-order).
+   z-index scale ONLY for flat non-portalled chrome + toasts. Mirrors Part 7 L0–L4.
+   NEVER 9999 in product · NEVER !important z-index · Stylelint: token-only.
+   Scrim/alpha come from the locked Part 2 colour tokens (not redefined here).
+   ============================================================================ */
+
+:root {
+  /* ---- z-index scale (11.2) — named, spaced for insertion, mirrors L0–L4 ---- */
+  --z-below: -1; /* @kind other */
+  --z-base: 0; /* @kind other */
+  --z-raised: 10; /* @kind other */
+  --z-sticky: 100; /* @kind other */
+  --z-dropdown: 1000; /* @kind other */
+  --z-modal: 1200; /* @kind other */
+  --z-scrim: calc(var(--z-modal) - 1); /* @kind other */
+  --z-popover: 1300; /* @kind other */
+  --z-toast: 1400; /* @kind other */
+  --z-tooltip: 1500; /* @kind other */
+  --z-max: 9999; /* @kind other */
+
+  /* ---- Backdrop-blur (11.7) — restrained; scrim + app-face header ONLY ---- */
+  --backdrop-blur: 14px; /* @kind other */
+}
+
+/* ============================================================================
+   STACKING-CONTEXT DISCIPLINE (11.3) — seal local layering, no visual side-effect
+   Traps (a child's z-index loses if an ancestor formed a lower stacking context):
+   position+z · opacity<1 · transform · filter · will-change · contain.
+   FIX STRUCTURE, never escalate. Inside .isolate use only local z values.
+   ============================================================================ */
+.isolate {
+  isolation: isolate;
+}
+
+/* z-index utilities (token-only; Stylelint bans raw numbers + !important) */
+.z-below {
+  z-index: var(--z-below);
+}
+.z-base {
+  z-index: var(--z-base);
+}
+.z-raised {
+  z-index: var(--z-raised);
+}
+.z-sticky {
+  z-index: var(--z-sticky);
+}
+.z-dropdown {
+  z-index: var(--z-dropdown);
+}
+.z-scrim {
+  z-index: var(--z-scrim);
+}
+.z-modal {
+  z-index: var(--z-modal);
+}
+.z-popover {
+  z-index: var(--z-popover);
+}
+.z-toast {
+  z-index: var(--z-toast);
+}
+.z-tooltip {
+  z-index: var(--z-tooltip);
+}
+
+/* ============================================================================
+   SCRIM + BACKDROP-BLUR (11.6 / 11.7) — scrim colour/alpha LOCKED in Part 2.
+   Blur behind @supports; solid fallback; off under reduced-transparency / low-end.
+   ============================================================================ */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-scrim);
+  background: var(--color-scrim);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .scrim-blur {
+    -webkit-backdrop-filter: blur(var(--backdrop-blur));
+    backdrop-filter: blur(var(--backdrop-blur));
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .scrim-blur {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--color-backdrop);
+  }
+}
+
+/* App-face sticky header glass (11.7) — the only chrome that may blur */
+.app-header-glass {
+  background: color-mix(in oklab, var(--color-surface) 80%, transparent);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .app-header-glass {
+    -webkit-backdrop-filter: blur(var(--backdrop-blur)) saturate(1.6);
+    backdrop-filter: blur(var(--backdrop-blur)) saturate(1.6);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-header-glass {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ============================================================================
+   ALPHA / OPACITY HARD RULE (11.8) — alpha scale is LOCKED in colors.css
+   (--alpha-* + scrim/backdrop). NEVER put `opacity` on a container holding
+   text/icons (text goes muddy) — use a transparent background-colour or a
+   pseudo-element overlay; reserve `opacity` for fading a whole element.
+   ============================================================================ */
+.overlay-hover {
+  background: color-mix(
+    in oklab,
+    var(--color-text-primary) calc(var(--alpha-overlay-hover) * 100%),
+    transparent
+  );
+}
+.overlay-pressed {
+  background: color-mix(
+    in oklab,
+    var(--color-text-primary) calc(var(--alpha-overlay-pressed) * 100%),
+    transparent
+  );
+}
+.is-disabled {
+  opacity: var(--alpha-disabled);
+} /* only on a whole element, never text-over-content */
+
+/* ============================================================================
+   DATUN OVERLAY LAYER-MAP (11.11) — components (Part 15) consume these:
+     Consult bottom-sheet  → sheet @ z-modal (+ .scrim), swipe-down
+     Confirm/consent dialog→ <dialog>.showModal() (native top-layer, inert)
+     Select / dropdown     → Popover/Radix @ z-dropdown
+     Tooltip               → Popover top-layer / z-tooltip
+     Toast                 → z-toast (above modal; z-index, NOT top-layer)
+     Sticky header / tab-bar / FAB → z-sticky
+   Behavioural bits (top-layer, portals, scroll-lock, focus-trap/dismissal) ship
+   WITH the components in Part 15 — not in this token step.
+   ============================================================================ */

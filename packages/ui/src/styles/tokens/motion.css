@@ -1,0 +1,197 @@
+/* ============================================================================
+   DATUN — MOTION TOKENS  (Design System Part 9 · LOCKED) — final foundation
+   Motion clarifies, never decorates. Calm, quick, physical. Never bounce/flash.
+   CSS-first; animate ONLY transform/opacity (low-end Android smooth). Always
+   honours prefers-reduced-motion. Exits ~20–30% faster than enters.
+   ============================================================================ */
+
+:root {
+  /* ---- Durations (9.2) — ms, scaled to size/distance. instant·fast150·base200·moderate300·slow400·slower500·press100·exit150 ---- */
+  --duration-instant: 0ms; /* @kind other */
+  --duration-fast: 150ms; /* @kind other */
+  --duration-base: 200ms; /* @kind other */
+  --motion-base: 200ms; /* @kind other */
+  --motion-fast: 150ms; /* @kind other */
+  --duration-moderate: 300ms; /* @kind other */
+  --duration-slow: 400ms; /* @kind other */
+  --duration-slower: 500ms; /* @kind other */
+  --duration-press: 100ms; /* @kind other */
+  --duration-exit: 150ms; /* @kind other */
+
+  /* ---- Easing (9.3) — Material-style; enter decelerates(out), exit accelerates(in), emphasized=subtle overshoot ---- */
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1); /* @kind other */
+  --easing-out: cubic-bezier(0, 0, 0.2, 1); /* @kind other */
+  --easing-in: cubic-bezier(0.4, 0, 1, 1); /* @kind other */
+  --easing-emphasized: cubic-bezier(0.2, 0, 0, 1.2); /* @kind other */
+
+  /* ---- Springs (9.3) — gentle, well-damped, no bounce, via linear() ---- */
+  --spring-gentle: linear(0, 0.16, 0.41, 0.69, 0.9, 1.02, 1.06, 1.04, 1.01, 1); /* @kind other */
+  --spring-base: linear(0, 0.22, 0.55, 0.83, 0.98, 1.03, 1.02, 1); /* @kind other */
+}
+
+/* ---- Keyframes (9.4) — transform/opacity only ---- */
+@keyframes dt-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dt-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dt-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dt-shimmer {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 250% 0;
+  }
+}
+@keyframes dt-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+@keyframes dt-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================================================
+   MOTION UTILITIES — all gated behind no-preference (9.5: author static first)
+   ============================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .anim-fade {
+    animation: dt-fade var(--duration-moderate) var(--easing-out) both;
+  }
+  .anim-slide-up {
+    animation: dt-slide-up var(--duration-moderate) var(--easing-out) both;
+  }
+  .anim-scale-in {
+    animation: dt-scale-in var(--duration-base) var(--easing-out) both;
+  }
+
+  /* Transition patterns (9.4) — enter ≠ exit */
+  .transition-base {
+    transition:
+      transform var(--duration-base) var(--easing-standard),
+      opacity var(--duration-base) var(--easing-standard);
+  }
+  .enter {
+    transition-timing-function: var(--easing-out);
+  }
+  .exit {
+    transition-duration: var(--duration-exit);
+    transition-timing-function: var(--easing-in);
+  }
+
+  /* Micro-interactions (9.6) — press scale ~0.97, feedback ≤250ms */
+  .press {
+    transition: transform var(--duration-press) var(--easing-standard);
+  }
+  .press:active {
+    transform: scale(0.97);
+  }
+
+  /* Success checkmark draw (9.6 expressive) */
+  .check-draw {
+    stroke-dasharray: 24;
+    animation: dt-check var(--duration-moderate) var(--easing-out) forwards;
+  }
+
+  /* Choreography / stagger (9.9) — ~20–50ms between items */
+  .stagger > * {
+    animation: dt-slide-up var(--duration-moderate) var(--easing-out) both;
+  }
+  .stagger > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 200ms;
+  }
+
+  /* Skeleton shimmer (9.8) — preserves layout (anti-CLS), gentle */
+  .skeleton {
+    background: linear-gradient(
+        100deg,
+        var(--color-surface-sunken) 30%,
+        var(--color-border-subtle) 50%,
+        var(--color-surface-sunken) 70%
+      )
+      0 0 / 250% 100%;
+    animation: dt-shimmer 1.4s linear infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  /* "Analyzing your symptoms" — calm on-brand pulse, never a frantic spinner (9.8) */
+  .pulse-calm {
+    animation: dt-pulse 1.8s var(--easing-standard) infinite;
+  }
+}
+
+/* ---- Global safety-net (9.5) — cut anything missed; reduce, don't nuke ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* movement → fade: keep state-change legible without translate/scale */
+  .anim-slide-up,
+  .anim-scale-in {
+    animation: dt-fade 0.01ms both;
+  }
+}
+
+/* ============================================================================
+   PERFORMANCE (9.11) — only transform/opacity; will-change sparingly.
+   ROUTE TRANSITIONS (9.7) — View Transitions API (app-face slide/fade):
+     @view-transition { navigation: auto; }   // same-document opt-in
+     .card { view-transition-name: card-<id>; } // shared-element morph (Part 6 radius)
+     + Speculation Rules <script type="speculationrules"> to prerender likely-next.
+   HAPTICS (9.10) — navigator.vibrate(10) on key success, progressive enhancement only.
+   ============================================================================ */

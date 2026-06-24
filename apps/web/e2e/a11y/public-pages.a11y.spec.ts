@@ -40,7 +40,7 @@ const PUBLIC_ROUTES: ReadonlyArray<{
   /** Freeze timers before load — see the /offline note. */
   freezeClock?: true;
 }> = [
-  { path: '/', name: 'home (coming-soon)' },
+  { path: '/', name: 'home' },
   { path: '/login', name: 'login' },
   { path: '/signup', name: 'signup' },
   { path: '/forgot-password', name: 'forgot password' },

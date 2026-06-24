@@ -1,0 +1,273 @@
+/* ============================================================================
+   DATUN — COLOUR TOKENS  (Design System Part 2 · LOCKED)
+   OKLCH canonical (W3C Color 4) · HEX in comments = sRGB fallback.
+   3-tier: @theme primitives -> :root/[data-theme] semantics. Tailwind v4-ready.
+   Decisions locked: teal-600=#0E8C82 & teal-700=#0A6A66 (logo) on-ramp;
+   CTA fill = teal-700 (AA 6.27:1 white text); semantic -strong = AA text/icon.
+   ============================================================================ */
+
+/* ---------- TAILWIND v4 STATIC PRIMITIVES (raw palette, never used directly in components) ---------- */
+:root {
+  /* Teal — the one owned brand colour (hue ~187). 600/700 = locked logo hexes */
+  --teal-50: oklch(0.975 0.015 186); /* #ECFAF8 */
+  --teal-100: oklch(0.94 0.03 186); /* #D6F2EE */
+  --teal-200: oklch(0.89 0.05 187); /* #B6E6E0 */
+  --teal-300: oklch(0.82 0.068 187); /* #91D3CB */
+  --teal-400: oklch(0.72 0.088 187); /* #5CB7AE */
+  --teal-500: oklch(0.655 0.098 187); /* #37A49B */
+  --teal-600: oklch(0.577 0.099 186); /* #0E8C82 */
+  --teal-700: oklch(0.474 0.079 190); /* #0A6A66 */
+  --teal-800: oklch(0.39 0.065 190); /* #06504D */
+  --teal-900: oklch(0.3 0.05 190); /* #033633 */
+  --teal-950: oklch(0.23 0.04 190); /* #002321 */
+  /* Clay / amber — warm secondary (hue 45), humanity only, never alerts */
+  --clay-50: oklch(0.97 0.02 45); /* #FFF2EC */
+  --clay-100: oklch(0.94 0.04 45); /* #FFE5DA */
+  --clay-200: oklch(0.89 0.06 45); /* #FECFBB */
+  --clay-300: oklch(0.83 0.08 45); /* #F4B79C */
+  --clay-400: oklch(0.78 0.1 45); /* #EDA382 */
+  --clay-500: oklch(0.72 0.11 45); /* #DE8E69 */
+  --clay-600: oklch(0.64 0.11 45); /* #C37552 */
+  --clay-700: oklch(0.54 0.1 45); /* #9E5A3B */
+  --clay-800: oklch(0.44 0.08 45); /* #77432B */
+  --clay-900: oklch(0.34 0.06 45); /* #512D1C */
+  --clay-950: oklch(0.26 0.045 45); /* #361C11 */
+  /* Tertiary green-teal (hue 165) — depth/charts in-family */
+  --green-50: oklch(0.97 0.015 165); /* #ECF9F3 */
+  --green-100: oklch(0.94 0.025 165); /* #DDF1E7 */
+  --green-200: oklch(0.89 0.04 165); /* #C3E4D4 */
+  --green-300: oklch(0.82 0.055 165); /* #A4D0BB */
+  --green-400: oklch(0.72 0.065 165); /* #7EB29A */
+  --green-500: oklch(0.63 0.07 165); /* #5F977F */
+  --green-600: oklch(0.54 0.065 165); /* #487B65 */
+  --green-700: oklch(0.45 0.055 165); /* #365F4E */
+  --green-800: oklch(0.37 0.045 165); /* #27473A */
+  --green-900: oklch(0.28 0.035 165); /* #172E25 */
+  --green-950: oklch(0.22 0.028 165); /* #0D1F17 */
+  /* Warm-leaning neutral slate (hue 85) — canvas + text + borders */
+  --neutral-0: oklch(0.99 0.004 85); /* #FDFCF9 */
+  --neutral-50: oklch(0.975 0.005 85); /* #F8F7F3 */
+  --neutral-100: oklch(0.95 0.006 85); /* #F0EEEA */
+  --neutral-200: oklch(0.91 0.007 85); /* #E3E1DC */
+  --neutral-300: oklch(0.86 0.008 85); /* #D3D1CB */
+  --neutral-400: oklch(0.74 0.009 85); /* #ADAAA5 */
+  --neutral-500: oklch(0.62 0.01 85); /* #89867F */
+  --neutral-600: oklch(0.5 0.011 85); /* #66635C */
+  --neutral-700: oklch(0.42 0.011 85); /* #504D46 */
+  --neutral-800: oklch(0.32 0.01 85); /* #35332D */
+  --neutral-900: oklch(0.24 0.009 85); /* #211F1A */
+  --neutral-950: oklch(0.18 0.008 85); /* #13110E */
+  /* Semantic hues (separate from brand) — weak / 500 / strong */
+  --success-weak: oklch(0.95 0.035 145); /* #E1F5E0 */
+  --success-500: oklch(0.6 0.12 145); /* #4D9351 */
+  --success-strong: oklch(0.54 0.12 145); /* #3B8040 */
+  --warning-weak: oklch(0.95 0.035 75); /* #FDECD5 */
+  --warning-500: oklch(0.75 0.115 75); /* #D8A354 */
+  --warning-strong: oklch(0.56 0.115 75); /* #9B690B */
+  --error-weak: oklch(0.95 0.035 25); /* #FFE8E6 */
+  --error-500: oklch(0.58 0.16 25); /* #C74B47 */
+  --error-strong: oklch(0.576 0.16 25); /* #C64946 */
+  --info-weak: oklch(0.95 0.035 245); /* #E1F1FF */
+  --info-500: oklch(0.6 0.1 245); /* #4886B8 */
+  --info-strong: oklch(0.552 0.1 245); /* #3977A9 */
+  /* Chart categorical (colour-blind-safe, <8 hues, no red-green adjacency) */
+  --chart-1: #0e8c82;
+  --chart-2: #4886b8;
+  --chart-3: #de8e69;
+  --chart-4: #7f5bb6;
+  --chart-5: #459173;
+  --chart-6: #cfb656;
+  /* Alpha */
+  --alpha-scrim: 0.5; /* @kind other */
+  --alpha-backdrop: 0.6; /* @kind other */
+  --alpha-overlay-hover: 0.08; /* @kind other */
+  --alpha-overlay-pressed: 0.12; /* @kind other */
+  --alpha-disabled: 0.38; /* @kind other */
+}
+
+/* ---------- SEMANTIC TOKENS · LIGHT (default) ---------- */
+:root {
+  color-scheme: light;
+  --color-bg: var(--neutral-0);
+  --color-surface: var(--neutral-0);
+  --color-surface-raised: oklch(0.995 0.003 85);
+  --color-surface-sunken: var(--neutral-50);
+
+  --color-text-primary: oklch(0.28 0.012 85);
+  --color-text-secondary: oklch(0.45 0.01 85);
+  --color-text-muted: oklch(0.556 0.01 85);
+  --color-text-on-brand: var(--neutral-0);
+  --color-text-link: var(--teal-700);
+  --color-text-body: var(--color-text-secondary);
+  --color-text-accent: var(--clay-700);
+  --color-text-faint: var(--neutral-500);
+  --color-clay-500: var(--clay-500);
+
+  --color-border-subtle: var(--neutral-100);
+  --color-border-default: var(--neutral-200);
+  --color-border-strong: var(--neutral-300);
+  --color-border-focus: var(--teal-600);
+
+  --color-brand-base: var(--teal-600); /* identity / marks / accent */
+  --color-bg-brand: var(--teal-700); /* CTA fill (AA white text 6.27:1) */
+  --color-bg-brand-hover: var(--teal-800);
+  --color-bg-brand-pressed: var(--teal-900);
+  --color-bg-brand-weak: var(--teal-50);
+  /* Action/CTA fill — AA-locked: white label 6.16:1 (Part 2.9). Button primary uses these. */
+  --color-bg-action-primary: var(--teal-700);
+  --color-bg-action-primary-hover: var(--teal-800);
+  --color-bg-action-primary-pressed: var(--teal-900);
+  --color-text-on-action: var(--color-text-on-brand);
+
+  --color-ring: var(--teal-600);
+  --color-ring-halo: var(--color-surface);
+
+  --color-success-weak: var(--success-weak);
+  --color-success: var(--success-strong);
+  --color-success-surface: var(--success-500);
+  --color-warning-weak: var(--warning-weak);
+  --color-warning: var(--warning-strong);
+  --color-warning-surface: var(--warning-500);
+  --color-error-weak: var(--error-weak);
+  --color-error: var(--error-strong);
+  --color-error-surface: var(--error-500);
+  --color-info-weak: var(--info-weak);
+  --color-info: var(--info-strong);
+  --color-info-surface: var(--info-500);
+
+  /* Icons (Part 10.10): default inherits text; semantic icons use -strong */
+  --color-icon-default: currentColor;
+  --color-icon-muted: var(--color-text-muted);
+  --color-icon-brand: var(--teal-600);
+  --color-icon-duotone-fg: var(--teal-600);
+  --color-icon-duotone-bg: var(--teal-100);
+
+  /* Triage (results only, never decorative) — colour + icon + label always */
+  --color-triage-calm-fg: var(--teal-700);
+  --color-triage-calm-bg: var(--teal-50);
+  --color-triage-caution-fg: var(--warning-strong);
+  --color-triage-caution-bg: var(--warning-weak);
+  --color-triage-urgent-fg: var(--error-strong);
+  --color-triage-urgent-bg: var(--error-weak);
+
+  /* Charts */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-grid: var(--neutral-200);
+  --color-chart-axis: var(--color-text-muted);
+
+  /* Shadow tint (full recipes = Part 7 Elevation) · warm, never pure black */
+  --color-shadow-tint: oklch(0.2 0.012 85);
+
+  /* Overlays */
+  --color-scrim: oklch(0.2 0.01 85 / 0.5);
+  --color-backdrop: oklch(0.2 0.01 85 / 0.6);
+
+  /* Ambient hero glow (only place gradient is allowed — Part 2.15) */
+  --gradient-hero-glow: radial-gradient(120% 80% at 50% 0%, var(--teal-100), transparent 70%);
+}
+
+/* ---------- DARK (intentional remap; lighter raised surfaces; lower-chroma accents) ---------- */
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: oklch(0.2 0.01 85);
+  --color-surface: oklch(0.24 0.012 85);
+  --color-surface-raised: oklch(0.28 0.012 85);
+  --color-surface-sunken: oklch(0.17 0.01 85);
+
+  --color-text-primary: oklch(0.95 0.005 85);
+  --color-text-secondary: oklch(0.78 0.008 85);
+  --color-text-muted: oklch(0.64 0.008 85);
+  --color-text-on-brand: oklch(0.2 0.01 85);
+  --color-text-link: var(--teal-300);
+
+  --color-border-subtle: oklch(0.3 0.01 85);
+  --color-border-default: oklch(0.36 0.012 85);
+  --color-border-strong: oklch(0.44 0.012 85);
+  --color-border-focus: var(--teal-400);
+
+  --color-brand-base: var(--teal-400);
+  --color-bg-brand: var(--teal-500);
+  --color-bg-brand-hover: var(--teal-400);
+  --color-bg-brand-pressed: var(--teal-300);
+  --color-bg-brand-weak: oklch(0.3 0.04 187);
+  /* Action/CTA fill (dark) — lightness-preserving teal so it reads on dark panels:
+     off-white label 5.03:1 AND bg-vs-dark-panel 3.44:1 (Part 2.8/2.9/2.13). */
+  --color-bg-action-primary: oklch(0.52 0.09 187); /* #047972 */
+  --color-bg-action-primary-hover: oklch(0.58 0.095 187);
+  --color-bg-action-primary-pressed: oklch(0.46 0.085 187);
+  --color-text-on-action: oklch(0.985 0.004 85); /* off-white */
+
+  --color-ring: var(--teal-400);
+  --color-ring-halo: var(--color-surface);
+
+  --color-success: var(--success-default, var(--success-500));
+  --color-success-weak: oklch(0.3 0.05 145);
+  --color-warning: var(--warning-500);
+  --color-warning-weak: oklch(0.32 0.06 75);
+  --color-error: oklch(0.66 0.16 25);
+  --color-error-weak: oklch(0.3 0.08 25);
+  --color-info: var(--info-500);
+  --color-info-weak: oklch(0.3 0.05 245);
+
+  --color-icon-brand: var(--teal-400);
+  --color-icon-duotone-fg: var(--teal-400);
+  --color-icon-duotone-bg: oklch(0.3 0.04 187);
+
+  --color-triage-calm-fg: var(--teal-300);
+  --color-triage-calm-bg: oklch(0.3 0.04 187);
+  --color-triage-caution-fg: var(--warning-500);
+  --color-triage-caution-bg: oklch(0.32 0.06 75);
+  --color-triage-urgent-fg: oklch(0.72 0.16 25);
+  --color-triage-urgent-bg: oklch(0.3 0.08 25);
+
+  --color-chart-grid: oklch(0.32 0.01 85);
+  --color-scrim: oklch(0 0 0 / 0.6);
+  --color-backdrop: oklch(0 0 0 / 0.7);
+}
+
+/* ---------- HIGH-CONTRAST (AAA 7:1; OS-pref driven) ---------- */
+[data-theme='hc'] {
+  color-scheme: light;
+  --color-bg: oklch(1 0 0);
+  --color-surface: oklch(1 0 0);
+  --color-surface-raised: oklch(1 0 0);
+  --color-surface-sunken: oklch(0.96 0.004 85);
+
+  --color-text-primary: oklch(0.16 0.012 85);
+  --color-text-secondary: oklch(0.24 0.012 85);
+  --color-text-muted: oklch(0.34 0.01 85);
+  --color-text-on-brand: oklch(1 0 0);
+  --color-text-link: var(--teal-800);
+
+  --color-border-subtle: var(--neutral-300);
+  --color-border-default: var(--neutral-400);
+  --color-border-strong: var(--neutral-600);
+  --color-border-focus: var(--teal-800);
+
+  --color-brand-base: var(--teal-700);
+  --color-bg-brand: var(--teal-800);
+  --color-bg-brand-hover: var(--teal-900);
+  --color-bg-brand-pressed: var(--teal-900);
+  --color-bg-action-primary: var(--teal-800); /* HC: white label 9.29:1 */
+  --color-bg-action-primary-hover: var(--teal-900);
+  --color-bg-action-primary-pressed: var(--teal-900);
+  --color-text-on-action: oklch(1 0 0);
+
+  --color-ring: var(--teal-800);
+  --color-success: var(--success-strong);
+  --color-warning: var(--warning-strong);
+  --color-error: var(--error-strong);
+  --color-info: var(--info-strong);
+}
+
+/* prefers-contrast hook (auto-opt-in) */
+@media (prefers-contrast: more) {
+  :root {
+    --color-text-muted: oklch(0.4 0.01 85);
+  }
+}

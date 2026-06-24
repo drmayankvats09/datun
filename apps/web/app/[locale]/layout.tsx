@@ -80,7 +80,6 @@
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/providers/app-provider';
@@ -96,12 +95,6 @@ import { TranslationBanner } from '@/components/translation-banner';
 import { getNonce } from '@/lib/csp/get-nonce';
 import { SpeedInsightsClient } from '@/components/providers/speed-insights';
 import { GoogleAnalytics } from '@next/third-parties/google';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -152,7 +145,7 @@ export default async function LocaleLayout({
   const nonce = await getNonce();
 
   return (
-    <html lang={locale} className={locale === 'en' ? inter.variable : ''} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
@@ -160,7 +153,7 @@ export default async function LocaleLayout({
               <MotionConfigProvider>
                 <LocaleFont nonce={nonce || undefined} />
                 <ThemeProvider
-                  attribute="class"
+                  attribute="data-theme"
                   defaultTheme="light"
                   enableSystem
                   disableTransitionOnChange

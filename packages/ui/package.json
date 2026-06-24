@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./*": "./src/*.tsx"
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles/index.css"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
@@ -22,7 +23,10 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "lottie-react": "^2.4.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "recharts": "^3.8.1"
   }
 }
