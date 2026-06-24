@@ -7,7 +7,7 @@
    CSS vars (--background, --primary, --border, --ring …) onto Datun tokens,
    so the existing components/ui/* adopt the Datun look with no edits (fix #6).
    ───────────────────────────────────────────────────────────────────────── */
-@import '@repo/ui/styles.css';
+@import '../../../packages/ui/src/styles/index.css';
 
 @plugin 'tailwindcss-animate';
 

@@ -65,14 +65,16 @@ const Lock = () => (
   </svg>
 );
 
-/** Brand logo lockup (passed to @repo/ui SiteHeader; also used in footer). */
+/** Datun wordmark (brand SVG) — passed to @repo/ui SiteHeader and used in the
+ * footer. Theme-aware: ink wordmark on light, off-white wordmark on dark.
+ * alt="" because the wrapping links carry aria-label="Datun home". */
 export function HomeLogo() {
   return (
-    <span className="logo">
-      <span className="m" aria-hidden="true">
-        d
-      </span>
-      datun
+    <span className="dtn-wordmark">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="dtn-wordmark__ink" src="/brand/datun-wordmark.svg" alt="" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="dtn-wordmark__white" src="/brand/datun-wordmark-white.svg" alt="" />
     </span>
   );
 }
@@ -471,7 +473,7 @@ export async function WhyDatun({ locale }: SectionProps) {
           ))}
         </div>
         <div className="honest">
-          <div className="honest__r">
+          <div className="honest__r honest__head">
             <div className="honest__c h" />
             <div className="honest__c h">Most dental sites</div>
             <div className="honest__c h b">Datun</div>
@@ -482,9 +484,11 @@ export async function WhyDatun({ locale }: SectionProps) {
                 <span className="k">{r.k}</span>
               </div>
               <div className="honest__c">
+                <span className="honest__lbl">Most sites</span>
                 <span className="no">{r.no}</span>
               </div>
               <div className="honest__c b">
+                <span className="honest__lbl">Datun</span>
                 <span className="yes">
                   <Check /> {r.yes}
                 </span>

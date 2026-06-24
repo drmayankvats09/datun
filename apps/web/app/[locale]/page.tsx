@@ -29,8 +29,6 @@ import {
   Cities,
   PatientStories,
   TourismTeaser,
-  AnswersTeaser,
-  ForClinics,
   FinalCta,
   SiteFooter,
 } from '@/components/home/sections';
@@ -110,8 +108,6 @@ export default async function HomePage({ params }: Props) {
         <Cities locale={locale} />
         <PatientStories locale={locale} />
         <TourismTeaser locale={locale} />
-        <AnswersTeaser locale={locale} />
-        <ForClinics locale={locale} />
         <FinalCta locale={locale} />
       </main>
 
@@ -120,6 +116,9 @@ export default async function HomePage({ params }: Props) {
       <script
         type="application/ld+json"
         nonce={nonce || undefined}
+        // nonce is intentionally stripped from the client tree by React (security),
+        // so SSR vs client differs on this non-executable data block — expected.
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
     </div>
