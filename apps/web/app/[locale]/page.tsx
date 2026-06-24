@@ -97,7 +97,7 @@ export default async function HomePage({ params }: Props) {
         clinicsHref="https://clinics.datunai.com"
       />
 
-      <main id="main" tabIndex={-1}>
+      <main id="main-content" tabIndex={-1}>
         <Hero locale={locale} />
         <TrustStrip locale={locale} />
         <Manifesto locale={locale} />

@@ -9,6 +9,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 import { getTranslations } from 'next-intl/server';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 /** Locale-aware internal href (routing is localePrefix: 'as-needed'). */
 function lp(locale: string, path: string): string {
@@ -160,7 +161,7 @@ export async function Hero({ locale }: SectionProps) {
                   {b.text}
                 </div>
               ))}
-              <div className="bubble--type" aria-label="Datun is typing">
+              <div className="bubble--type" aria-hidden="true">
                 <i />
                 <i />
                 <i />
@@ -466,7 +467,7 @@ export async function WhyDatun({ locale }: SectionProps) {
             <div className="why__pt" key={i}>
               <span className="ic">{pt.icon}</span>
               <div>
-                <h4>{pt.h}</h4>
+                <h3>{pt.h}</h3>
                 <p>{pt.p}</p>
               </div>
             </div>
@@ -536,7 +537,9 @@ export async function ConditionLinks({ locale }: SectionProps) {
                   </svg>
                 </span>
                 {c.en}
-                <span className="hi">{c.hi}</span>
+                {/* Hindi sub-label only on the Hindi locale — keeps the
+                    Devanagari webfont off the English page's perf budget. */}
+                {locale === 'hi' && <span className="hi">{c.hi}</span>}
               </a>
             ))}
           </div>
@@ -857,7 +860,7 @@ export async function SiteFooter({ locale }: SectionProps) {
           </div>
           {cols.map((col) => (
             <div className="foot__col" key={col.h}>
-              <h5>{col.h}</h5>
+              <h3>{col.h}</h3>
               {col.links.map((l) => (
                 <a href={l.href.startsWith('#') ? l.href : lp(locale, l.href)} key={l.label}>
                   {l.label}
@@ -879,6 +882,7 @@ export async function SiteFooter({ locale }: SectionProps) {
           <span>{t('home.footer.trustReviewed')}</span>
         </div>
         <div className="foot__base">
+          <LanguageSwitcher />
           <span>{t('home.footer.rights', { year })}</span>
           <span>{t('home.footer.emergency')}</span>
         </div>

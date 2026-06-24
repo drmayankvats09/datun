@@ -606,7 +606,7 @@
   inline-size: 23px;
   block-size: 23px;
 }
-.dtn-home .why__pt h4 {
+.dtn-home .why__pt h3 {
   font: var(--type-title-s);
   font-weight: 600;
   margin: 0 0 4px;
@@ -709,7 +709,7 @@
   grid-template-columns: 1.4fr 1fr 1fr 1fr;
   gap: var(--space-32);
 }
-.dtn-home .foot__col h5 {
+.dtn-home .foot__col h3 {
   font: var(--type-label-s);
   font-weight: 700;
   letter-spacing: 0.08em;

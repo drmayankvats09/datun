@@ -95,12 +95,12 @@
 
   --color-text-primary: oklch(0.28 0.012 85);
   --color-text-secondary: oklch(0.45 0.01 85);
-  --color-text-muted: oklch(0.556 0.01 85);
+  --color-text-muted: oklch(0.52 0.012 85); /* WCAG AA: 4.5:1 on warm-white + brand-weak tints */
   --color-text-on-brand: var(--neutral-0);
   --color-text-link: var(--teal-700);
   --color-text-body: var(--color-text-secondary);
   --color-text-accent: var(--clay-700);
-  --color-text-faint: var(--neutral-500);
+  --color-text-faint: oklch(0.525 0.012 85); /* WCAG AA 4.5:1 (was neutral-500 ≈ 3.4:1 — failed) */
   --color-clay-500: var(--clay-500);
 
   --color-border-subtle: var(--neutral-100);

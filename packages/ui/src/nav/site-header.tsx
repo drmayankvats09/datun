@@ -50,7 +50,7 @@ export function SiteHeader({
 
   return (
     <header className={cn('dtn-siteheader', stuck && 'dtn-siteheader--stuck', className)}>
-      <a href="#main" className="dtn-skip">
+      <a href="#main-content" className="dtn-skip">
         Skip to content
       </a>
       <div className="dtn-siteheader__in">

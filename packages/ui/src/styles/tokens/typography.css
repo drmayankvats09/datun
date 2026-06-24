@@ -11,9 +11,10 @@
    active Indic script, lazy-load others on language switch (Part 3.11). */
 @font-face {
   font-family: 'Anek Latin';
+  /* Subset for the web budget: Latin glyphs only, wght axis kept (100–800),
+     wdth axis instanced out (unused) — 176 KB → ~40 KB. */
   src: url('/fonts/AnekLatin-Variable.woff2') format('woff2-variations');
   font-weight: 400 700;
-  font-stretch: 75% 125%; /* wdth axis: condensed..expanded */
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+20B9; /* Latin + ₹ */
 }
