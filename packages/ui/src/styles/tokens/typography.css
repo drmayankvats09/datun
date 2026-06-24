@@ -15,7 +15,12 @@
      wdth axis instanced out (unused) — 176 KB → ~40 KB. */
   src: url('/fonts/AnekLatin-Variable.woff2') format('woff2-variations');
   font-weight: 400 700;
-  font-display: swap;
+  /* optional, not swap: the browser only uses Anek if it's ready at first paint
+     and NEVER swaps it in mid-view, so there is zero font-driven CLS regardless
+     of which fallback the CI/OS resolves (local()-matched fallbacks can't be
+     guaranteed to resolve on the Linux runner). Anek still renders on capable
+     connections and on every cached/repeat visit. */
+  font-display: optional;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+2122, U+20B9; /* Latin + ₹ */
 }
 @font-face {
@@ -23,7 +28,7 @@
   font-family: 'Anek Devanagari';
   src: url('/fonts/AnekDevanagari-Variable.woff2') format('woff2-variations');
   font-weight: 400 700;
-  font-display: swap;
+  font-display: optional; /* see Anek Latin note — zero font-driven CLS */
   unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
 }
 /* Metric-matched fallback (anti-CLS) — fontaine / next-font method.
