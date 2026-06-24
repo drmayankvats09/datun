@@ -26,22 +26,20 @@
   font-display: swap;
   unicode-range: U+0900-097F, U+1CD0-1CFF, U+A8E0-A8FF;
 }
-/* Metric-matched fallback (anti-CLS).
-   Overrides equal Anek Latin's real metrics (unitsPerEm 2000, typo ascent
-   1800, descent 400, lineGap 0 → 90% / 20% / 0%), so the fallback line box
-   is IDENTICAL to Anek's and the font swap produces ~0 vertical CLS no matter
-   which local font the OS resolves. src lists fonts present on Linux (DejaVu /
-   Liberation), Windows (Segoe / Arial) and macOS so the override @font-face
-   always resolves in CI too (else the descriptors would be ignored). */
+/* Metric-matched fallback (anti-CLS) — fontaine / next-font method.
+   Descriptors are computed against ARIAL's metrics (upm 2048, asc 1491,
+   desc 431, xAvg 904) vs Anek Latin (upm 2000, asc 1800, desc 400, xAvg 1004).
+   'Arial' resolves to real Arial on Windows/macOS and to Liberation Sans
+   (metric-IDENTICAL) via fontconfig aliasing on Linux/CI — so these numbers
+   match the ACTUAL resolved fallback on every OS, making the font swap cause
+   ~0 layout shift while Anek still renders (font-display: swap). */
 @font-face {
   font-family: 'Anek Fallback';
-  src:
-    local('Noto Sans'), local('Segoe UI'), local('Roboto'), local('Liberation Sans'),
-    local('DejaVu Sans'), local('Arial'), local('Helvetica');
+  src: local('Arial'), local('Liberation Sans'), local('Arimo'), local('Helvetica Neue');
   font-display: swap;
-  size-adjust: 100%;
-  ascent-override: 90%;
-  descent-override: 20%;
+  size-adjust: 113.73%;
+  ascent-override: 79.14%;
+  descent-override: 17.59%;
   line-gap-override: 0%;
 }
 
