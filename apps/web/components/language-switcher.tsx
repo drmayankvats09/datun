@@ -1,33 +1,26 @@
 // apps/web/components/language-switcher.tsx
 // ═══════════════════════════════════════════════════════════════
-// LANGUAGE SWITCHER v3 — native <select>, flag-free, FAANG-grade
+// LANGUAGE SWITCHER v4 — @repo/ui Popover + Phosphor icons (Task #55).
 //
-// REDESIGN RATIONALE (Task #54, r7):
-//   v2 shipped flag emojis in each option. On Windows, 🇮🇳 / 🇬🇧 do
-//   NOT render as flags — the OS shows the raw regional-indicator
-//   letters "IN" / "GB", which collided with the globe icon and
-//   visibly overlapped the language name (reported desktop + mobile).
+// A premium globe trigger that opens an accessible menu listing each language in
+// its OWN native script, with a checkmark on the active locale. Built on the
+// @repo/ui <Popover>/<MenuItem> primitive (native HTML Popover API): the browser
+// gives top-layer rendering, light-dismiss (click-outside), Escape, and focus
+// for free; each item is a real <button role="menuitem"> (>=44px target, visible
+// focus ring) so the control stays fully keyboard + screen-reader operable.
 //
-//   Fix = the pattern the most-audited locale pickers use (GOV.UK,
-//   Apple/Google footers, W3C): a styled NATIVE <select> showing the
-//   language in its OWN script — "English", "हिन्दी" — with ONE globe
-//   affordance on the left and a chevron on the right. No emojis, so
-//   nothing renders differently per-OS; generous padding (pl-9 / pr-9)
-//   guarantees the icons never touch the text.
-//
-//   Why native <select> overall:
-//   - Keyboard + focus + Escape + type-ahead are the browser's own
-//     (SC 2.1.1 / 2.1.2 / 4.1.2 satisfied with zero widget JS).
-//   - Mobile gets the OS-native picker — better touch UX than a popover.
-//   - Opaque bg-card surface: translucent over <AuroraBg /> has an
-//     unverifiable blend, so token surfaces only (≥4.5:1 both themes).
+// Icons are Phosphor via the @repo/ui <Icon> primitive (Part 10, the ONE icon
+// library — no lucide). The trigger carries the accessible name; icons are
+// decorative. No flag emojis (they render inconsistently per OS).
+// i18n wiring preserved: useLocale + router.replace(pathname,{locale}).
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
-import type { ChangeEvent } from 'react';
+import type { MouseEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ChevronDown, Globe } from 'lucide-react';
+import { Icon, MenuItem, Popover } from '@repo/ui';
+import { CaretDown, Check, GlobeSimple } from '@phosphor-icons/react';
 
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { LOCALE_META, UI_LOCALES } from '@/i18n/config';
@@ -39,35 +32,43 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
   const t = useTranslations('common.language');
 
-  function handleLocaleChange(event: ChangeEvent<HTMLSelectElement>) {
-    router.replace(pathname, { locale: event.target.value as Locale });
+  function pick(loc: Locale, event: MouseEvent<HTMLButtonElement>) {
+    // Close the native popover, then navigate (light-dismiss also handles Esc).
+    (event.currentTarget.closest('[popover]') as HTMLElement | null)?.hidePopover?.();
+    if (loc !== locale) router.replace(pathname, { locale: loc });
   }
 
   return (
-    <div className="relative inline-flex items-center">
-      {/* Decorative — the <select> carries the accessible name, so both
-          icons are hidden from assistive tech. pointer-events-none lets
-          clicks fall through to the native control beneath. */}
-      <Globe
-        aria-hidden="true"
-        className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
-      />
-      <select
-        value={locale}
-        onChange={handleLocaleChange}
-        aria-label={t('switchLabel')}
-        className="h-9 cursor-pointer appearance-none rounded-full border border-border/60 bg-card pr-9 pl-9 text-sm font-medium text-foreground transition-colors hover:border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        {UI_LOCALES.map((loc) => (
-          <option key={loc} value={loc}>
-            {LOCALE_META[loc].nativeName}
-          </option>
-        ))}
-      </select>
-      <ChevronDown
-        aria-hidden="true"
-        className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-muted-foreground"
-      />
-    </div>
+    <Popover
+      align="start"
+      trigger={
+        <button
+          type="button"
+          aria-label={t('switchLabel')}
+          className="inline-flex h-12 cursor-pointer items-center gap-2 rounded-full border border-border/60 bg-card px-4 text-sm font-medium text-foreground transition-colors hover:border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        >
+          <Icon as={GlobeSimple} size="xs" className="text-muted-foreground" />
+          <span>{LOCALE_META[locale].nativeName}</span>
+          <Icon as={CaretDown} size="xs" className="text-muted-foreground" />
+        </button>
+      }
+    >
+      {UI_LOCALES.map((loc) => (
+        <MenuItem
+          key={loc}
+          onClick={(event) => pick(loc, event)}
+          aria-current={loc === locale ? 'true' : undefined}
+          icon={
+            loc === locale ? (
+              <Icon as={Check} size="sm" />
+            ) : (
+              <span className="inline-block h-5 w-5" />
+            )
+          }
+        >
+          {LOCALE_META[loc].nativeName}
+        </MenuItem>
+      ))}
+    </Popover>
   );
 }

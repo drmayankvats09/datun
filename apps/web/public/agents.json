@@ -1,0 +1,53 @@
+{
+  "schema": "https://datunai.com/agents.json",
+  "version": "0.1",
+  "updated": "2026-06-26",
+  "organization": {
+    "name": "Datun",
+    "legalName": "Datun Health Private Limited",
+    "type": "MedicalOrganization",
+    "medicalSpecialty": "Dentistry",
+    "url": "https://datunai.com",
+    "areaServed": "India",
+    "languages": ["en", "hi", "ta", "te", "bn", "mr", "gu", "kn", "ml", "pa"],
+    "description": "Dentist-backed dental guidance for India: describe any tooth problem, get an assessment plus a report you keep, and book a verified clinic in your language."
+  },
+  "summary": "Datun helps anyone in India with a dental worry, at any hour, in any language. It gives a dentist-backed assessment and a report you keep, then routes you to a verified clinic when you need one. Datun guides and supports your dentist; it never replaces one and does not perform procedures itself.",
+  "audiences": [
+    "Patients with a dental problem or question",
+    "Caregivers and family members",
+    "NRIs and international patients considering treatment in India"
+  ],
+  "capabilities": [
+    "Explain common dental problems (toothache, sensitivity, bleeding gums, cavities, bad breath, broken tooth, wisdom tooth, dental emergency) in calm, plain language",
+    "Explain common dental procedures (implant, aligners, braces, root canal, crown, whitening, extraction, scaling, filling): what each is, when it is needed, and what to expect",
+    "Provide a dentist-backed assessment and a report the patient keeps",
+    "Route patients to primary-source-verified dental clinics near them",
+    "Answer dental questions in Hindi and English"
+  ],
+  "entryPoints": [
+    {
+      "name": "Homepage",
+      "url": "https://datunai.com/",
+      "description": "Patient homepage: how Datun works, common problems and procedures, verified dentists, patient reviews, and FAQs."
+    },
+    {
+      "name": "Curated index for language models",
+      "url": "https://datunai.com/llms.txt"
+    },
+    {
+      "name": "Sitemap",
+      "url": "https://datunai.com/sitemap.xml"
+    }
+  ],
+  "policies": {
+    "honesty": "No fabricated statistics, counts, or ratings. Patient reviews shown on the site are real and consented.",
+    "privacy": "DPDP 2023 compliant: patient data is encrypted, consent-logged, deletable at any time, and never sold.",
+    "medicalScope": "A remote assessment cannot fully replace an in-person dental exam. Datun states clearly when a patient should see a dentist in person and when care is urgent.",
+    "noDarkPatterns": "No false urgency, no pre-ticked consent, no fake counts or timers."
+  },
+  "contact": {
+    "instagram": "https://instagram.com/datun.ai",
+    "linkedin": "https://linkedin.com/company/datunai"
+  }
+}

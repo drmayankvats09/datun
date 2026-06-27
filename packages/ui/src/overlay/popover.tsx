@@ -19,9 +19,10 @@ export interface PopoverProps {
 export function Popover({ trigger, children, className, align = 'start' }: PopoverProps) {
   const id = React.useId();
   const popId = `pop-${id}`;
-  // Native popover wiring via popovertarget — no JS open/close needed.
+  // Native popover wiring via the popoverTarget prop (React 19 maps it to the
+  // popovertarget attribute) — no JS open/close needed.
   const triggerEl = React.cloneElement(trigger as React.ReactElement<Record<string, unknown>>, {
-    popovertarget: popId,
+    popoverTarget: popId,
     'aria-haspopup': 'menu',
   });
   return (

@@ -10,6 +10,8 @@ export interface NavLink {
 }
 export interface SiteHeaderProps {
   logo: React.ReactNode;
+  /** Locale-aware home href for the logo link (default "/"). */
+  homeHref?: string;
   links: NavLink[]; // 5–7 marketing links
   ctaLabel?: string; // "Ask Datun"
   ctaHref?: string;
@@ -27,6 +29,7 @@ export interface SiteHeaderProps {
  */
 export function SiteHeader({
   logo,
+  homeHref = '/',
   links,
   ctaLabel = 'Ask Datun',
   ctaHref = '/consult',
@@ -54,7 +57,7 @@ export function SiteHeader({
         Skip to content
       </a>
       <div className="dtn-siteheader__in">
-        <a href="/" aria-label="Datun home">
+        <a href={homeHref} aria-label="Datun home">
           {logo}
         </a>
         <nav className="dtn-sitenav" aria-label="Primary">

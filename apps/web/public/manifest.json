@@ -1,7 +1,7 @@
 {
-  "name": "Datun — Dental Triage by AI",
+  "name": "Datun: everyone deserves care",
   "short_name": "Datun",
-  "description": "Free AI dental guidance for everyone. Get instant triage in 10 Indian languages.",
+  "description": "Dentist-backed dental guidance in 10 Indian languages. Describe any tooth problem and book a verified clinic nearby.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

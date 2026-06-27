@@ -16,8 +16,6 @@ import { localeUrl } from '@/lib/seo/alternates';
 import { PUBLIC_ROUTES } from '@/lib/seo/routes';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-
   return PUBLIC_ROUTES.flatMap((route) => {
     // Identical alternates object for every locale variant of a
     // page — Google treats the set as one mutual hreflang cluster.
@@ -28,7 +26,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     return LOCALES.map((locale) => ({
       url: localeUrl(locale, route.path),
-      lastModified,
+      // Honest per-route content date (NOT build time) — see lib/seo/routes.ts.
+      // Google discounts lastmod entirely once it sees churned/always-now dates.
+      lastModified: route.lastModified,
       changeFrequency: route.changeFrequency,
       priority: route.priority,
       alternates: { languages },

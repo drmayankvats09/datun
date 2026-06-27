@@ -110,7 +110,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               role="status"
               className="fixed top-0 right-0 left-0 z-[9999] bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950 shadow-sm print:hidden"
             >
-              📡 {t('offline')}
+              <span aria-hidden="true">📡</span> {t('offline')}
             </div>
           )}
           {children}

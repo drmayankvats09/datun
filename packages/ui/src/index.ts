@@ -22,6 +22,15 @@ export {
   CardFooter,
   type CardProps,
 } from './card/card';
+// Layout primitives (Part 4.8 — intrinsic, token-only, RSC-safe)
+export { Stack, type StackProps } from './layout/stack';
+export { Cluster, type ClusterProps } from './layout/cluster';
+export { Grid, type GridProps } from './layout/grid';
+export { Bleed, type BleedProps } from './layout/bleed';
+export { Inset, type InsetProps } from './layout/inset';
+export { Container, type ContainerProps } from './layout/container';
+export { Section, type SectionProps } from './layout/section';
+export type { SpaceToken, ContainerSize, Align, Justify } from './layout/shared';
 export { SiteHeader, type SiteHeaderProps, type NavLink } from './nav/site-header';
 export { BottomTabBar, type BottomTabBarProps, type TabItem } from './nav/bottom-tab-bar';
 export { TopAppBar, type TopAppBarProps } from './nav/top-app-bar';

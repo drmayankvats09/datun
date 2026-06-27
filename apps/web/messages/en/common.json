@@ -1,8 +1,8 @@
 {
   "brand": {
     "name": "Datun",
-    "tagline": "Everyone Deserves a Doctor.",
-    "description": "AI-powered dental care for India"
+    "tagline": "Everyone deserves care.",
+    "description": "Dentist-backed dental care for India"
   },
   "nav": {
     "home": "Home",
@@ -31,7 +31,7 @@
   "status": {
     "loading": "Loading...",
     "saving": "Saving...",
-    "offline": "You're offline — changes will sync when you reconnect",
+    "offline": "You're offline, changes will sync when you reconnect",
     "error": "Something went wrong",
     "success": "Success",
     "notFound": "Page not found",
@@ -52,20 +52,11 @@
     "switchToDark": "Switch to dark mode"
   },
   "homepage": {
-    "title": "Datun",
-    "mission": "Healthcare is a Right, Not a Privilege",
-    "headline": "AI powered dental care, built for everyone",
-    "subheadline": "We're crafting a world class dental experience that speaks your language, respects your time, and is free for life.",
-    "buildStatus": "Shipping daily",
-    "ctaWhatsApp": "Talk to us on WhatsApp",
-    "ctaNotify": "Notify me at launch",
-    "ctaNotifySubject": "Notify me when Datun launches",
-    "ctaNotifyBody": "Hi Datun team,\n\nPlease let me know when the platform launches.\n\nThanks!",
-    "languages": "Available in 10+ languages"
+    "ctaWhatsApp": "Talk to us on WhatsApp"
   },
   "meta": {
-    "homeTitle": "Datun — AI Dental Care for India",
-    "homeDescription": "Free AI-powered dental guidance for 600M+ underserved Indians. Get instant dental advice in your language.",
+    "homeTitle": "Datun — India's most trusted dental platform",
+    "homeDescription": "Describe any tooth problem and get a dentist-backed assessment plus a report you keep, then a verified clinic booked nearby — from toothache to smile makeover. Private, in your language.",
     "loginTitle": "Sign In",
     "signupTitle": "Create Account",
     "privacyTitle": "Privacy Policy",
@@ -84,7 +75,7 @@
   "emptyStates": {
     "noConsultations": {
       "title": "Your dental journey starts here",
-      "description": "Get expert AI guidance in under 60 seconds.",
+      "description": "Get expert dentist-backed guidance in under 60 seconds.",
       "action": "Start consultation"
     },
     "noClinicPatients": {
@@ -154,35 +145,68 @@
       "find": "Find a dentist",
       "login": "Log in",
       "clinics": "For clinics",
-      "estimate": "Get a free estimate"
+      "estimate": "Get a free estimate",
+      "browseProcedures": "Browse all procedures",
+      "viewAllReviews": "Read more stories"
+    },
+    "trust": {
+      "consultations": "consultations guided",
+      "clinics": "verified clinics",
+      "cities": "cities across India",
+      "breadth": "Any dental issue",
+      "breadthSub": "Toothache to smile makeover"
     },
     "hero": {
-      "eyebrow": "Everyone deserves a doctor",
+      "eyebrow": "Everyone deserves care",
       "title1": "Any tooth trouble?",
       "title2": "Start with Datun.",
-      "lede": "Describe what's bothering you and get a doctor-backed assessment in minutes — then medicine, or a verified dentist nearby. All in one calm place.",
-      "trustcue": "Reviewed by licensed dentists · No cost to ask"
+      "lede": "Describe what's bothering you and get a dentist-backed assessment in minutes, then medicine, or a verified dentist nearby. All in one calm place.",
+      "trustcue": "Dentist-built guidance"
     },
     "manifesto": {
       "tagLeft": "Our mission",
       "lead": "Healthcare is a right, not a privilege.",
-      "strong": "Everyone deserves a doctor",
-      "rest": "— at any hour, in any language, for every Indian.",
+      "strong": "Everyone deserves care",
+      "rest": ", at any hour, in any language, for every Indian.",
       "tagRight": "Est. 2026 · India"
+    },
+    "mission": {
+      "eyebrow": "Our mission",
+      "line1": "Healthcare is a right, not a privilege.",
+      "line2": "Everyone deserves care.",
+      "line3": "At any hour, in any language, for every Indian.",
+      "est": "Est. 2026 · India"
     },
     "how": {
       "eyebrow": "How Datun works",
-      "title1": "Three calm steps, from hurting to ",
-      "title2": "handled."
+      "title1": "From hurting to handled, ",
+      "title2": "in three calm steps."
     },
     "doors": {
       "eyebrow": "Two ways in",
       "title": "However you'd like to start."
     },
+    "problems": {
+      "eyebrow": "Start with what you feel",
+      "title": "Common dental problems, explained simply.",
+      "lede": "Tell us the feeling. We'll tell you what it usually means and what to do next."
+    },
+    "procedures": {
+      "eyebrow": "Know your options",
+      "title": "Common dental procedures, in plain language.",
+      "lede": "What each treatment is, when it's needed, and how Datun guides you to a verified clinic. Datun explains and routes; the clinic performs the procedure.",
+      "guides": "Datun guides you to a verified clinic; it does not perform procedures."
+    },
     "why": {
       "eyebrow": "Why people trust Datun",
       "title1": "Built by dentists. ",
       "title2": "Private by design."
+    },
+    "comparison": {
+      "eyebrow": "An honest comparison",
+      "title": "How Datun is different.",
+      "head": "Most dental sites",
+      "headDatun": "Datun"
     },
     "conditions": {
       "eyebrow": "Start with what you feel",
@@ -190,7 +214,17 @@
     },
     "cities": {
       "eyebrow": "Care near you",
-      "title": "Verified dentists across India."
+      "title": "Verified dentists across India.",
+      "lede": "Book a primary-source-checked dentist in your city. New cities are added every month."
+    },
+    "reviews": {
+      "eyebrow": "Patient stories",
+      "title": "Real people, real relief.",
+      "consent": "Shown with patient consent.",
+      "prevLabel": "Previous reviews",
+      "nextLabel": "More reviews",
+      "pageLabel": "Reviews, page {current} of {total}",
+      "ratingLabel": "5 out of 5 stars"
     },
     "stories": {
       "eyebrow": "Patient stories",
@@ -200,12 +234,19 @@
     "tourism": {
       "eyebrow": "Dental tourism",
       "title": "World-class care in India, verified.",
-      "desc": "For NRIs and international patients — treatment plans, verified clinics, and a free estimate before you travel."
+      "desc": "For NRIs and international patients: a treatment plan, verified clinics, and a free estimate before you travel. Honest pricing, no surprises.",
+      "point1": "Primary-source-checked clinics",
+      "point2": "A plan and estimate before you fly",
+      "point3": "Support in your language"
+    },
+    "faq": {
+      "eyebrow": "Good questions",
+      "title": "Questions, answered honestly."
     },
     "answers": {
       "eyebrow": "Datun Answers",
       "title": "Real questions, answered by verified dentists.",
-      "desc": "Ask anything about your teeth and get a clear, doctor-reviewed answer — free to read, anytime.",
+      "desc": "Ask anything about your teeth and get a clear, dentist-reviewed answer, free to read, anytime.",
       "cta": "Browse Datun Answers"
     },
     "clinicsCta": {
@@ -215,21 +256,22 @@
     },
     "finalCta": {
       "title1": "Not sure where to start?",
-      "title2": "Just describe it — we'll take it from there.",
-      "desc": "Calm, clear, doctor-backed. The next time something feels off, you'll know exactly what to do.",
+      "title2": "Just describe it, we'll take it from there.",
+      "desc": "Calm, clear, dentist-backed. The next time something feels off, you'll know exactly what to do.",
       "cta": "Ask Datun"
     },
     "footer": {
-      "tagline": "A doctor-backed first opinion for any dental problem — and a bridge to verified clinics. Datun supports your dentist; it never replaces one.",
+      "descriptor": "India's most trusted dental platform",
+      "tagline": "A dentist-backed first opinion for any dental problem, and a bridge to verified clinics. Datun supports your dentist; it never replaces one.",
       "product": "Product",
       "learn": "Learn",
       "company": "Company & legal",
-      "trustDoctor": "Doctor-backed",
+      "trustDoctor": "Dentist-backed",
       "trustVerified": "Verified clinics",
       "trustSecure": "DPDP secure · HTTPS",
       "trustReviewed": "Medically reviewed",
       "rights": "© {year} Datun · Made with care in India",
-      "emergency": "Datun provides doctor-backed guidance; for emergencies contact your local services."
+      "emergency": "Datun provides dentist-backed guidance; for emergencies contact your local services."
     }
   }
 }
