@@ -15,7 +15,11 @@
 import type { ElementType } from 'react';
 import { Icon, DatunReport } from '@repo/ui';
 import {
+  Bandaids,
+  BracketsSquare,
+  Brain,
   Broom,
+  Bug,
   CaretDown as PhCaretDown,
   CaretLeft as PhCaretLeft,
   CaretRight as PhCaretRight,
@@ -28,13 +32,16 @@ import {
   LockSimple,
   MagnifyingGlass,
   MapPin,
+  PuzzlePiece,
   Scales,
+  Screwdriver,
   SealCheck,
   ShieldCheck as PhShieldCheck,
   Smiley,
   Snowflake,
   Sparkle,
   Star as PhStar,
+  Syringe,
   Tooth,
   Wind,
 } from '@phosphor-icons/react';
@@ -59,25 +66,29 @@ export const ArrowRight = ({ className }: IP) => <Icon as={PhCaretRight} classNa
 export const Star = ({ className }: IP) => <Icon as={PhStar} weight="fill" className={className} />;
 
 // ── Category tiles (Duotone, dental-specific metaphors) ────────
+// One distinct glyph per id — NEVER the same icon twice across the two grids.
+// Phosphor has no dental-specific set beyond Tooth, so decay / break / wisdom /
+// implant / braces / rct / filling use the closest clear metaphor; the visible
+// tile label disambiguates each (Part 10.9 "label icons by default").
 const CATEGORY: Record<string, ElementType> = {
   // problems
   toothache: Tooth,
-  sensitivity: Snowflake,
-  'bleeding-gums': Drop,
-  cavity: Tooth,
-  'bad-breath': Wind,
-  'broken-tooth': Tooth,
-  'wisdom-tooth': Tooth,
+  sensitivity: Snowflake, // cold/hot twinge
+  'bleeding-gums': Drop, // blood at the gumline
+  cavity: Bug, // decay-causing bacteria
+  'bad-breath': Wind, // breath
+  'broken-tooth': Bandaids, // a chip/break that needs care
+  'wisdom-tooth': Brain, // "wisdom"
   emergency: FirstAid,
   // procedures
-  implant: Tooth,
-  aligners: Smiley,
-  braces: Tooth,
-  rct: Tooth,
-  crown: Crown,
-  whitening: Sparkle,
-  scaling: Broom,
-  filling: Drop,
+  implant: Screwdriver, // the titanium post placed in the jaw
+  aligners: Smiley, // the straightened-smile result
+  braces: BracketsSquare, // brackets
+  rct: Syringe, // clinical canal treatment
+  crown: Crown, // the cap
+  whitening: Sparkle, // brighter shade
+  scaling: Broom, // a professional clean
+  filling: PuzzlePiece, // restoring the gap
 };
 
 /** Duotone category glyph for a problem/procedure tile. The two-tone reads from

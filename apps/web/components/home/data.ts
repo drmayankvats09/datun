@@ -189,8 +189,8 @@ export const FAQS: readonly FaqItem[] = [
     a: 'Yes, in your own language. Describe your problem and read your assessment in the language you speak, whichever it is.',
   },
   {
-    q: 'Who is behind the answers?',
-    a: 'Licensed dentists. Every assessment follows protocols written and reviewed by practising dentists, so your report is dentist-backed.',
+    q: 'Can I add a photo of my tooth?',
+    a: 'Yes. You can add a clear photo of the affected area, which helps Datun read your problem more accurately and gives the dentist useful context.',
   },
   {
     q: 'How are clinics verified?',
