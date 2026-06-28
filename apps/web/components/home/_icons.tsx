@@ -32,9 +32,9 @@ import {
   LockSimple,
   MagnifyingGlass,
   MapPin,
+  Nut,
   PuzzlePiece,
   Scales,
-  Screwdriver,
   SealCheck,
   ShieldCheck as PhShieldCheck,
   Smiley,
@@ -81,7 +81,7 @@ const CATEGORY: Record<string, ElementType> = {
   'wisdom-tooth': Brain, // "wisdom"
   emergency: FirstAid,
   // procedures
-  implant: Screwdriver, // the titanium post placed in the jaw
+  implant: Nut, // the titanium screw-post (hex bolt head)
   aligners: Smiley, // the straightened-smile result
   braces: BracketsSquare, // brackets
   rct: Syringe, // clinical canal treatment
