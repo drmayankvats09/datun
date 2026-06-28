@@ -161,7 +161,8 @@
       "title1": "Any tooth trouble?",
       "title2": "Start with Datun.",
       "lede": "Describe what's bothering you and get a dentist-backed assessment in minutes, then medicine, or a verified dentist nearby. All in one calm place.",
-      "trustcue": "Dentist-built guidance"
+      "trustcue": "Dentist-backed guidance",
+      "trustcue2": "100% private · your data is never sold"
     },
     "manifesto": {
       "tagLeft": "Our mission",

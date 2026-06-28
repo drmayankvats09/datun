@@ -240,13 +240,20 @@
     flex: 0 0 auto;
   }
 }
+/* Two stacked trust cues under the hero CTA (dentist-backed + data privacy). */
+.dtn-home .hero__trust {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-8);
+  margin-top: var(--space-24);
+}
 .dtn-home .trustcue {
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
   font: var(--type-body-s);
   color: var(--color-text-muted);
-  margin-top: var(--space-24);
   text-wrap: pretty;
 }
 .dtn-home .trustcue svg {
@@ -327,16 +334,18 @@
   font: var(--type-body-s);
   line-height: 1.45;
 }
-/* Datun-side bubble (renamed from the legacy "ai" token; never the word "AI"). */
+/* Datun-side bubble (renamed from the legacy "ai" token; never the word "AI").
+   Brand voice = the dark CTA teal with on-action (white) text. */
 .dtn-home .bubble--datun {
-  background: var(--color-bg-brand-weak);
-  color: var(--color-text-primary);
+  background: var(--color-bg-action-primary);
+  color: var(--color-text-on-action);
   border-end-start-radius: var(--radius-xs);
   align-self: flex-start;
 }
+/* Patient-side bubble = soft teal-weak with primary ink text. */
 .dtn-home .bubble--me {
-  background: var(--color-text-primary);
-  color: var(--color-surface);
+  background: var(--color-bg-brand-weak);
+  color: var(--color-text-primary);
   border-end-end-radius: var(--radius-xs);
   align-self: flex-end;
 }
@@ -344,7 +353,7 @@
   align-self: flex-start;
   display: inline-flex;
   gap: 5px;
-  background: var(--color-bg-brand-weak);
+  background: var(--color-bg-action-primary);
   padding: var(--space-12) var(--space-16);
   border-radius: var(--radius-lg);
   border-end-start-radius: var(--radius-xs);
@@ -353,8 +362,8 @@
   inline-size: 7px;
   block-size: 7px;
   border-radius: var(--radius-circle);
-  background: var(--color-text-link);
-  opacity: 0.4;
+  background: var(--color-text-on-action);
+  opacity: 0.5;
 }
 @media (prefers-reduced-motion: no-preference) {
   .dtn-home .bubble--type i {
@@ -421,6 +430,11 @@
 .dtn-home .float--b {
   inset-block-end: 20px;
   inset-inline-start: -16px;
+  color: var(--color-text-accent);
+}
+/* Teal pin (matches the "300+ verified" strip icon) + dark-clay clinic text. */
+.dtn-home .float--b svg {
+  color: var(--color-bg-action-primary);
 }
 /* Floats can crowd at the smallest sizes; hide below the 2-up split point. */
 @media (max-width: 26rem) {

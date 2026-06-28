@@ -1,7 +1,7 @@
 // apps/web/components/home/sections/hero.tsx
 import { getTranslations } from 'next-intl/server';
 import { Container } from '@repo/ui';
-import { lp, Pin, ShieldCheck, Spark, type SectionProps } from '../_shared';
+import { Lock, lp, Pin, ShieldCheck, Spark, type SectionProps } from '../_shared';
 
 /** Demo consult preview. The Datun-side author key is "datun" (never "ai"); the
  *  copy carries no em-dashes and frames the read as dentist-backed. */
@@ -45,10 +45,16 @@ export async function Hero({ locale }: SectionProps) {
                 {t('home.cta.find')}
               </a>
             </div>
-            <span className="trustcue">
-              <ShieldCheck />
-              {t('home.hero.trustcue')}
-            </span>
+            <div className="hero__trust">
+              <span className="trustcue">
+                <ShieldCheck />
+                {t('home.hero.trustcue')}
+              </span>
+              <span className="trustcue">
+                <Lock />
+                {t('home.hero.trustcue2')}
+              </span>
+            </div>
           </div>
 
           {/* Illustrative demo only — exposed to AT as a single labelled image
