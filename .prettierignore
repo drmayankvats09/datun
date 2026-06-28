@@ -5,3 +5,7 @@ build
 coverage
 pnpm-lock.yaml
 .turbo
+
+# Next.js auto-generates this on typegen/build (gitignored, never hand-edited).
+# Its format follows Next, not Prettier — don't lint a generated artifact.
+next-env.d.ts

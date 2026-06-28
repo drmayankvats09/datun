@@ -13,6 +13,10 @@
 /.next/
 /out/
 
+# lighthouse CI local report artifacts (the workflow archives these as a
+# build artifact; they are never source and must not be committed)
+/.lighthouseci/
+
 # production
 /build
 

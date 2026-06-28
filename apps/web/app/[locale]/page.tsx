@@ -20,13 +20,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { SiteHeader } from '@repo/ui';
-import {
-  BRAND,
-  buildGraph,
-  buildWebPageSchema,
-  buildFaqPageSchema,
-  buildBreadcrumbSchema,
-} from '@repo/shared';
+import { BRAND, buildGraph, buildWebPageSchema, buildFaqPageSchema } from '@repo/shared';
 import { buildAlternates, localeUrl } from '@/lib/seo/alternates';
 import { JsonLd } from '@/components/seo/json-ld';
 import {
@@ -98,9 +92,10 @@ export default async function HomePage({ params }: Props) {
 
   // Page-specific structured data — the site-wide Organization + WebSite graph is
   // emitted once by the locale layout (Task #55 C). WebPage carries the honest
-  // freshness signal; FAQPage mirrors the same FAQS the accordion renders;
-  // BreadcrumbList anchors the page. All reference the canonical Organization @id
-  // through the factory, so the entity never drifts.
+  // freshness signal; FAQPage mirrors the same FAQS the accordion renders. Both
+  // reference the canonical Organization @id through the factory, so the entity
+  // never drifts. (No BreadcrumbList on the home node: a single "Home" crumb is a
+  // documented Google no-op and only adds inline bytes — Task #55 interlink audit.)
   const homeUrl = localeUrl(locale, '');
   const pageGraph = buildGraph([
     buildWebPageSchema({
@@ -113,7 +108,6 @@ export default async function HomePage({ params }: Props) {
     // FAQ answers are authored in English on every route (body-copy i18n is a
     // tracked follow-up), so declare the real text language, not the locale.
     buildFaqPageSchema({ url: homeUrl, faqs: FAQS, inLanguage: 'en' }),
-    buildBreadcrumbSchema({ url: homeUrl, items: [{ name: 'Home', item: homeUrl }] }),
   ]);
 
   return (

@@ -15,7 +15,8 @@ const DOORS = {
 } as const;
 
 /** Two doors — ask Datun, or find and book directly. The core dual-entry brand
- *  element. The second card carries id="find" (header + footer anchor target). */
+ *  element. The second card LINKS to the #find section (rendered by
+ *  VerifiedDentists); it does not itself carry id="find". */
 export async function TwoDoors({ locale }: SectionProps) {
   const t = await getTranslations({ locale, namespace: 'common' });
   return (

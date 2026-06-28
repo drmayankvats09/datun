@@ -968,6 +968,32 @@
 .dtn-home .rev__track::-webkit-scrollbar {
   display: none;
 }
+/* Keyboard-focusable scroll region: the track scroll-snaps horizontally and
+   tabindex=0 (reviews-carousel.tsx) puts it in the tab order so keyboard users
+   can arrow-scroll it (axe scrollable-region-focusable / SC 2.1.1). Token-only
+   focus ring, matching the design-system convention. */
+.dtn-home .rev__track:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+  border-radius: var(--radius-lg);
+}
+/* Review-card inner figure (replaces a per-card inline style — token-only and
+   trims inline-style bytes from the SSR'd HTML). */
+.dtn-home .rev__fig {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  block-size: 100%;
+}
+/* Dark-mode contrast fix (WCAG 1.4.3): the base dark --color-text-muted
+   (oklch 0.64) was tuned for base surfaces and dips below 4.5:1 on the
+   homepage's lighter tinted bands (.dtn-band--teal / --clay and .tourism).
+   Lift it to 0.70 ONLY within the marketing page — ratios 5.1–5.6:1 on those
+   bands, with no other page or surface affected. Token-only. */
+[data-theme='dark'] .dtn-home {
+  --color-text-muted: oklch(0.7 0.008 85);
+}
 @media (prefers-reduced-motion: no-preference) {
   .dtn-home .rev__track {
     scroll-behavior: smooth;
@@ -1155,6 +1181,14 @@
     transparent 65%
   );
   pointer-events: none;
+}
+/* Inverse CTA on the teal band: surface fill + theme-aware link color (replaces
+   an inline style that hardcoded --teal-700, which failed AA on the dark surface;
+   --color-text-link → teal-300 in dark ≈ 9:1, unchanged in light). Token-only. */
+.dtn-home .band__cta {
+  position: relative;
+  background: var(--color-surface);
+  color: var(--color-text-link);
 }
 .dtn-home .band h2 {
   position: relative;

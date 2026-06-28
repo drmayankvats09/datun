@@ -141,26 +141,23 @@ export function ReviewsCarousel({
         </div>
       </div>
 
-      <ul className="rev__track" ref={trackRef}>
+      {/* tabindex=0 makes the horizontally scroll-snapping track keyboard-
+          operable (arrow-scroll) — REQUIRED by axe scrollable-region-focusable /
+          WCAG SC 2.1.1 because the review cards carry no focusable content of
+          their own. The arrows/dots remain the primary controls; aria-label
+          names the region for AT. jsx-a11y can't detect a scroll container, so
+          its no-noninteractive-tabindex rule is a false positive here. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+      <ul className="rev__track" ref={trackRef} tabIndex={0} aria-label={labels.region}>
         {reviews.map((r) => (
           <li key={`${r.name}-${r.place}`} className="rev__card">
-            <figure
-              style={{
-                margin: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--space-12)',
-                blockSize: '100%',
-              }}
-            >
+            <figure className="rev__fig">
               <span className="rev__stars" role="img" aria-label={labels.rating}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} />
                 ))}
               </span>
-              <blockquote className="rev__q" style={{ margin: 0 }}>
-                {r.q}
-              </blockquote>
+              <blockquote className="rev__q">{r.q}</blockquote>
               <figcaption className="rev__by">
                 <span className="rev__av" aria-hidden="true">
                   {initials(r.name)}

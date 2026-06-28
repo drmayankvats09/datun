@@ -38,13 +38,14 @@ export function buildOrganizationSchema(): JsonLdNode {
     '@type': 'MedicalOrganization',
     '@id': ORGANIZATION.id,
     name: ORGANIZATION.name,
-    alternateName: [...ORGANIZATION.alternateName],
+    // alternateName (=== name) and image (=== logo) are omitted on purpose: they
+    // carry zero incremental signal to search/AI engines and only add inline
+    // JSON-LD bytes (Task #55 — Lighthouse document-budget hardening).
     legalName: ORGANIZATION.legalName,
     slogan: ORGANIZATION.slogan,
     description: ORGANIZATION.description,
     url: ORGANIZATION.url,
     logo: ORGANIZATION.logo,
-    image: ORGANIZATION.image,
     foundingDate: ORGANIZATION.foundingDate,
     medicalSpecialty: 'Dentistry',
     areaServed: { '@type': 'Country', name: ORGANIZATION.areaServed },
@@ -63,14 +64,10 @@ export function buildWebSiteSchema(opts: { inLanguage: string }): JsonLdNode {
     name: BRAND.name,
     inLanguage: opts.inLanguage,
     publisher: { '@id': ORGANIZATION_ID },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${BASE}/?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
+    // No SearchAction yet: a sitelinks searchbox requires a working on-site
+    // search endpoint (e.g. /search?q=). Declaring one without it is misleading
+    // and Google distrusts unbacked SearchActions — re-add when search ships
+    // (Task #55 interlink audit).
   };
 }
 

@@ -32,6 +32,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  // Guarantee tree-shaking for the monorepo barrels that many client components
+  // import, so the entity/schema-factory constants never leak into client chunks
+  // (Task #55 — Lighthouse script-budget hardening).
+  experimental: {
+    optimizePackageImports: ['@repo/shared', '@repo/ui'],
+  },
+
   images: {
     // Task #46 — Cloudflare Images custom loader for delivery.
     // The loader file builds imagedelivery.net URLs per requested width.

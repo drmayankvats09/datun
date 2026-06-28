@@ -17,15 +17,7 @@ export async function FinalCta({ locale }: SectionProps) {
             {t('home.finalCta.title2')}
           </h2>
           <p>{t('home.finalCta.desc')}</p>
-          <a
-            className="dtn-btn dtn-btn--lg"
-            href={lp(locale, '/consult')}
-            style={{
-              position: 'relative',
-              background: 'var(--color-surface)',
-              color: 'var(--teal-700)',
-            }}
-          >
+          <a className="dtn-btn dtn-btn--lg band__cta" href={lp(locale, '/consult')}>
             {t('home.finalCta.cta')}
           </a>
         </div>

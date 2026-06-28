@@ -1,7 +1,16 @@
 // apps/web/components/home/sections/why-datun.tsx
 import { getTranslations } from 'next-intl/server';
 import { Container, Grid, Section } from '@repo/ui';
-import { Check, Globe, Lock, Report, Scale, Shield, ShieldCheck, type SectionProps } from '../_shared';
+import {
+  Check,
+  Globe,
+  Lock,
+  Report,
+  Scale,
+  Shield,
+  ShieldCheck,
+  type SectionProps,
+} from '../_shared';
 import { COMPARE_ROWS } from '../data';
 
 const POINTS = [
