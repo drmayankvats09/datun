@@ -63,7 +63,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: 'common' });
 
   return {
-    title: t('meta.homeTitle'),
+    // `absolute` bypasses the global "%s | Datun" title template — the homepage
+    // title already leads with the brand, so the suffix would double it
+    // ("Datun - … | Datun"). Other pages keep the template ("Privacy | Datun").
+    title: { absolute: t('meta.homeTitle') },
     description: t('meta.homeDescription'),
     alternates: buildAlternates(locale, ''),
     openGraph: {
