@@ -175,11 +175,10 @@
   letter-spacing: 0.01em;
   color: var(--color-text-muted);
   white-space: nowrap;
-}
-@media (max-width: 47.99rem) {
-  .dtn-home .dtn-headbrand__desc {
-    display: none;
-  }
+  /* Optical nudge: the wordmark SVG carries ~2.7px of left bearing before the
+     "d", so the descriptor reads ~1px left of it; shift it right to sit exactly
+     beneath the wordmark (premium alignment). Shown on every size. */
+  margin-inline-start: var(--space-2);
 }
 
 .dtn-home .imgph {

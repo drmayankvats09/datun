@@ -14,7 +14,7 @@ export async function TrustStrip({ locale }: SectionProps) {
   const t = await getTranslations({ locale, namespace: 'common' });
   const stats = [
     { icon: <Chat />, value: '1,000+', label: t('home.trust.consultations') },
-    { icon: <Pin />, value: '300', label: t('home.trust.clinics') },
+    { icon: <Pin />, value: '300+', label: t('home.trust.clinics') },
     { icon: <Globe />, value: '30+', label: t('home.trust.cities') },
     { icon: <Spark />, value: t('home.trust.breadth'), label: t('home.trust.breadthSub') },
   ];
