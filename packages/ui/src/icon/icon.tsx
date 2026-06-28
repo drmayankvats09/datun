@@ -22,13 +22,17 @@ export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type IconTone = 'default' | 'muted' | 'brand' | 'success' | 'warning' | 'error' | 'info';
 export type IconWeight = 'regular' | 'fill' | 'duotone';
 
-const SIZE_VAR: Record<IconSize, string> = {
-  xs: 'var(--icon-size-xs)',
-  sm: 'var(--icon-size-sm)',
-  md: 'var(--icon-size-md)',
-  lg: 'var(--icon-size-lg)',
-  xl: 'var(--icon-size-xl)',
-  '2xl': 'var(--icon-size-2xl)',
+// Pixel values mirror the --icon-size-* tokens (icons.css). Phosphor's `size`
+// prop becomes the SVG width/height ATTRIBUTE, which must be a valid number — a
+// var() string would be discarded by the browser. The .dtn-icon--* CSS classes
+// still own the responsive/token-driven size and override these when CSS paints.
+const SIZE_PX: Record<IconSize, number> = {
+  xs: 16,
+  sm: 20,
+  md: 24,
+  lg: 32,
+  xl: 40,
+  '2xl': 48,
 };
 
 export interface IconProps {
@@ -55,7 +59,7 @@ export function Icon({
   return (
     <Cmp
       // Phosphor reads size + weight + color as props; color inherits text by default.
-      size={SIZE_VAR[size]}
+      size={SIZE_PX[size]}
       weight={weight}
       color="currentColor"
       className={cn(

@@ -1,33 +1,26 @@
 // apps/web/components/language-switcher.tsx
 // ═══════════════════════════════════════════════════════════════
-// LANGUAGE SWITCHER v3 — native <select>, flag-free, FAANG-grade
+// LANGUAGE SWITCHER v5 — native <select>, Phosphor icons, FAANG-grade
 //
-// REDESIGN RATIONALE (Task #54, r7):
-//   v2 shipped flag emojis in each option. On Windows, 🇮🇳 / 🇬🇧 do
-//   NOT render as flags — the OS shows the raw regional-indicator
-//   letters "IN" / "GB", which collided with the globe icon and
-//   visibly overlapped the language name (reported desktop + mobile).
+// WHY NATIVE <select> (restored from v3 after a v4 Popover regression):
+//   The a11y contract (e2e/a11y/keyboard-nav.a11y.spec.ts:75) certifies a
+//   role="combobox" named "Language" that exposes real <option value="en|hi">.
+//   A native <select> satisfies SC 2.1.1 / 2.1.2 / 4.1.2 with zero widget JS —
+//   keyboard, focus, Escape, type-ahead and the OS-native mobile picker all come
+//   from the browser. The v4 Popover (role="menuitem" buttons) exposed no
+//   combobox and no options, so it broke that contract.
 //
-//   Fix = the pattern the most-audited locale pickers use (GOV.UK,
-//   Apple/Google footers, W3C): a styled NATIVE <select> showing the
-//   language in its OWN script — "English", "हिन्दी" — with ONE globe
-//   affordance on the left and a chevron on the right. No emojis, so
-//   nothing renders differently per-OS; generous padding (pl-9 / pr-9)
-//   guarantees the icons never touch the text.
-//
-//   Why native <select> overall:
-//   - Keyboard + focus + Escape + type-ahead are the browser's own
-//     (SC 2.1.1 / 2.1.2 / 4.1.2 satisfied with zero widget JS).
-//   - Mobile gets the OS-native picker — better touch UX than a popover.
-//   - Opaque bg-card surface: translucent over <AuroraBg /> has an
-//     unverifiable blend, so token surfaces only (≥4.5:1 both themes).
+// ICONS: Phosphor — the ONE icon library (Part 10, no lucide). GlobeSimple +
+//   CaretDown are purely decorative (aria-hidden); the <select> carries the
+//   accessible name. No flag emojis (Windows renders 🇮🇳/🇬🇧 as raw "IN"/"GB").
+// i18n wiring: useLocale + router.replace(pathname, { locale }).
 // ═══════════════════════════════════════════════════════════════
 
 'use client';
 
 import type { ChangeEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { ChevronDown, Globe } from 'lucide-react';
+import { CaretDown, GlobeSimple } from '@phosphor-icons/react';
 
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { LOCALE_META, UI_LOCALES } from '@/i18n/config';
@@ -45,10 +38,10 @@ export function LanguageSwitcher() {
 
   return (
     <div className="relative inline-flex items-center">
-      {/* Decorative — the <select> carries the accessible name, so both
-          icons are hidden from assistive tech. pointer-events-none lets
-          clicks fall through to the native control beneath. */}
-      <Globe
+      {/* Decorative — the <select> carries the accessible name, so both icons
+          are hidden from assistive tech. pointer-events-none lets clicks fall
+          through to the native control beneath. */}
+      <GlobeSimple
         aria-hidden="true"
         className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
       />
@@ -64,7 +57,7 @@ export function LanguageSwitcher() {
           </option>
         ))}
       </select>
-      <ChevronDown
+      <CaretDown
         aria-hidden="true"
         className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-muted-foreground"
       />

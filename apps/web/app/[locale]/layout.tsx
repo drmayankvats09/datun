@@ -95,6 +95,8 @@ import { TranslationBanner } from '@/components/translation-banner';
 import { getNonce } from '@/lib/csp/get-nonce';
 import { SpeedInsightsClient } from '@/components/providers/speed-insights';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import { JsonLd } from '@/components/seo/json-ld';
+import { buildGlobalEntityGraph } from '@repo/shared';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -114,6 +116,8 @@ export async function generateMetadata({
     // /signup ("points to another hreflang location"). Each indexable
     // page now owns `alternates: buildAlternates(locale, '/its-path')`
     // (legal pages already did; home + auth pages gained theirs here).
+    // Link the PWA manifest so its (new) icons + theme color actually apply.
+    manifest: '/manifest.json',
     openGraph: {
       locale: locale === 'hi' ? 'hi_IN' : 'en_IN',
       alternateLocale: LOCALES.filter((l) => l !== locale).map((l) =>
@@ -167,6 +171,11 @@ export default async function LocaleLayout({
             </PostHogProvider>
           </QueryProvider>
         </NextIntlClientProvider>
+        {/* Task #55 C: site-wide brand-entity graph (Organization + WebSite),
+            emitted on EVERY route so any new page inherits the Datun entity with
+            zero manual work. Page-specific nodes (WebPage/FAQPage/Breadcrumb) are
+            added per route. Carries the per-request CSP nonce via <JsonLd>. */}
+        <JsonLd data={buildGlobalEntityGraph({ inLanguage: locale })} />
         {/* ── Task #53: real-user Core Web Vitals (Vercel-only) ──
             Server-side VERCEL gate keeps Lighthouse CI / local
             `next start` free of a 404'ing collector script. */}

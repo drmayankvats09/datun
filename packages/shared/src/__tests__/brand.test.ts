@@ -7,7 +7,7 @@ describe('BRAND constants', () => {
   });
 
   it('tagline matches mission statement', () => {
-    expect(BRAND.tagline).toBe('Everyone Deserves a Doctor.');
+    expect(BRAND.tagline).toBe('Everyone deserves care.');
   });
 
   it('AI name matches brand name', () => {

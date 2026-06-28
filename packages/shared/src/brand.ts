@@ -12,11 +12,11 @@ export const BRAND = {
   legalName: 'Datun Health Private Limited',
 
   /** One-liner shown in footers, emails, WhatsApp signatures */
-  tagline: 'Everyone Deserves a Doctor.',
+  tagline: 'Everyone deserves care.',
 
   /** Short description for SEO, meta tags, social cards */
   description:
-    'AI-powered healthcare platform for India, beginning with dental care and expanding across medical verticals.',
+    'Dentist-backed dental care for India: describe any tooth problem, get an assessment plus a report you keep, and book a verified clinic in your language.',
 
   /** AI identity name used in clinical prompts (separate from brand for flexibility) */
   aiName: 'Datun',

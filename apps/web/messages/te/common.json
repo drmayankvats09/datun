@@ -1,8 +1,8 @@
 {
   "brand": {
     "name": "Datun",
-    "tagline": "Everyone Deserves a Doctor.",
-    "description": "AI-powered dental care for India"
+    "tagline": "Everyone deserves care.",
+    "description": "Dentist-backed dental care for India"
   },
   "nav": {
     "home": "Home",
@@ -31,7 +31,7 @@
   "status": {
     "loading": "Loading...",
     "saving": "Saving...",
-    "offline": "You're offline — changes will sync when you reconnect",
+    "offline": "You're offline, changes will sync when you reconnect",
     "error": "Something went wrong",
     "success": "Success",
     "notFound": "Page not found",
@@ -64,8 +64,8 @@
     "languages": "Available in 10+ languages"
   },
   "meta": {
-    "homeTitle": "Datun — AI Dental Care for India",
-    "homeDescription": "Free AI-powered dental guidance for 600M+ underserved Indians. Get instant dental advice in your language.",
+    "homeTitle": "Datun - India's most trusted dental platform",
+    "homeDescription": "Describe any tooth problem and get a dentist-backed assessment plus a report you keep, then a verified clinic booked nearby — from toothache to smile makeover. Private, in your language.",
     "loginTitle": "Sign In",
     "signupTitle": "Create Account",
     "privacyTitle": "Privacy Policy",

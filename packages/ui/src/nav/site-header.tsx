@@ -10,6 +10,8 @@ export interface NavLink {
 }
 export interface SiteHeaderProps {
   logo: React.ReactNode;
+  /** Locale-aware home href for the logo link (default "/"). */
+  homeHref?: string;
   links: NavLink[]; // 5–7 marketing links
   ctaLabel?: string; // "Ask Datun"
   ctaHref?: string;
@@ -27,6 +29,7 @@ export interface SiteHeaderProps {
  */
 export function SiteHeader({
   logo,
+  homeHref = '/',
   links,
   ctaLabel = 'Ask Datun',
   ctaHref = '/consult',
@@ -54,7 +57,7 @@ export function SiteHeader({
         Skip to content
       </a>
       <div className="dtn-siteheader__in">
-        <a href="/" aria-label="Datun home">
+        <a href={homeHref} aria-label="Datun home">
           {logo}
         </a>
         <nav className="dtn-sitenav" aria-label="Primary">
@@ -70,10 +73,13 @@ export function SiteHeader({
           ))}
         </nav>
         <div className="dtn-header__right">
-          <a href={clinicsHref} className="dtn-header__clinics" rel="noopener">
+          {/* "For clinics" is desktop-only in the top bar (dtn-cta-inline hides it
+              on mobile); on mobile it lives in the drawer. "Log in" is the
+              persistent top-bar action on mobile (no dtn-cta-inline). */}
+          <a href={clinicsHref} className="dtn-header__clinics dtn-cta-inline" rel="noopener">
             For clinics
           </a>
-          <a href={loginHref} className="dtn-navlink dtn-cta-inline">
+          <a href={loginHref} className="dtn-navlink dtn-header__login">
             Log in
           </a>
           <a href={ctaHref} className="dtn-btn dtn-btn--primary dtn-btn--md dtn-cta-inline">
@@ -126,11 +132,11 @@ export function SiteHeader({
                 {l.label}
               </a>
             ))}
+            {/* "For clinics" lives here in the drawer on mobile (it's hidden in
+                the top bar). "Log in" is NOT repeated here — it's the persistent
+                top-bar action on mobile. */}
             <a href={clinicsHref} className="dtn-drawer__link" rel="noopener">
               For clinics
-            </a>
-            <a href={loginHref} className="dtn-drawer__link">
-              Log in
             </a>
             <a
               href={ctaHref}

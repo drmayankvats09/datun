@@ -126,3 +126,10 @@ export * from './types/notification';
 // Key registry, evaluation context schema, DTOs and shared enums.
 // Imported by both `apps/api` and `apps/web` — single source of truth.
 export * from './flags/index';
+
+// ── Task #55: Brand-entity / structured-data factory ──
+// Additive, zero-dependency, isomorphic (no zod / node builtins) → safe in the
+// root barrel + client bundles. Single source of truth for the JSON-LD entity
+// graph; supersedes the removed stale SEO.organizationSchema / medicalAppSchema.
+export * from './entity/organization';
+export * from './schema-factory';

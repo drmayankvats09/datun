@@ -235,3 +235,52 @@ with `1` set only on Vercel Preview), and layout-level canonicals —
 a layout cannot know its leaf path, so alternates moved to per-page
 ownership (`buildAlternates(locale, '/path')` on home, login, signup,
 forgot-password; legal pages already complied).
+
+#### Amendment v3 — Homepage rebuild byte budgets (Task #55, 2026-06-28)
+
+Task #55 replaced the 11-section home (v2 baseline: script 418 KB, total 548 KB)
+with the world-class 14-section rebuild — Common Problems, Common Procedures,
+Mission, Verified Dentists, a 12-card Patient-Reviews carousel, Dental Tourism,
+full FAQ — plus a site-wide Organization+WebSite JSON-LD entity graph and a
+per-page WebPage+FAQPage graph. An intentional, founder-approved scope increase,
+not a regression. Only the `/` byte budgets move; /login, /signup, /privacy are
+unchanged and still pass.
+
+Measured on `/` via `lhci` (byte transfer sizes are deterministic across runs —
+the same gzipped build output — so a single completed run equals the 3-run
+median for bytes; the local machine's perf score and `categories:seo` canonical
+are CI-only signals here — see note below):
+
+| Resource | Old budget | Measured | New budget | Headroom |
+| -------- | ---------- | -------- | ---------- | -------- |
+| script   | 440 KB     | 442.0 KB | 443 KB     | ~1.1 KB  |
+| document | 50 KB      | 55.4 KB  | 57 KB      | ~1.6 KB  |
+| total    | 580 KB     | 619.0 KB | 621 KB     | ~2.0 KB  |
+
+stylesheet (40 KB), font (40 KB) and image (13 KB) stay well under their
+unchanged budgets.
+
+**Genuine optimizations applied first (no shortcut taken):** trimmed the
+Organization JSON-LD to schema-meaningful fields (dropped `alternateName`===name
+and `image`===logo), removed the unbacked WebSite `SearchAction` and the
+single-item homepage `BreadcrumbList` (both documented Google no-ops), migrated
+per-card inline styles to token-only classes, and enabled
+`optimizePackageImports` for the `@repo/*` barrels. Net effect ~0.8 KB document /
+~0.4 KB total — which **confirms the overage is STRUCTURAL**: the rich content
+plus the fixed framework JS floor (PostHog, TanStack Query, next-intl, theme,
+motion, Sentry — all app-wide, not homepage-specific), not bloat.
+
+**One-way valve intact** — this is the sanctioned loosening-by-amendment; budgets
+still only ratchet DOWN from here. **Ratchet-down path (tracked follow-up):**
+code-split the heavy app-wide providers (PostHog, TanStack Query) out of the
+static marketing route so the home script floor falls back toward the 418 KB
+baseline; when that lands, tighten `script`/`total` here.
+
+**Note (canonical / perf on a local box):** the Lighthouse _workflow_ builds with
+`NEXT_PUBLIC_APP_URL=http://localhost:3000` (per Amendment v2), so on CI the
+homepage canonical matches the audited origin and `categories:seo` passes; a
+plain local build canonicals to `datunai.com`, so the local `canonical` audit
+(and thus the local SEO score) is a false negative. Likewise the perf-score
+floor (0.55) is calibrated to the CI Linux runner; a slower local machine can
+dip under it. Byte budgets, by contrast, are deterministic and verifiable
+anywhere.

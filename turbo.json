@@ -105,7 +105,8 @@
     "FLAG_CACHE_L1_TTL_SECONDS",
     "FLAG_CACHE_L2_TTL_SECONDS",
     "HOSTNAME",
-    "FEATURE_FLAGS_ENABLED"
+    "FEATURE_FLAGS_ENABLED",
+    "INDEXNOW_KEY"
   ],
   "tasks": {
     "build": {

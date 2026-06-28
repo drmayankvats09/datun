@@ -22,15 +22,32 @@ export interface PublicRoute {
   path: string;
   priority: number;
   changeFrequency: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
+  /** Honest last content-change date (ISO yyyy-mm-dd). Sourced from the page's
+   *  own JSON-LD dateModified (legal pages) or its source file's git commit date
+   *  (auth pages), NEVER build time — so <lastmod> stays trustworthy and an
+   *  unchanged page keeps its date across deploys. Must equal any visible /
+   *  schema date the page shows (Task #55 D1/D2; Google ignores churned lastmod). */
+  lastModified: string;
 }
 
 export const PUBLIC_ROUTES: PublicRoute[] = [
-  { path: '', priority: 1.0, changeFrequency: 'weekly' },
-  { path: '/login', priority: 0.8, changeFrequency: 'monthly' },
-  { path: '/signup', priority: 0.9, changeFrequency: 'monthly' },
-  { path: '/forgot-password', priority: 0.3, changeFrequency: 'yearly' },
-  { path: '/privacy', priority: 0.5, changeFrequency: 'monthly' },
-  { path: '/terms', priority: 0.5, changeFrequency: 'monthly' },
-  { path: '/cookies', priority: 0.4, changeFrequency: 'monthly' },
-  { path: '/dpdp-notice', priority: 0.5, changeFrequency: 'monthly' },
+  // lastModified mirrors each page's real content date: homepage = its
+  // LAST_REVIEWED (keep in sync with app/[locale]/page.tsx); legal pages = their
+  // own JSON-LD dateModified; auth pages = their source file's git commit date.
+  { path: '', priority: 1.0, changeFrequency: 'weekly', lastModified: '2026-06-26' },
+  { path: '/login', priority: 0.8, changeFrequency: 'monthly', lastModified: '2026-06-13' },
+  { path: '/signup', priority: 0.9, changeFrequency: 'monthly', lastModified: '2026-06-13' },
+  {
+    path: '/forgot-password',
+    priority: 0.3,
+    changeFrequency: 'yearly',
+    lastModified: '2026-06-13',
+  },
+  { path: '/privacy', priority: 0.5, changeFrequency: 'monthly', lastModified: '2026-04-23' },
+  { path: '/terms', priority: 0.5, changeFrequency: 'monthly', lastModified: '2026-04-23' },
+  { path: '/cookies', priority: 0.4, changeFrequency: 'monthly', lastModified: '2026-04-23' },
+  { path: '/dpdp-notice', priority: 0.5, changeFrequency: 'monthly', lastModified: '2026-04-23' },
+  // /accessibility legal page exists + is footer-linked but was missing from the
+  // sitemap (Task #55 D3 — clean sitemap includes every live, indexable page).
+  { path: '/accessibility', priority: 0.4, changeFrequency: 'yearly', lastModified: '2026-06-12' },
 ];
