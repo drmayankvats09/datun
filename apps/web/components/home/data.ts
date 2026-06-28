@@ -227,7 +227,7 @@ export const COMPARE_ROWS: readonly CompareRow[] = [
   {
     k: 'In your language',
     no: 'Usually English only',
-    yes: 'Hindi, English, and more Indian languages',
+    yes: 'Any language you speak',
   },
 ];
 

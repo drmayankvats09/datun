@@ -2,7 +2,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Container } from '@repo/ui';
 import { LanguageSwitcher } from '@/components/language-switcher';
-import { Check, HomeLogo, Lock, ShieldCheck, lp, type SectionProps } from '../_shared';
+import { Check, HomeLogo, Lock, Report, ShieldCheck, lp, type SectionProps } from '../_shared';
 
 /** A footer nav item. `href: null` means the route is not built yet (Task #56+)
  *  and renders as a muted, non-interactive span — never a 404, never href="#". */
@@ -91,7 +91,9 @@ export async function SiteFooter({ locale }: SectionProps) {
           <span>
             <Lock /> {t('home.footer.trustSecure')}
           </span>
-          <span>{t('home.footer.trustReviewed')}</span>
+          <span>
+            <Report /> {t('home.footer.trustReviewed')}
+          </span>
         </div>
 
         <div className="foot__base">
