@@ -159,6 +159,29 @@
   display: block;
 }
 
+/* Header brand lockup: wordmark + the positioning descriptor beneath it
+   (mirrors the footer). Hidden below md so the mobile sticky header stays
+   compact (wordmark + actions + hamburger); the footer carries the line on phones. */
+.dtn-home .dtn-headbrand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  line-height: 1.1;
+}
+.dtn-home .dtn-headbrand__desc {
+  font: var(--type-caption);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+@media (max-width: 47.99rem) {
+  .dtn-home .dtn-headbrand__desc {
+    display: none;
+  }
+}
+
 .dtn-home .imgph {
   inline-size: 100%;
   block-size: 100%;

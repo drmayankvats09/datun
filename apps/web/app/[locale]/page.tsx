@@ -119,7 +119,12 @@ export default async function HomePage({ params }: Props) {
   return (
     <div className="dtn-home">
       <SiteHeader
-        logo={<HomeLogo />}
+        logo={
+          <span className="dtn-headbrand">
+            <HomeLogo />
+            <span className="dtn-headbrand__desc">{t('home.footer.descriptor')}</span>
+          </span>
+        }
         homeHref={lp(locale, '/')}
         links={navLinks}
         ctaLabel={t('home.cta.ask')}
