@@ -335,17 +335,17 @@
   line-height: 1.45;
 }
 /* Datun-side bubble (renamed from the legacy "ai" token; never the word "AI").
-   Brand voice = the dark CTA teal with on-action (white) text. */
+   Soft teal-weak with ink text — the calm assistant voice. */
 .dtn-home .bubble--datun {
-  background: var(--color-bg-action-primary);
-  color: var(--color-text-on-action);
+  background: var(--color-bg-brand-weak);
+  color: var(--color-text-primary);
   border-end-start-radius: var(--radius-xs);
   align-self: flex-start;
 }
-/* Patient-side bubble = soft teal-weak with primary ink text. */
+/* Patient-side bubble = the dark CTA teal with on-action (white) text. */
 .dtn-home .bubble--me {
-  background: var(--color-bg-brand-weak);
-  color: var(--color-text-primary);
+  background: var(--color-bg-action-primary);
+  color: var(--color-text-on-action);
   border-end-end-radius: var(--radius-xs);
   align-self: flex-end;
 }
@@ -353,7 +353,7 @@
   align-self: flex-start;
   display: inline-flex;
   gap: 5px;
-  background: var(--color-bg-action-primary);
+  background: var(--color-bg-brand-weak);
   padding: var(--space-12) var(--space-16);
   border-radius: var(--radius-lg);
   border-end-start-radius: var(--radius-xs);
@@ -362,8 +362,8 @@
   inline-size: 7px;
   block-size: 7px;
   border-radius: var(--radius-circle);
-  background: var(--color-text-on-action);
-  opacity: 0.5;
+  background: var(--color-text-link);
+  opacity: 0.4;
 }
 @media (prefers-reduced-motion: no-preference) {
   .dtn-home .bubble--type i {
