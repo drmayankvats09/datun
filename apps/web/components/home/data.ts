@@ -186,7 +186,7 @@ export const FAQS: readonly FaqItem[] = [
   },
   {
     q: 'Can I use Datun in my own language?',
-    a: 'Yes. You can describe your problem in everyday Hindi or English and read your assessment in your language. More Indian languages are being added.',
+    a: 'Yes, in your own language. Describe your problem and read your assessment in the language you speak, whichever it is.',
   },
   {
     q: 'Who is behind the answers?',
@@ -241,6 +241,8 @@ export const CITIES: readonly CityItem[] = [
   { city: 'Chennai', region: 'Tamil Nadu' },
   { city: 'Kolkata', region: 'West Bengal' },
   { city: 'Ahmedabad', region: 'Gujarat' },
+  { city: 'Jaipur', region: 'Rajasthan' },
+  { city: 'Lucknow', region: 'Uttar Pradesh' },
 ];
 
 // ── Patient reviews (REAL founder-provided v1 data, all 5 stars, consented) ──

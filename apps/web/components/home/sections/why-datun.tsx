@@ -28,7 +28,7 @@ const POINTS = [
   {
     icon: <Globe />,
     h: 'Care in your language',
-    p: 'Ask in everyday Hindi or English and read your assessment in your language. More Indian languages are being added.',
+    p: 'Ask in any language you speak. Datun understands you and gives your assessment back in your own language.',
   },
   {
     icon: <Report />,
