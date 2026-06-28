@@ -1,7 +1,7 @@
 // apps/web/components/home/sections/why-datun.tsx
 import { getTranslations } from 'next-intl/server';
 import { Container, Grid, Section } from '@repo/ui';
-import { Check, Lock, Scale, Shield, ShieldCheck, type SectionProps } from '../_shared';
+import { Check, Globe, Lock, Report, Scale, Shield, ShieldCheck, type SectionProps } from '../_shared';
 import { COMPARE_ROWS } from '../data';
 
 const POINTS = [
@@ -24,6 +24,16 @@ const POINTS = [
     icon: <Scale />,
     h: 'Honest about scope',
     p: "A remote check can't fully replace an in-person exam, so we always tell you when to see someone.",
+  },
+  {
+    icon: <Globe />,
+    h: 'Care in your language',
+    p: 'Ask in everyday Hindi or English and read your assessment in your language. More Indian languages are being added.',
+  },
+  {
+    icon: <Report />,
+    h: 'A report you keep',
+    p: 'Every consult gives you a clear, dentist-backed report. Yours to keep, share, or take to any dentist.',
   },
 ];
 
